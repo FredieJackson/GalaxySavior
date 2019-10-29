@@ -1,14 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="pack.warshipsbattle">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.onedayofwar">
 
-    <application android:allowBackup="true"
+    <application
+        android:allowBackup="true"
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:theme="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen"
         android:screenOrientation="landscape"
         android:keepScreenOn="true">
 
-     <activity android:name=".MainActivity">
+        <activity android:name="app.onedayofwar.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -16,7 +16,6 @@
         </activity>
 
         <activity android:name=".GameActivity"/>
-
     </application>
 
 </manifest>
