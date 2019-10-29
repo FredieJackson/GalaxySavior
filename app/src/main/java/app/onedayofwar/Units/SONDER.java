@@ -1,6 +1,6 @@
 package app.onedayofwar.Units;
 
-import app.onedayofwar.Field;
+import app.onedayofwar.GameElements.Field;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.Vector2;
 

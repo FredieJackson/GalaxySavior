@@ -1,4 +1,4 @@
-package app.onedayofwar;
+package app.onedayofwar.GameElements;
 
 /**
  * Created by Slava on 10.01.2015.

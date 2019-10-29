@@ -6,7 +6,7 @@
     <statePointEntry>
       <state      
         class = "com.android.tools.idea.editors.navigation.model.ActivityState"      
-        className = "app.onedayofwar.MainActivity"/>
+        className = "app.onedayofwar.Activities.MainActivity"/>
       <point      
         x = "3200"      
         y = "0"/>
@@ -14,7 +14,7 @@
     <statePointEntry>
       <state      
         class = "com.android.tools.idea.editors.navigation.model.ActivityState"      
-        className = "app.onedayofwar.GameOverActivity"/>
+        className = "app.onedayofwar.Activities.GameOverActivity"/>
       <point      
         x = "3200"      
         y = "1280"/>
@@ -22,7 +22,7 @@
     <statePointEntry>
       <state      
         class = "com.android.tools.idea.editors.navigation.model.ActivityState"      
-        className = "app.onedayofwar.GameActivity"/>
+        className = "app.onedayofwar.Activities.GameActivity"/>
       <point      
         x = "800"      
         y = "160"/>

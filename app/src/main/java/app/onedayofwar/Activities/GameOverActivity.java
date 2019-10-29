@@ -1,4 +1,4 @@
-package app.onedayofwar;
+package app.onedayofwar.Activities;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -8,7 +8,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import app.onedayofwar.Activities.MainActivity;
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.R;
 
 /**
  * Created by Slava on 26.01.2015.

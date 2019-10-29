@@ -1,9 +1,10 @@
-package app.onedayofwar.System;
+package app.onedayofwar.GameElements;
 
 import android.graphics.Rect;
 
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Sprite;
+import app.onedayofwar.System.Vector2;
 
 /**
  * Created by Slava on 08.11.2014.

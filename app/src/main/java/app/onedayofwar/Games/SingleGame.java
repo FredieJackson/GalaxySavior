@@ -2,11 +2,10 @@ package app.onedayofwar.Games;
 
 import android.widget.Toast;
 
-import junit.framework.Test;
-
 import java.util.ArrayList;
 
-import app.onedayofwar.GameView;
+import app.onedayofwar.GameElements.Enemy;
+import app.onedayofwar.System.GameView;
 import app.onedayofwar.System.Vector2;
 import app.onedayofwar.Units.*;
 
@@ -22,6 +21,16 @@ public class SingleGame extends Game
         super(gameView);
     }
 
+    @Override
+    public void InstallationFinish()
+    {
+        if(isYourTurn)
+            state = GameState.AttackPrepare;
+        else
+            state = GameState.Defence;
+        gameView.MoveGates();
+    }
+
     //region Enemy Loading
     public void LoadEnemy()
     {
@@ -35,29 +44,30 @@ public class SingleGame extends Game
     public void InitializeEnemy()
     {
         eArmy = new ArrayList<>();
+        Vector2 startPos = new Vector2();
         for(int i = 0; i < unitCount[0]; i++)
         {
-            eArmy.add(new Robot(new Vector2(), 0, false));
+            eArmy.add(new Robot(startPos, 0, false));
         }
         for(int i = 0; i < unitCount[1]; i++)
         {
-            eArmy.add(new IFV(new Vector2(), 1, false));
+            eArmy.add(new IFV(startPos, 1, false));
         }
         for(int i = 0; i < unitCount[2]; i++)
         {
-            eArmy.add(new Engineer(new Vector2(), 2, false));
+            eArmy.add(new Engineer(startPos, 2, false));
         }
         for(int i = 0; i < unitCount[3]; i++)
         {
-            eArmy.add(new Tank(new Vector2(), 3, false));
+            eArmy.add(new Tank(startPos, 3, false));
         }
         for(int i = 0; i < unitCount[4]; i++)
         {
-            eArmy.add(new Turret(new Vector2(), 4, false));
+            eArmy.add(new Turret(startPos, 4, false));
         }
         for(int i = 0; i < unitCount[5]; i++)
         {
-            eArmy.add(new SONDER(new Vector2(), 5, false));
+            eArmy.add(new SONDER(startPos, 5, false));
         }
     }
 
@@ -78,7 +88,7 @@ public class SingleGame extends Game
                     if((int)(Math.random()* 2 + 1) == 2)
                         eArmy.get(i).ChangeDirection();
 
-                    tmpSocket.SetValue((int)(Math.random()* eField.width + eField.x),(int)(Math.random()* eField.height + eField.y));
+                    tmpSocket.SetValue(eField.GetGlobalSocketCoord((int)(Math.random() * eField.size),(int)(Math.random() * eField.size)));
 
                     if(eArmy.get(i).SetForm(tmpSocket, eField, true))
                     {
@@ -98,7 +108,7 @@ public class SingleGame extends Game
     }
     //endregion
 
-    public boolean PlayerShoot()
+    public boolean PreparePlayerShoot()
     {
         if(eField.selectedSocket.IsFalse() || eField.GetSelectedSocketSign() != 0)
             return false;
@@ -108,11 +118,11 @@ public class SingleGame extends Game
 
         if(target < 0)
         {
-            eField.SetSign(false);
+            eField.SetShot(false);
         }
         else
         {
-            if(eArmy.get(target).SetDamage(army.get(selectedUnitZone).GetPower(), eField.selectedSocket))
+            if(eArmy.get(target).SetDamage(army.get(selectedUnitZone).GetPower()))
             {
                 Vector2 tmpLocalFormCoord = new Vector2();
                 for(int i = 0; i < eArmy.get(target).GetForm().length; i++)
@@ -123,7 +133,7 @@ public class SingleGame extends Game
             }
             else
             {
-                eField.SetSign(true);
+                eField.SetShot(true);
             }
         }
         CheckEnemyArmy();
@@ -131,7 +141,12 @@ public class SingleGame extends Game
         return true;
     }
 
-    public void PrepareEnemyShoot()
+    public void PlayerShoot()
+    {
+        gameView.MoveGates();
+    }
+
+    public boolean PrepareEnemyShoot()
     {
         byte rndUnitID;
         Vector2 rndLocalCoord = new Vector2();
@@ -185,7 +200,7 @@ public class SingleGame extends Game
 
         /*if(target < 0)
         {
-            field.SetSign(false);
+            field.SetShot(false);
         }
         else
         {
@@ -200,15 +215,15 @@ public class SingleGame extends Game
             }
             else
             {
-                field.SetSign(true);
+                field.SetShot(true);
             }
         }*/
+        return true;
     }
 
     public void CheckEnemyArmy()
     {
         //region eArmy
-
         boolean isGood = false;
         boolean isGameOver = true;
 
@@ -284,11 +299,11 @@ public class SingleGame extends Game
 
         if(target < 0)
         {
-            field.SetSign(false);
+            field.SetShot(false);
         }
         else
         {
-            if(army.get(target).SetDamage(eArmy.get(Enemy.attacker).GetPower(), field.selectedSocket))
+            if(army.get(target).SetDamage(eArmy.get(Enemy.attacker).GetPower()))
             {
                 Vector2 tmp = new Vector2();
                 for(int i = 0; i < army.get(target).GetForm().length; i++)
@@ -299,7 +314,7 @@ public class SingleGame extends Game
             }
             else
             {
-                field.SetSign(true);
+                field.SetShot(true);
             }
         }
         CheckPlayerArmy();

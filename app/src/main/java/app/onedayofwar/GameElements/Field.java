@@ -1,6 +1,7 @@
-package app.onedayofwar;
+package app.onedayofwar.GameElements;
 
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
@@ -176,7 +177,7 @@ public class Field
         return shots;
     }
 
-    public void SetSign(boolean isGoodShot)
+    public void SetShot(boolean isGoodShot)
     {
         localSocketCoord.SetValue(GetLocalSocketCoord(selectedSocket));
         if(isGoodShot)
@@ -336,13 +337,17 @@ public class Field
                     localSocketCoord.SetValue(j,i);
                     globalSocketCoord.SetValue(GetGlobalSocketCoord(localSocketCoord));
 
-                    /*testTextPaint.setARGB(255,250,240,20);
+                    /*testTextPaint.setARGB(255,0,0,255);
 
                     if(fieldInfo[i][j] >=0)
                     {
                         testTextPaint.setARGB(255,255,0,0);
                     }
-                    canvas.drawText("" + fieldInfo[i][j], tmp.x + 5, tmp.y + 25, testTextPaint);*/
+                    if(fieldInfo[i][j] == -1)
+                    {
+                        testTextPaint.setARGB(255,250,240,20);
+                    }
+                    g.drawText("" + fieldInfo[i][j], 15, globalSocketCoord.x + 5, globalSocketCoord.y + 25, testTextPaint.getColor());*/
 
                     switch (shots[i][j])
                     {
@@ -364,12 +369,7 @@ public class Field
             {
                 for (int j = 0; j < size; j++)
                 {
-                    /*if(shots[i][j] == 2)
-                    {
-                        tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
-                        g.drawSprite(Assets.signFire, tmp.x - 13, tmp.y - 20);
-                    }
-                    else */if(shots[i][j] == 1)
+                    if(shots[i][j] == 1)
                     {
                         localSocketCoord.SetValue(j,i);
                         globalSocketCoord.SetValue(GetGlobalSocketCoord(localSocketCoord));
@@ -447,6 +447,19 @@ public class Field
         else
         {
             globalSocketCoord.SetValue(x + width / 2 + socketSizeX / 2 * (socketLocalCoord.x - socketLocalCoord.y), y + socketSizeY / 2 * (socketLocalCoord.y + socketLocalCoord.x));
+        }
+        return globalSocketCoord;
+    }
+    public Vector2 GetGlobalSocketCoord(int localX, int localY)
+    {
+        //если не изометрия
+        if(!isIso)
+        {
+            globalSocketCoord.SetValue(x + localX * socketSizeX, y + localY * socketSizeY);
+        }
+        else
+        {
+            globalSocketCoord.SetValue(x + width / 2 + socketSizeX / 2 * (localX - localY), y + socketSizeY / 2 * (localY + localX));
         }
         return globalSocketCoord;
     }

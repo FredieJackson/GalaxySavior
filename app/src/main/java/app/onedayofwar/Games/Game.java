@@ -1,12 +1,14 @@
 package app.onedayofwar.Games;
 
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
 
-import app.onedayofwar.Field;
-import app.onedayofwar.GameView;
+import app.onedayofwar.GameElements.Enemy;
+import app.onedayofwar.GameElements.Field;
+import app.onedayofwar.System.GameView;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.*;
 import app.onedayofwar.Units.*;
@@ -17,7 +19,7 @@ import app.onedayofwar.Units.*;
 public abstract class Game
 {
     //region Variables
-    public static enum GameState { Installation, Defence, Attack , AttackPrepare, Win, Lose}
+    public static enum GameState { Installation, Defence, Attack, AttackPrepare, Shoot, Win, Lose}
     public static GameState state;
     public Field field;
     public Field eField;
@@ -49,9 +51,11 @@ public abstract class Game
 
     //region Abstract Methods
     abstract public void LoadEnemy();
-    abstract public boolean PlayerShoot();
-    abstract public void PrepareEnemyShoot();
+    abstract public boolean PreparePlayerShoot();
+    abstract public void PlayerShoot();
+    abstract public boolean PrepareEnemyShoot();
     abstract public void EnemyShoot();
+    abstract public void InstallationFinish();
     //endregion
 
     //region Initialization
@@ -59,7 +63,10 @@ public abstract class Game
     {
         state = GameState.Installation;
         Enemy.target = new Vector2();
+        Enemy.target.SetFalse();
         Enemy.weaponType = 0;
+        Enemy.damage = 0;
+        Enemy.attackResult = -1;
         turns = 0;
         army = new ArrayList<>();
 
@@ -67,14 +74,13 @@ public abstract class Game
         eField = new Field((int)(405 * Assets.monitorWidthCoeff), gameView.screenHeight/2 - Assets.gridIso.getHeight()/2, 15, false); //gameView.screenWidth/2 - Assets.grid.getWidth()/2, gameView.screenHeight/2 - Assets.grid.getHeight()/2, 15, false);
         eField.Move();
 
-        isYourTurn = false;
         selectedUnitZone = -1;
 
         unitCount = new byte[6];
         unitCount[0] = 1;//6;//Robot
         unitCount[1] = 1;//4;//IFV
         unitCount[2] = 1;//3;//Engineer
-        unitCount[3] = 1;//2;//Tank
+        unitCount[3] = 3;//2;//Tank
         unitCount[4] = 1;//2;//Turret
         unitCount[5] = 1;//1;//SONDER
 
@@ -132,8 +138,7 @@ public abstract class Game
         {
             if(state == GameState.Installation)
             {
-                state = GameState.AttackPrepare;
-                gameView.MoveGates();
+                InstallationFinish();
             }
             else if(selectedUnitZone > -1)
             {
@@ -153,25 +158,42 @@ public abstract class Game
                 //в состоянии дэфенс проигрываем анимацию потом меняем на подготовку к атаке
                 state = GameState.Defence;
             }
+            else if(state == GameState.Shoot)
+            {
+                state = GameState.Defence;
+                gameView.DefendingPrepare();
+                gameView.MoveGates();
+            }
         }
         else if(gameView.IsGatesOpen())
         {
             if(state == GameState.Defence)
             {
-                switch(bullet.state)
+                if(PrepareEnemyShoot())
                 {
-                    case LAUNCH:
-                        bullet.Launch(Enemy.target.x, Enemy.target.y, Enemy.weaponType);
-                        break;
-                    case FLY:
-                        bullet.Update();
-                        break;
-                    case BOOM:
-                        bullet.Reload();
-                        EnemyShoot();
-                        state = GameState.AttackPrepare;
-                        break;
+                    switch (bullet.state)
+                    {
+                        case LAUNCH:
+                            bullet.Launch(Enemy.target.x, Enemy.target.y, Enemy.weaponType);
+                            Log.i("ROCKET", "LAUNCH");
+                            break;
+                        case FLY:
+                            bullet.Update();
+                            break;
+                        case BOOM:
+                            Log.i("ROCKET", "BOOM");
+                            bullet.Reload();
+                            Enemy.target.SetFalse();
+                            EnemyShoot();
+                            gameView.AttackPrepare();
+                            state = GameState.AttackPrepare;
+                            break;
+                    }
                 }
+            }
+            else if(state == GameState.Shoot)
+            {
+                PlayerShoot();
             }
         }
     }
@@ -183,29 +205,31 @@ public abstract class Game
         //Если было совершено нажатие на экран
         if(event.getAction() == MotionEvent.ACTION_DOWN)
         {
-            //Если расстановка не закончена
+            //Если идет расстановка
             if(state == GameState.Installation)
             {
                 //Пытаемся выбрать юнит
                 SelectUnit();
             }
+            //Если ворота открыты и идет подготовка к атаке
             else if(gameView.IsGatesOpen() && state == GameState.AttackPrepare)
             {
+                //Выделяем клетку поля
                 field.SelectSocket(gameView.touchPos, 0);
+                //Выбираем юнит
                 SelectUnit();
             }
         }
         //Если убрали палец с экрана
         else if(event.getAction() == MotionEvent.ACTION_UP)
         {
-
         }
-
+        //Если ворота открыты и идет атака
         if(gameView.IsGatesOpen() && state == GameState.Attack)
         {
+            //Выделяем клетку вражеского поля
             eField.SelectSocket(gameView.touchPos, 0);
         }
-
         //Если выбран юнит и расстановка не закончена
         if (selectedUnitZone > -1 && state == GameState.Installation)
         {
@@ -256,7 +280,6 @@ public abstract class Game
         }
         if (c == unitNum.length)
         {
-            isYourTurn = true;
             return true;
         }
         return false;
@@ -314,9 +337,9 @@ public abstract class Game
         if (state == GameState.AttackPrepare)
         {
             //Получаем локальные координаты клетки поля
-            Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
+            //Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
             //Получаем инфу клетки поля
-            byte tmpID = field.GetFieldInfo()[tmp.y][tmp.x];
+            byte tmpID = field.GetSelectedSocketInfo();
             //Если в клетке стоит юнит
             if (tmpID > -1 && !army.get(tmpID).IsDead() && !army.get(tmpID).IsReloading())
             {
@@ -541,7 +564,8 @@ public abstract class Game
         for(int i = 0, j = 0; i < unitCount.length; i++)
         {
             j += unitCount[i];
-            army.get(j - 1).DrawIcon(gameView.graphics);
+            if(unitNum[i] != -1)
+                army.get(j - 1).DrawIcon(gameView.graphics);
         }
     }
 
@@ -565,7 +589,7 @@ public abstract class Game
         reward += goodShots * 5;
         if(state == GameState.Win)
         {
-            reward += 150;
+            reward += 100;
         }
 
         gameView.GameOver(state, reward);

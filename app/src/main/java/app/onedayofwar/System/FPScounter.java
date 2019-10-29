@@ -1,4 +1,4 @@
-package app.onedayofwar;
+package app.onedayofwar.System;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;

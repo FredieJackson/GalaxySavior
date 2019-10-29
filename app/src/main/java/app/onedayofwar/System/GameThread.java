@@ -1,11 +1,6 @@
 package app.onedayofwar.System;
 
 import android.graphics.Canvas;
-import android.os.SystemClock;
-
-import app.onedayofwar.FPScounter;
-import app.onedayofwar.GameView;
-import app.onedayofwar.Graphics.Graphics;
 
 
 public class GameThread extends Thread

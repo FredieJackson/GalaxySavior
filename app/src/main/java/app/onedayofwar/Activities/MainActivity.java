@@ -1,4 +1,4 @@
-package app.onedayofwar;
+package app.onedayofwar.Activities;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -12,24 +12,35 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.R;
 
 public class MainActivity extends Activity
 {
+    BluetoothAdapter btAdapter;
+    private boolean isBluetoothOff;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.main);
-        Assets.mainFont = Typeface.createFromAsset(getAssets(), "fonts/hollowpoint.ttf");//clonewars.ttf");
+        isBluetoothOff = false;
+        Assets.mainFont = Typeface.createFromAsset(getAssets(), "fonts/hollowpoint.ttf");
     }
     @Override
     protected void onResume()
     {
         super.onResume();
+        if(isBluetoothOff)
+        {
+            StartGame('b');
+            isBluetoothOff = false;
+            return;
+        }
         setContentView(R.layout.main);
         mainFonts();
     }
+
     public void ClickBtn1(View view)
     {
         setContentView(R.layout.main_game_mode);
@@ -39,9 +50,10 @@ public class MainActivity extends Activity
     {
         StartGame('s');
     }
+
     public void ClickBluetoothBtn(View view)
     {
-        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
         if(btAdapter == null)
         {
             Toast.makeText(this, "ERROR: BLUETOOTH UNSUPPORTED", Toast.LENGTH_LONG).show();
@@ -55,10 +67,10 @@ public class MainActivity extends Activity
         else
         {
             Toast.makeText(this, "BLUETOOTH IS OFF", Toast.LENGTH_LONG).show();
+            setContentView(R.layout.loading);
+            isBluetoothOff = true;
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, 1);
-            if(btAdapter.isEnabled())
-                StartGame('b');
         }
     }
     public void ClickInternetBtn(View view)

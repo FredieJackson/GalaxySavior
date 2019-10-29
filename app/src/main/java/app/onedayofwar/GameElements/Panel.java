@@ -1,13 +1,12 @@
-package app.onedayofwar;
+package app.onedayofwar.GameElements;
 
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
-import app.onedayofwar.System.Button;
+import app.onedayofwar.GameElements.Button;
 import app.onedayofwar.System.Vector2;
 
 /**

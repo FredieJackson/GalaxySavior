@@ -1,4 +1,4 @@
-package app.onedayofwar;
+package app.onedayofwar.System;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -10,13 +10,18 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
+import app.onedayofwar.Activities.BluetoothConnection.BluetoothController;
+import app.onedayofwar.Activities.GameOverActivity;
+import app.onedayofwar.Activities.MainActivity;
+import app.onedayofwar.GameElements.Button;
+import app.onedayofwar.GameElements.Panel;
+import app.onedayofwar.Games.BluetoothGame;
 import app.onedayofwar.Games.Game.*;
 import app.onedayofwar.Games.Game;
 import app.onedayofwar.Games.SingleGame;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.System.*;
-import app.onedayofwar.Panel.*;
+import app.onedayofwar.GameElements.Panel.*;
 
 public class GameView extends SurfaceView
 implements OnTouchListener, SurfaceHolder.Callback
@@ -25,6 +30,7 @@ implements OnTouchListener, SurfaceHolder.Callback
     public static final int sourceHeight = 720;
     public static final int sourceWidth = 1024;
     public static final int sourceDpi = 132;
+    public BluetoothController btController;
     public Graphics graphics;
     public int screenWidth;
     public int screenHeight;
@@ -62,6 +68,9 @@ implements OnTouchListener, SurfaceHolder.Callback
             case 's':
                 game = new SingleGame(this);
             break;
+            case 'b':
+                game = new BluetoothGame(this);
+                break;
         }
         ButtonsInitialize();
         MoveGates();
@@ -106,6 +115,16 @@ implements OnTouchListener, SurfaceHolder.Callback
     //endregion
 
     //region Initialization
+    public void SetAttackSequence(boolean isYourTurn)
+    {
+        game.isYourTurn = isYourTurn;
+    }
+
+    public void LoadBT(BluetoothController controller)
+    {
+        btController = controller;
+    }
+
     private void Initialize()
     {
         getHolder().addCallback(this);
@@ -303,6 +322,11 @@ implements OnTouchListener, SurfaceHolder.Callback
     public void DefendingPrepare()
     {
         shootBtn.SetInvisible();
+        shootBtn.Lock();
+    }
+
+    public void AttackPrepare()
+    {
         installBtn.Unlock();
         installBtn.SetVisible();
     }
@@ -403,11 +427,7 @@ implements OnTouchListener, SurfaceHolder.Callback
 
         else if(shootBtn.IsClicked() && IsGatesOpen())
         {
-            if(game.PlayerShoot())
-            {
-                MoveGates();
-                shootBtn.Lock();
-            }
+            game.PreparePlayerShoot();
         }
     }
 
@@ -467,11 +487,8 @@ implements OnTouchListener, SurfaceHolder.Callback
         }
         else
         {
-            if(game.isYourTurn)
-            {
-                installBtn.Draw(graphics);
-                shootBtn.Draw(graphics);
-            }
+            installBtn.Draw(graphics);
+            shootBtn.Draw(graphics);
         }
     }
 
@@ -495,7 +512,7 @@ implements OnTouchListener, SurfaceHolder.Callback
     {
         //graphics.clear(Color.argb(255, 0, 140, 240));
         //canvas.drawColor(Color.argb(255, 0, 140, 240));
-        if (game.state == GameState.Attack)
+        if (game.state == GameState.Attack || game.state == GameState.Shoot)
         {
             graphics.clear(Color.rgb(0, 0, 0));
             graphics.drawSprite(Assets.monitor);
@@ -527,7 +544,7 @@ implements OnTouchListener, SurfaceHolder.Callback
             gateUp.Draw(graphics);
             gateDown.Draw(graphics);
         }
-        graphics.drawText("width: " + screenWidth, 20, 50,300, paint.getColor());
+        graphics.drawText("state: " + game.state, 20, 50,300, paint.getColor());
         graphics.drawText("height: " + screenHeight, 20, 50,350, paint.getColor());
         graphics.drawText("dpi: " + Assets.dpiCoeff, 20, 50,400, paint.getColor());
         graphics.drawText("btn X: " + shootBtn.x, 20, 50,450, paint.getColor());
@@ -550,6 +567,11 @@ implements OnTouchListener, SurfaceHolder.Callback
         intent.putExtra("result", state == GameState.Win);
         intent.putExtra("reward", reward);
         activity.startActivity(intent);
+    }
+    public void GameOver()
+    {
+        game.state = GameState.Win;
+        game.GameOver();
     }
     //endregion
 }

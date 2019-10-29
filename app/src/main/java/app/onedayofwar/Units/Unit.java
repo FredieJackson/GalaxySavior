@@ -3,7 +3,7 @@ package app.onedayofwar.Units;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
-import app.onedayofwar.Field;
+import app.onedayofwar.GameElements.Field;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Sprite;
@@ -80,6 +80,7 @@ abstract public class Unit
         DrawDamagedZones(g);
         if(reload > 0 && !isDead)
             DrawReload(g);
+
     }
 
     public void DrawReload(Graphics g)
@@ -97,7 +98,7 @@ abstract public class Unit
 
     public void DrawIcon(Graphics g)
     {
-        if(!isInstalled && !iconPos.IsNegative(false))
+        if(!iconPos.IsNegative(false))
         {
             g.drawSprite(icon, iconPos.x, iconPos.y);
         }
@@ -208,7 +209,7 @@ abstract public class Unit
         reload = reloadTime + 1;
     }
 
-    public boolean SetDamage(int damage, Vector2 damagedZone)
+    public boolean SetDamage(int damage)
     {
         damagedZones++;
         if(armor >= damage)
@@ -221,25 +222,43 @@ abstract public class Unit
         if(hitPoints <= 0)
         {
             isDead = true;
-            for(int i = 0; i < damagedForm.length; i++)
-            {
-               damagedForm[i] = true;
-            }
             return true;
         }
         else if(damagedZones == form.length)
         {
             isDead = true;
         }
-        for(int i = 0; i < form.length; i++)
+        /*for(int i = 0; i < form.length; i++)
         {
             if(form[i].Equals(damagedZone))
             {
                 damagedForm[i] = true;
                 break;
             }
-        }
+        }*/
         return false;
+    }
+
+    public void UpdateDamagedZones(Vector2 damagedZone)
+    {
+        if(isDead)
+        {
+            for(int i = 0; i < form.length; i++)
+            {
+                damagedForm[i] = true;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < form.length; i++)
+            {
+                if (form[i].Equals(damagedZone))
+                {
+                    damagedForm[i] = true;
+                    break;
+                }
+            }
+        }
     }
 
     public int GetPower()
@@ -255,6 +274,6 @@ abstract public class Unit
     public void ResetReload()
     {
         reload = 0;
-        power = power / 10;
+        power = power / 2;
     }
 }
