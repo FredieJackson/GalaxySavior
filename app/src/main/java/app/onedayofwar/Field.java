@@ -23,6 +23,8 @@ public class Field
     public int socketSizeY;
     public int size;
     public Vector2 selectedSocket;
+    public Vector2 globalSocketCoord;
+    public Vector2 localSocketCoord;
 
     byte[][] fieldInfo;
     byte[][] shots;
@@ -85,6 +87,8 @@ public class Field
 
         testTextPaint = new Paint();
         testTextPaint.setARGB(255,250,240,20);
+        globalSocketCoord = new Vector2();
+        localSocketCoord = new Vector2();
     }
     //endregion
 
@@ -147,14 +151,14 @@ public class Field
 
     public byte GetSelectedSocketInfo()
     {
-        Vector2 tmp = new Vector2(GetLocalSocketCoord(selectedSocket));
-        return fieldInfo[tmp.y][tmp.x];
+        localSocketCoord.SetValue(GetLocalSocketCoord(selectedSocket));
+        return fieldInfo[localSocketCoord.y][localSocketCoord.x];
     }
 
     public byte GetSelectedSocketSign()
     {
-        Vector2 tmp = new Vector2(GetLocalSocketCoord(selectedSocket));
-        return shots[tmp.y][tmp.x];
+        localSocketCoord.SetValue(GetLocalSocketCoord(selectedSocket));
+        return shots[localSocketCoord.y][localSocketCoord.x];
     }
 
     public boolean IsIso()
@@ -174,11 +178,11 @@ public class Field
 
     public void SetSign(boolean isGoodShot)
     {
-        Vector2 tmp = new Vector2(GetLocalSocketCoord(selectedSocket));
+        localSocketCoord.SetValue(GetLocalSocketCoord(selectedSocket));
         if(isGoodShot)
-            shots[tmp.y][tmp.x] = 2;
+            shots[localSocketCoord.y][localSocketCoord.x] = 2;
         else
-            shots[tmp.y][tmp.x] = 1;
+            shots[localSocketCoord.y][localSocketCoord.x] = 1;
     }
 
     /**
@@ -188,15 +192,14 @@ public class Field
      */
     public void PlaceUnit(Vector2[] form, int unitID)
     {
-        Vector2 tmp = new Vector2();
         for(int i = 0; i < form.length; i++)
         {
             //получаем локальные координаты
-            tmp.SetValue(GetLocalSocketCoord(form[i]));
+            localSocketCoord.SetValue(GetLocalSocketCoord(form[i]));
 
-            fieldInfo[tmp.y][tmp.x] = (byte)unitID;
+            fieldInfo[localSocketCoord.y][localSocketCoord.x] = (byte)unitID;
 
-            SetRestrictedArea(tmp);
+            SetRestrictedArea(localSocketCoord);
         }
     }
 
@@ -324,14 +327,14 @@ public class Field
      */
     public void DrawFieldInfo(Graphics g)
     {
-        Vector2 tmp = new Vector2();
         if(!isIso)
         {
             for (int i = 0; i < size; i++)
             {
                 for (int j = 0; j < size; j++)
                 {
-                    tmp.SetValue(GetGlobalSocketCoord(new Vector2(j,i)));
+                    localSocketCoord.SetValue(j,i);
+                    globalSocketCoord.SetValue(GetGlobalSocketCoord(localSocketCoord));
 
                     /*testTextPaint.setARGB(255,250,240,20);
 
@@ -344,10 +347,10 @@ public class Field
                     switch (shots[i][j])
                     {
                         case 1:
-                            g.drawSprite(Assets.signMiss, tmp.x, tmp.y);
+                            g.drawSprite(Assets.signMiss, globalSocketCoord.x, globalSocketCoord.y);
                             break;
                         case 2:
-                            g.drawSprite(Assets.signHit, tmp.x, tmp.y);
+                            g.drawSprite(Assets.signHit, globalSocketCoord.x, globalSocketCoord.y);
                             break;
                     }
                 }
@@ -368,8 +371,9 @@ public class Field
                     }
                     else */if(shots[i][j] == 1)
                     {
-                        tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
-                        g.drawSprite(Assets.signMissIso, tmp.x - (int)(20 * Assets.gridCoeff), (int)(tmp.y + 2 * Assets.gridCoeff));
+                        localSocketCoord.SetValue(j,i);
+                        globalSocketCoord.SetValue(GetGlobalSocketCoord(localSocketCoord));
+                        g.drawSprite(Assets.signMissIso, globalSocketCoord.x - (int)(20 * Assets.gridCoeff), (int)(globalSocketCoord.y + 2 * Assets.gridCoeff));
                     }
                 }
             }
@@ -397,8 +401,7 @@ public class Field
      */
     public Vector2 GetLocalSocketCoord(Vector2 socketGlobalCoord)
     {
-        Vector2 tmp = new Vector2();
-        tmp.SetFalse();
+        localSocketCoord.SetFalse();
         //если не изометрия
         if(!isIso)
         {
@@ -412,21 +415,21 @@ public class Field
                 //проверяем через функцию прямой с положительным коэффициэнтом совпадает ли у функции и у ячейки
                 if (socketGlobalCoord.y == (0.5 * (socketGlobalCoord.x - (x + width / 2)) + i * socketSizeY + y))
                 {
-                    tmp.y = i;
+                    localSocketCoord.y = i;
                 }
 
                 //проверяем через функцию прямой с отрицательным коэффициэнтом совпадает ли у функции и у ячейки
                 if (socketGlobalCoord.y == (-0.5 * (socketGlobalCoord.x - (x + width / 2)) + i * socketSizeY + y))
                 {
-                    tmp.x = i;
+                    localSocketCoord.x = i;
                 }
 
                 //если вычислили локальные координаты
-                if (tmp.x != -1 && tmp.y != -1)
+                if (localSocketCoord.x != -1 && localSocketCoord.y != -1)
                     break;
             }
         }
-        return tmp;
+        return localSocketCoord;
     }
 
     /**
@@ -439,12 +442,13 @@ public class Field
         //если не изометрия
         if(!isIso)
         {
-            return new Vector2(x + socketLocalCoord.x * socketSizeX, y + socketLocalCoord.y * socketSizeY);
+            globalSocketCoord.SetValue(x + socketLocalCoord.x * socketSizeX, y + socketLocalCoord.y * socketSizeY);
         }
         else
         {
-            return new Vector2(x + width / 2 + socketSizeX / 2 * (socketLocalCoord.x - socketLocalCoord.y), y + socketSizeY / 2 * (socketLocalCoord.y + socketLocalCoord.x));
+            globalSocketCoord.SetValue(x + width / 2 + socketSizeX / 2 * (socketLocalCoord.x - socketLocalCoord.y), y + socketSizeY / 2 * (socketLocalCoord.y + socketLocalCoord.x));
         }
+        return globalSocketCoord;
     }
 
     /**

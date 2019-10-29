@@ -1,6 +1,7 @@
 package app.onedayofwar;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
@@ -38,7 +39,6 @@ public class Panel
         this.width = width;
         this.height = height;
         this.type = type;
-
        /* if(openType == 3)
             image = BitmapFactory.decodeResource(res,R.drawable.gate_top);
         else if(openType == 2)
@@ -57,7 +57,7 @@ public class Panel
         rect = new Rect(x, y, x + width, y + height);
 
         if(type == Type.RIGHT)
-            closeBtn = new Button(Assets.btnPanelClose, new Vector2(x, height / 2 - Assets.btnPanelClose.getHeight() / 2), false);
+            closeBtn = new Button(Assets.btnPanelClose, x, height / 2 - Assets.btnPanelClose.getHeight() / 2, false);
 
         isStop = true;
         isClose = true;

@@ -2,7 +2,6 @@ package app.onedayofwar.Games;
 
 import android.graphics.Rect;
 import android.view.MotionEvent;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -34,6 +33,8 @@ public abstract class Game
     protected byte selectedUnitZone;
     //endregion
 
+
+    Bullet bullet;
     //endregion
 
     protected String testLocalView = "";
@@ -48,8 +49,8 @@ public abstract class Game
 
     //region Abstract Methods
     abstract public void LoadEnemy();
-    abstract public void NextTurn();
     abstract public boolean PlayerShoot();
+    abstract public void PrepareEnemyShoot();
     abstract public void EnemyShoot();
     //endregion
 
@@ -57,11 +58,13 @@ public abstract class Game
     protected void Initialize()
     {
         state = GameState.Installation;
+        Enemy.target = new Vector2();
+        Enemy.weaponType = 0;
         turns = 0;
         army = new ArrayList<>();
 
         field = new Field(gameView.screenWidth/2 - Assets.gridIso.getWidth()/2, gameView.screenHeight/2 - Assets.gridIso.getHeight()/2, 15, true);
-        eField = new Field((int)(170 * Assets.screenWidthCoeff  * Assets.dpiCoeff), gameView.screenHeight/2 - Assets.gridIso.getHeight()/2, 15, false); //gameView.screenWidth/2 - Assets.grid.getWidth()/2, gameView.screenHeight/2 - Assets.grid.getHeight()/2, 15, false);
+        eField = new Field((int)(405 * Assets.monitorWidthCoeff), gameView.screenHeight/2 - Assets.gridIso.getHeight()/2, 15, false); //gameView.screenWidth/2 - Assets.grid.getWidth()/2, gameView.screenHeight/2 - Assets.grid.getHeight()/2, 15, false);
         eField.Move();
 
         isYourTurn = false;
@@ -114,6 +117,7 @@ public abstract class Game
         {
             drawArmySequence[i] = army.get(i);
         }
+        bullet = new Bullet();
         LoadEnemy();
     }
     //endregion
@@ -124,7 +128,7 @@ public abstract class Game
         if(state == GameState.Installation && !gameView.selectingPanel.isStop)
             AlignArmyPosition();
 
-        if(gameView.IsGatesClose() && isYourTurn)
+        if(gameView.IsGatesClose())
         {
             if(state == GameState.Installation)
             {
@@ -141,14 +145,33 @@ public abstract class Game
             else if(selectedUnitZone == -1)
             {
                 SwapFields();
-                EnemyShoot();
-                NextTurn();
+                PrepareEnemyShoot();
                 state = GameState.Defence;
                 gameView.DefendingPrepare();
                 gameView.MoveGates();
 
                 //в состоянии дэфенс проигрываем анимацию потом меняем на подготовку к атаке
-                state = GameState.AttackPrepare;
+                state = GameState.Defence;
+            }
+        }
+        else if(gameView.IsGatesOpen())
+        {
+            if(state == GameState.Defence)
+            {
+                switch(bullet.state)
+                {
+                    case LAUNCH:
+                        bullet.Launch(Enemy.target.x, Enemy.target.y, Enemy.weaponType);
+                        break;
+                    case FLY:
+                        bullet.Update();
+                        break;
+                    case BOOM:
+                        bullet.Reload();
+                        EnemyShoot();
+                        state = GameState.AttackPrepare;
+                        break;
+                }
             }
         }
     }
@@ -166,6 +189,11 @@ public abstract class Game
                 //Пытаемся выбрать юнит
                 SelectUnit();
             }
+            else if(gameView.IsGatesOpen() && state == GameState.AttackPrepare)
+            {
+                field.SelectSocket(gameView.touchPos, 0);
+                SelectUnit();
+            }
         }
         //Если убрали палец с экрана
         else if(event.getAction() == MotionEvent.ACTION_UP)
@@ -173,17 +201,9 @@ public abstract class Game
 
         }
 
-        if(state != GameState.Installation && !gameView.IsGatesClose())
+        if(gameView.IsGatesOpen() && state == GameState.Attack)
         {
-            if(eField.IsVectorInField(gameView.touchPos))
-            {
-                eField.SelectSocket(gameView.touchPos, 0);
-            }
-            else if(field.IsVectorInField(gameView.touchPos))
-            {
-                field.SelectSocket(gameView.touchPos, 0);
-                SelectUnit();
-            }
+            eField.SelectSocket(gameView.touchPos, 0);
         }
 
         //Если выбран юнит и расстановка не закончена
@@ -291,7 +311,7 @@ public abstract class Game
      */
     public void SelectUnit()
     {
-        if (state != GameState.Installation)
+        if (state == GameState.AttackPrepare)
         {
             //Получаем локальные координаты клетки поля
             Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
@@ -307,7 +327,7 @@ public abstract class Game
                 army.get(tmpID).Select();
             }
         }
-        else
+        else if(state == GameState.Installation)
         {
             gameView.isButtonPressed = false;
             //Если юнит не выбран
@@ -346,8 +366,9 @@ public abstract class Game
                         army.get(unitNum[selectedUnitZone]).pos.SetValue(field.GetGlobalSocketCoord(new Vector2(field.size / 2, field.size / 2)));
                         //Выделяем ячейку на поле
                         field.SelectSocket(new Vector2(army.get(unitNum[selectedUnitZone]).pos.x, army.get(unitNum[selectedUnitZone]).pos.y + 2), 0);
+
                         //Подсвечиваем юнит
-                        army.get(unitNum[selectedUnitZone]).isSelected = true;
+                        army.get(unitNum[selectedUnitZone]).Select();
 
                         //Проверяем помехи
                         army.get(unitNum[selectedUnitZone]).CheckPosition(field);
@@ -381,6 +402,8 @@ public abstract class Game
                                 gameView.selectingPanel.Move();
                             //Удаляем информацию о нем с поля
                             field.DeleteUnit(army.get(tmpID));
+                            //Удаляем выделение
+                            army.get(tmpID).Deselect();
                             //Обнуляем его позицию
                             army.get(tmpID).ResetPosition();
                             //Помечаем его как не установленный
@@ -451,7 +474,8 @@ public abstract class Game
 
                     //Помечаем юнит как установленный
                     army.get(unitNum[selectedUnitZone]).isInstalled = true;
-                    army.get(unitNum[selectedUnitZone]).isSelected = false;
+
+                    army.get(unitNum[selectedUnitZone]).Deselect();
                     //Увеличиваем текущий ид данного типа юнитов
                     unitNum[selectedUnitZone]++;
 
@@ -494,6 +518,7 @@ public abstract class Game
         {
             gameView.graphics.drawText(testLocalView, 24, 50, 150, army.get(0).strokePaint.getColor());
         }
+        bullet.Draw(gameView.graphics);
     }
 
     public void DrawFields()

@@ -122,8 +122,6 @@ abstract public class Unit
         {
             isRight = false;
             TurnImage();
-            //image.horizontalFlip();
-            //stroke.horizontalFlip();
         }
     }
 

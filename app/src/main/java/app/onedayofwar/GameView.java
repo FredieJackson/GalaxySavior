@@ -22,9 +22,9 @@ public class GameView extends SurfaceView
 implements OnTouchListener, SurfaceHolder.Callback
 {
     //region Variables
-    public static final int sourceHeight = 480;
-    public static final int sourceWidth = 800;
-    public static final int sourceDpi = 233;
+    public static final int sourceHeight = 720;
+    public static final int sourceWidth = 1024;
+    public static final int sourceDpi = 132;
     public Graphics graphics;
     public int screenWidth;
     public int screenHeight;
@@ -184,6 +184,9 @@ implements OnTouchListener, SurfaceHolder.Callback
         Assets.background = graphics.newSprite("town-c.jpg", Graphics.SpriteFormat.RGB565);
         Assets.monitor = graphics.newSprite("monitorHD.png", Graphics.SpriteFormat.ARGB4444);
 
+        Assets.bullet = graphics.newSprite("unit/bullet/bullet.png", Graphics.SpriteFormat.ARGB4444);
+        Assets.miniRocket = graphics.newSprite("unit/bullet/miniRocket.png", Graphics.SpriteFormat.ARGB4444);
+
         scaleImages();
     }
 
@@ -197,8 +200,10 @@ implements OnTouchListener, SurfaceHolder.Callback
         double iconCoeff = ((screenHeight - 70)/(double)6) / Assets.robotIcon.getHeight();
         double btnCoeff = screenHeight * 0.1f / (double)Assets.btnCancel.getHeight();
 
-        Assets.dpiCoeff =  getResources().getDisplayMetrics().xdpi / sourceDpi;
+        Assets.dpiCoeff =  (int)getResources().getDisplayMetrics().xdpi / (double)sourceDpi;
         Assets.gridCoeff = fieldCoeff;
+        Assets.monitorHeightCoeff = (double)screenHeight / 1080;
+        Assets.monitorWidthCoeff = (double)screenWidth / 1920;
         Assets.screenHeightCoeff = screenHeight / sourceHeight;
         Assets.screenWidthCoeff = screenWidth / sourceWidth;
 
@@ -250,6 +255,9 @@ implements OnTouchListener, SurfaceHolder.Callback
 
         Assets.background.changeSize(screenWidth, screenHeight);
         Assets.monitor.changeSize(screenWidth, screenHeight);
+
+        Assets.bullet.changeSize(fieldCoeff);
+        Assets.miniRocket.changeSize(fieldCoeff);
     }
     //endregion
 
@@ -377,7 +385,7 @@ implements OnTouchListener, SurfaceHolder.Callback
                 if (game.CheckInstallationFinish())
                 {
                     MoveGates();
-                    installBtn.SetPosition((int)((game.eField.initX + game.eField.width + 30) * Assets.screenWidthCoeff), (int)(game.eField.y * Assets.screenHeightCoeff));
+                    installBtn.SetPosition((int)(screenWidth - Assets.btnInstall.getWidth() - 50 * Assets.screenWidthCoeff * Assets.dpiCoeff), (int)(game.eField.y * Assets.screenHeightCoeff * Assets.dpiCoeff));
                     cancelBtn.Lock();
                     turnBtn.Lock();
                     selectingPanel.CloseBtnLock();
@@ -472,11 +480,11 @@ implements OnTouchListener, SurfaceHolder.Callback
      */
     private void ButtonsInitialize()
     {
-        cancelBtn = new Button(Assets.btnCancel, new Vector2(10, 90), true);
-        turnBtn = new Button(Assets.btnTurn, new Vector2(10, game.field.y + game.field.height - 150), true);
-        installBtn = new Button(Assets.btnInstall, new Vector2(10, game.field.y + game.field.height - 70), true);
-        installationFinishBtn = new Button(Assets.btnFinishInstallation, new Vector2(10, 10), true);
-        shootBtn = new Button(Assets.btnShoot, new Vector2((int)(80 * Assets.screenWidthCoeff),(int)(240 * Assets.screenHeightCoeff)), false);
+        cancelBtn = new Button(Assets.btnCancel, 10, 90, true);
+        turnBtn = new Button(Assets.btnTurn, 10, game.field.y + game.field.height - 150, true);
+        installBtn = new Button(Assets.btnInstall, 10, game.field.y + game.field.height - 70, true);
+        installationFinishBtn = new Button(Assets.btnFinishInstallation, 10, 10, true);
+        shootBtn = new Button(Assets.btnShoot, (int)(190 * Assets.monitorWidthCoeff), (int)(520 * Assets.monitorHeightCoeff), false);
         shootBtn.SetInvisible();
         shootBtn.Lock();
     }
@@ -522,8 +530,8 @@ implements OnTouchListener, SurfaceHolder.Callback
         graphics.drawText("width: " + screenWidth, 20, 50,300, paint.getColor());
         graphics.drawText("height: " + screenHeight, 20, 50,350, paint.getColor());
         graphics.drawText("dpi: " + Assets.dpiCoeff, 20, 50,400, paint.getColor());
-        //graphics.drawText("x: " + touchPos.x, 20, 50,400, paint.getColor());
-        //graphics.drawText("y: " + touchPos.y, 20, 50,450, paint.getColor());
+        graphics.drawText("btn X: " + shootBtn.x, 20, 50,450, paint.getColor());
+        graphics.drawText("btn Y: " + shootBtn.y, 20, 50,500, paint.getColor());
     }
     //endregion
 

@@ -94,7 +94,7 @@ public class Engineer extends Unit {
         {
             for (int i = 0; i < form.length; i++)
                 form[i].SetValue(tmpForm[i]);
-            if(isVisible && isRight) stroke.horizontalFlip();
+            //if(isVisible && isRight) stroke.horizontalFlip();
         }
 
         return true;

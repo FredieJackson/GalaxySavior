@@ -98,79 +98,6 @@ public class SingleGame extends Game
     }
     //endregion
 
-
-    public void NextTurn()
-    {
-        turns++;
-
-        //region army
-        boolean isGood = false;
-        boolean isGameOver = true;
-        for(Unit unit : army)
-        {
-            if(!unit.IsDead())
-            {
-                unit.NextTurn();
-                isGameOver = false;
-                if (!unit.IsReloading())
-                    isGood = true;
-            }
-        }
-        if(isGameOver)
-        {
-            testLocalView = "YOU LOSE!";
-            state = GameState.Lose;
-        }
-        if(!isGood)
-        {
-            for(Unit unit : army)
-            {
-                if(!unit.IsDead())
-                {
-                    unit.ResetReload();
-                    break;
-                }
-            }
-        }
-        //endregion
-
-        //region eArmy
-        isGood = false;
-        isGameOver = true;
-        for(Unit unit : eArmy)
-        {
-            if(!unit.IsDead())
-            {
-                isGameOver = false;
-                unit.NextTurn();
-                if (!unit.IsReloading())
-                    isGood = true;
-            }
-        }
-        if(isGameOver)
-        {
-            testLocalView = "YOU WIN!";
-            state = GameState.Win;
-        }
-        if(!isGood)
-        {
-            for(Unit unit : eArmy)
-            {
-                if(!unit.IsDead())
-                {
-                    unit.ResetReload();
-                    break;
-                }
-            }
-        }
-        //endregion
-
-        if(state == GameState.Win || state == GameState.Lose)
-        {
-            GameOver();
-        }
-    }
-
     public boolean PlayerShoot()
     {
         if(eField.selectedSocket.IsFalse() || eField.GetSelectedSocketSign() != 0)
@@ -199,14 +126,14 @@ public class SingleGame extends Game
                 eField.SetSign(true);
             }
         }
+        CheckEnemyArmy();
         selectedUnitZone = -1;
         return true;
     }
 
-    public void EnemyShoot()
+    public void PrepareEnemyShoot()
     {
         byte rndUnitID;
-        byte target;
         Vector2 rndLocalCoord = new Vector2();
         Vector2 rndSocket = new Vector2();
 
@@ -233,6 +160,7 @@ public class SingleGame extends Game
             while(field.GetSelectedSocketSign() != 0);
 
             testLocalView = "Crit! ";
+            Enemy.weaponType = 1;
         }
         else
         {
@@ -245,14 +173,17 @@ public class SingleGame extends Game
             while (field.GetSelectedSocketSign() != 0);
 
             testLocalView = "Normal ";
+            Enemy.weaponType = 0;
         }
 
         testLocalView += rndUnitID;
 
         eArmy.get(rndUnitID).Reload();
-        target = field.GetSelectedSocketInfo();
+        //target = field.GetSelectedSocketInfo();
+        Enemy.target.SetValue(field.selectedSocket.x, field.selectedSocket.y);
+        Enemy.attacker = rndUnitID;
 
-        if(target < 0)
+        /*if(target < 0)
         {
             field.SetSign(false);
         }
@@ -271,7 +202,106 @@ public class SingleGame extends Game
             {
                 field.SetSign(true);
             }
-        }
+        }*/
     }
 
+    public void CheckEnemyArmy()
+    {
+        //region eArmy
+
+        boolean isGood = false;
+        boolean isGameOver = true;
+
+        for(Unit unit : eArmy)
+        {
+            if(!unit.IsDead())
+            {
+                isGameOver = false;
+                unit.NextTurn();
+                if (!unit.IsReloading())
+                    isGood = true;
+            }
+        }
+        if(isGameOver)
+        {
+            testLocalView = "YOU WIN!";
+            state = GameState.Win;
+            GameOver();
+        }
+        else if(!isGood)
+        {
+            for(Unit unit : eArmy)
+            {
+                if(!unit.IsDead())
+                {
+                    unit.ResetReload();
+                    break;
+                }
+            }
+        }
+        //endregion
+    }
+
+    public void CheckPlayerArmy()
+    {
+        //region army
+        boolean isGood = false;
+        boolean isGameOver = true;
+        for(Unit unit : army)
+        {
+            if(!unit.IsDead())
+            {
+                unit.NextTurn();
+                isGameOver = false;
+                if (!unit.IsReloading())
+                    isGood = true;
+            }
+        }
+        if(isGameOver)
+        {
+            testLocalView = "YOU LOSE!";
+            state = GameState.Lose;
+            GameOver();
+        }
+        else if(!isGood)
+        {
+            for(Unit unit : army)
+            {
+                if(!unit.IsDead())
+                {
+                    unit.ResetReload();
+                    break;
+                }
+            }
+        }
+        //endregion
+    }
+
+    public void EnemyShoot()
+    {
+        byte target = field.GetSelectedSocketInfo();
+        Enemy.target.SetValue(field.selectedSocket.x, field.selectedSocket.y + field.socketSizeY);
+
+        if(target < 0)
+        {
+            field.SetSign(false);
+        }
+        else
+        {
+            if(army.get(target).SetDamage(eArmy.get(Enemy.attacker).GetPower(), field.selectedSocket))
+            {
+                Vector2 tmp = new Vector2();
+                for(int i = 0; i < army.get(target).GetForm().length; i++)
+                {
+                    tmp.SetValue(field.GetLocalSocketCoord(army.get(target).GetForm()[i]));
+                    field.GetShots()[tmp.y][tmp.x] = 2;
+                }
+            }
+            else
+            {
+                field.SetSign(true);
+            }
+        }
+        CheckPlayerArmy();
+    }
 }

@@ -21,14 +21,14 @@ public class Button
     private boolean isAnimated;
     private boolean isVisible;
 
-    public Button(Sprite image, Vector2 position, boolean isAnimated)
+    public Button(Sprite image, int x, int y, boolean isAnimated)
     {
         this.image = image;
-        x = position.x;
-        y = position.y;
+        this.x = x;
+        this.y = y;
         width = image.getWidth();
         height = image.getHeight();
-        rect = new Rect(x, y, x + width,y + height);
+        rect = new Rect(x, y, x + width, y + height);
         isClicked = false;
         isLocked = false;
         isVisible = true;
