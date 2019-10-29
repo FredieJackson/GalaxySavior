@@ -10,15 +10,15 @@ import android.graphics.Rect;
  */
 public class Button {
 
-    public float x;
-    public float y;
+    public int x;
+    public int y;
     public int width;
     public int height;
-    private Rect rect;
     private Bitmap image;
     private boolean isClicked;
     private boolean isLocked;
     private boolean isAnimated;
+    private boolean isVisible;
 
     public Button(Bitmap image, Vector2 position, boolean isAnimated)
     {
@@ -27,26 +27,28 @@ public class Button {
         y = position.y;
         width = image.getWidth();
         height = image.getHeight();
-        rect = new Rect((int)x, (int)y, (int)x + width,(int)y + height);
         isClicked = false;
         isLocked = false;
+        isVisible = true;
         this.isAnimated = isAnimated;
     }
 
     public void Draw(Canvas canvas)
     {
-        if(isClicked && isAnimated)
-            canvas.drawBitmap(image, new Rect(0,0,height,width), new Rect((int)x + 5,(int)y + 5, (int)x + width - 5,(int)y + height - 5), null);
-        else
-            canvas.drawBitmap(image, x, y, null);
+        if(isVisible)
+        {
+            if (isClicked && isAnimated)
+                canvas.drawBitmap(image, new Rect(0, 0, height, width), new Rect( x + 5, y + 5, x + width - 5, y + height - 5), null);
+            else
+                canvas.drawBitmap(image, x, y, null);
+        }
     }
 
     public void Update(Vector2 touchPos)
     {
-        if(!isLocked)
+        if(!isLocked && isVisible)
         {
-            rect = new Rect((int)x,(int)y, (int)x + width,(int)y +height);
-            if (new Rect((int) touchPos.x - 2, (int) touchPos.y - 2, (int) touchPos.x + 2, (int) touchPos.y + 2).intersect(rect))
+            if (touchPos.x < x + width && touchPos.x > x && touchPos.y > y && touchPos.y < y + height)
                 isClicked = true;
             else
                 isClicked = false;
@@ -78,4 +80,25 @@ public class Button {
     {
         isLocked = false;
     }
+
+    public void SetVisible()
+    {
+        isVisible = true;
+    }
+    public void SetInvisible()
+    {
+        isVisible = false;
+    }
+
+    public void SetPosition(Vector2 pos)
+    {
+        x = pos.x;
+        y = pos.y;
+    }
+
+    public Vector2 GetPosition()
+    {
+        return new Vector2(x,y);
+    }
+
 }

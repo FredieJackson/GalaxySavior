@@ -8,7 +8,6 @@ import android.graphics.LightingColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.RectF;
 
 import app.onedayofwar.Field;
 import app.onedayofwar.System.Vector2;
@@ -18,46 +17,52 @@ abstract public class Unit
     //region Variables
     public Vector2 pos;
     public Vector2 offset;
+    public Vector2 iconOffset;
     public boolean isInstalled;
+    protected byte zoneID;
 
     //region Images
     protected Bitmap stroke;
+    protected Bitmap icon;
     public boolean isSelected;
     protected Vector2 strokeOffset;
     protected Bitmap image;
     public boolean isRight;
-    protected Paint strokePaint;
+    public Paint strokePaint;
     //endregion
 
-    float accuracy;
-    float power;
+    int accuracy;
+    int power;
     int hitPoints;
     int reloadTime;
+    int reload;
     int armor;
-    protected Rect startPos;
+    public Vector2 iconPos;
     Vector2[] form;
-    private Paint testPaintW;
-    private Paint testPaintY;
+    byte damagedZones;
+    boolean isDead;
+    protected boolean isVisible;
     //endregion
 
     //region Constructor
-    public Unit()
+    public Unit(boolean isVisible)
     {
-        strokeOffset = new Vector2();
-        offset = new Vector2();
+        this.isVisible = isVisible;
         isInstalled = false;
         isRight = false;
-        strokePaint = new Paint();
+        isDead = false;
         isSelected = false;
-        testPaintW = new Paint();
-        testPaintW.setARGB(255,255,255,255);
-        testPaintW.setStyle(Paint.Style.STROKE);
-        testPaintW.setStrokeWidth(3);
-        testPaintY = new Paint();
-        testPaintY.setARGB(255,255,255,0);
-        testPaintY.setStyle(Paint.Style.STROKE);
-        testPaintY.setStrokeWidth(3);
-        strokeSetYellow();
+        if(isVisible)
+        {
+            iconOffset = new Vector2();
+            strokeOffset = new Vector2();
+            offset = new Vector2();
+            strokePaint = new Paint();
+            strokePaint.setTextSize(30);
+            strokeSetYellow();
+        }
+        damagedZones = 0;
+        reload = 0;
     }
     //endregion
 
@@ -69,18 +74,41 @@ abstract public class Unit
     abstract public byte GetZone();
     //endregion
 
+    //region Draw
     public void Draw(Canvas canvas)
     {
-        if(isSelected)
-            canvas.drawBitmap(stroke, pos.x + offset.x + strokeOffset.x, pos.y + offset.y + strokeOffset.y, strokePaint);
+        DrawStroke(canvas);
         canvas.drawBitmap(image, pos.x + offset.x, pos.y + offset.y, null);
+        if(reload > 0 && !isDead)
+            DrawReload(canvas);
     }
+    public void DrawReload(Canvas canvas)
+    {
+        canvas.drawText("" + reload, pos.x + offset.x + image.getWidth()/2, pos.y + offset.y + image.getHeight()/2, strokePaint);
+    }
+
+    public void DrawStroke(Canvas canvas)
+    {
+        if(isSelected)
+        {
+            canvas.drawBitmap(stroke, pos.x + offset.x + strokeOffset.x, pos.y + offset.y + strokeOffset.y, strokePaint);
+        }
+    }
+
+    public void DrawIcon(Canvas canvas)
+    {
+        if(!isInstalled)
+        {
+            canvas.drawBitmap(icon, iconPos.x + iconOffset.x, iconPos.y + iconOffset.y, null);
+        }
+    }
+    //endregion
 
     public void ResetPosition()
     {
         ResetOffset();
         isSelected = false;
-        pos.SetValue(startPos.left - offset.x, startPos.top - offset.y);
+        pos.SetValue(0, -image.getHeight());
         if(isRight)
         {
             image = ImageFlip(image);
@@ -89,14 +117,9 @@ abstract public class Unit
         }
     }
 
-    public Vector2 VGetStartPosition()
+    public Rect GetStartPosition()
     {
-        return new Vector2(startPos.left - offset.x, startPos.top - offset.y);
-    }
-
-    public Rect RGetStartPosition()
-    {
-        return new Rect(startPos);
+        return new Rect(iconPos.x ,iconPos.y, iconPos.x + icon.getWidth(), iconPos.y + icon.getHeight());
     }
 
     protected void InitializeFormArray()
@@ -104,7 +127,7 @@ abstract public class Unit
         for(int i = 0; i < form.length; i++)
         {
             form[i] = new Vector2();
-            form[i].SetNegative();
+            form[i].SetFalse();
         }
     }
 
@@ -115,26 +138,24 @@ abstract public class Unit
 
     public void ChangeDirection()
     {
-        if (isRight)
-            isRight = false;
-        else
-            isRight = true;
-        stroke = ImageFlip(stroke);
-        image = ImageFlip(image);
-        ChangeOffset();
+        isRight = !isRight;
+        if(isVisible)
+        {
+            stroke = ImageFlip(stroke);
+            image = ImageFlip(image);
+            ChangeOffset();
+        }
     }
 
     public void strokeSetYellow()
     {
-        ColorFilter filter = new LightingColorFilter(Color.argb(255,255,255,0), 1);
         strokePaint.setARGB(255,255,255,0);
-        strokePaint.setColorFilter(filter);
+        strokePaint.setColorFilter(new LightingColorFilter(strokePaint.getColor(), 1));
     }
     public void strokeSetRed()
     {
-        ColorFilter filter = new LightingColorFilter(Color.argb(255,255,0,0), 1);
         strokePaint.setARGB(255,255,0,0);
-        strokePaint.setColorFilter(filter);
+        strokePaint.setColorFilter(new LightingColorFilter(strokePaint.getColor(), 1));
     }
 
     public Bitmap ImageFlip(Bitmap src)
@@ -153,5 +174,59 @@ abstract public class Unit
         else
             //Подсвечиваем красным
             strokeSetRed();
+    }
+
+    public void NextTurn()
+    {
+        if(reload > 0)
+            reload--;
+    }
+
+    public boolean IsReloading()
+    {
+        return reload > 0;
+    }
+
+    public void Reload()
+    {
+        reload = reloadTime;
+    }
+
+    public boolean SetDamage(int damage)
+    {
+        damagedZones++;
+        if(armor >= damage)
+            armor -= damage;
+        else
+        {
+            hitPoints -= damage - armor;
+            armor = 0;
+        }
+        if(hitPoints <= 0)
+        {
+            isDead = true;
+            return true;
+        }
+        else if(damagedZones == form.length)
+        {
+            isDead = true;
+        }
+        return false;
+    }
+
+    public int GetPower()
+    {
+        return power;
+    }
+
+    public boolean IsDead()
+    {
+        return isDead;
+    }
+
+    public void ResetReload()
+    {
+        reload = 0;
+        power = power / 10;
     }
 }

@@ -12,20 +12,22 @@ import app.onedayofwar.Units.Unit;
 
 public class Field
 {
+
     //region Variables
-    public float x;
-    public float y;
-    private float scaleX;
-    private float scaleY;
+    public int x;
+    public int y;
+    public int initX;
+    public int initY;
     public int width;
     public int height;
-    int socketSizeX;
-    int socketSizeY;
-    int size;
+    public int socketSizeX;
+    public int socketSizeY;
+    public int size;
     public Vector2 selectedSocket;
 
     private Resources resources;
     byte[][] fieldInfo;
+    byte[][] shots;
     private Bitmap image;
     private Bitmap[] infoSigns;
     private Path selectedSocketForm;
@@ -36,10 +38,10 @@ public class Field
     //endregion
 
     //region Constructor
-    public Field(Resources resources, float x, float y, int size, boolean isIso)
+    public Field(Resources resources, int x, int y, int size, boolean isIso)
     {
-        this.x = x;
-        this.y = y;
+        initX = x;
+        initY = y;
         this.resources = resources;
         this.size = size;
         this.isIso = isIso;
@@ -51,6 +53,8 @@ public class Field
     //region Initialization
     private void Initialize()
     {
+        x = initX;
+        y = initY;
         //Если изометрия
         if(isIso)
             image = BitmapFactory.decodeResource(resources, R.drawable.grid_iso);
@@ -64,7 +68,8 @@ public class Field
         socketSizeY = height / size;
 
         fieldInfo = new byte[size][size];
-        infoSigns = new Bitmap[2];
+        shots = new byte[size][size];
+        infoSigns = new Bitmap[3];
         InitFieldInfo();
 
         //region SelectedSocket Paint and Path
@@ -90,9 +95,12 @@ public class Field
     public void Draw(Canvas canvas)
     {
         canvas.drawBitmap(image, x, y, null);
-        //DrawFieldInfo(canvas);
+        //
         if(!isIso)
+        {
+            DrawFieldInfo(canvas);
             DrawSelectedSocket(canvas);
+        }
     }
     /**
      * Отрисовывает выделенную ячейку
@@ -100,32 +108,18 @@ public class Field
      */
     private void DrawSelectedSocket(Canvas canvas)
     {
-        if (!selectedSocket.IsNegative())
+        if (!selectedSocket.IsFalse())
             canvas.drawPath(selectedSocketForm, selectedSocketPaint);
     }
     //endregion
 
-    //region Shooting
-    public void Shoot(Vector2 shootPos)
-    {
-        if (fieldInfo[(int) shootPos.y][(int) shootPos.x] == 0)
-            fieldInfo[(int) shootPos.y][(int) shootPos.x] = 1;
-
-    }
-
-    public void GetShot(Vector2 shootPos)
-    {
-        if (fieldInfo[(int) shootPos.y][(int) shootPos.x] == 0)
-            fieldInfo[(int) shootPos.y][(int) shootPos.x] = 2;
-    }
-
     public void Move()
     {
         if(x < 0)
-            x = 0;
+            x = initX;
         else
             x = -width - 10;
-        selectedSocket.SetNegative();
+        selectedSocket.SetFalse();
     }
     //endregion
 
@@ -140,16 +134,32 @@ public class Field
         {
             for(int j = 0; j < size; j++)
             {
-                //если не изометрия
-                if(!isIso)
-                    fieldInfo[i][j] = 0;
-                else
-                    fieldInfo[i][j] = -1;
+                fieldInfo[i][j] = -1;
+                shots[i][j] = 0;
             }
         }
 
-        infoSigns[1] = BitmapFactory.decodeResource(resources, R.drawable.sign_hit);
         infoSigns[0] = BitmapFactory.decodeResource(resources, R.drawable.sign_miss);
+        infoSigns[1] = BitmapFactory.decodeResource(resources, R.drawable.sign_hit);
+        infoSigns[2] = BitmapFactory.decodeResource(resources, R.drawable.sign_fire);
+
+    }
+
+    public byte GetSelectedSocketInfo()
+    {
+        Vector2 tmp = new Vector2(GetLocalSocketCoord(selectedSocket));
+        return fieldInfo[tmp.y][tmp.x];
+    }
+
+    public byte GetSelectedSocketSign()
+    {
+        Vector2 tmp = new Vector2(GetLocalSocketCoord(selectedSocket));
+        return shots[tmp.y][tmp.x];
+    }
+
+    public boolean IsIso()
+    {
+        return isIso;
     }
 
     public byte[][] GetFieldInfo()
@@ -157,12 +167,26 @@ public class Field
         return fieldInfo;
     }
 
+    public byte[][] GetShots()
+    {
+        return shots;
+    }
+
+    public void SetSign(boolean isGoodShot)
+    {
+        Vector2 tmp = new Vector2(GetLocalSocketCoord(selectedSocket));
+        if(isGoodShot)
+            shots[tmp.y][tmp.x] = 2;
+        else
+            shots[tmp.y][tmp.x] = 1;
+    }
+
     /**
      * Поместить юнит, который прошел все проверки на поле
      * @param form
      * @param unitID
      */
-    public void PlaceUnit(Vector2[] form, byte unitID)
+    public void PlaceUnit(Vector2[] form, int unitID)
     {
         Vector2 tmp = new Vector2();
         for(int i = 0; i < form.length; i++)
@@ -170,7 +194,7 @@ public class Field
             //получаем локальные координаты
             tmp.SetValue(GetLocalSocketCoord(form[i]));
 
-            fieldInfo[(int)tmp.y][(int)tmp.x] = unitID;
+            fieldInfo[tmp.y][tmp.x] = (byte)unitID;
 
             SetRestrictedArea(tmp);
         }
@@ -192,15 +216,15 @@ public class Field
                 if (localCoord.y - 1 >= 0)
                 {
                     //если в ячейке пусто, то делаем ее запретной зоной
-                    if (fieldInfo[(int) localCoord.y - 1][(int) localCoord.x - 1 + i] < 0)
-                        fieldInfo[(int) localCoord.y - 1][(int) localCoord.x - 1 + i]--;
+                    if (fieldInfo[localCoord.y - 1][localCoord.x - 1 + i] < 0)
+                        fieldInfo[localCoord.y - 1][localCoord.x - 1 + i]--;
                 }
                 //проверка на выход за границу массива
                 if (localCoord.y + 1 < 15)
                 {
                     //если в ячейке пусто, то делаем ее запретной зоной
-                    if (fieldInfo[(int) localCoord.y + 1][(int) localCoord.x - 1 + i] < 0)
-                        fieldInfo[(int) localCoord.y + 1][(int) localCoord.x - 1 + i]--;
+                    if (fieldInfo[localCoord.y + 1][localCoord.x - 1 + i] < 0)
+                        fieldInfo[localCoord.y + 1][localCoord.x - 1 + i]--;
                 }
             }
             //проверка на выхо
@@ -211,15 +235,15 @@ public class Field
                 if (localCoord.x - 1 >= 0)
                 {
                     //если в ячейке пусто, то делаем ее запретной зоной
-                    if (fieldInfo[(int) localCoord.y - 1 + i][(int) localCoord.x - 1] < 0)
-                        fieldInfo[(int) localCoord.y - 1 + i][(int) localCoord.x - 1]--;
+                    if (fieldInfo[localCoord.y - 1 + i][localCoord.x - 1] < 0)
+                        fieldInfo[localCoord.y - 1 + i][localCoord.x - 1]--;
                 }
                 //проверка на выход за границу массива
                 if (localCoord.x + 1 < 15)
                 {
                     //если в ячейке пусто, то делаем ее запретной зоной
-                    if (fieldInfo[(int) localCoord.y - 1 + i][(int) localCoord.x + 1] < 0)
-                        fieldInfo[(int) localCoord.y - 1 + i][(int) localCoord.x + 1]--;
+                    if (fieldInfo[localCoord.y - 1 + i][localCoord.x + 1] < 0)
+                        fieldInfo[localCoord.y - 1 + i][localCoord.x + 1]--;
                 }
             }
         }
@@ -245,16 +269,16 @@ public class Field
                     if (tmp.y - 1 >= 0)
                     {
                         //если в ячейке запретная зона, то делаем ее свободной
-                        if (fieldInfo[(int) tmp.y - 1][(int) tmp.x - 1 + i] < -1)
-                            fieldInfo[(int) tmp.y - 1][(int) tmp.x - 1 + i]++;
+                        if (fieldInfo[tmp.y - 1][tmp.x - 1 + i] < -1)
+                            fieldInfo[tmp.y - 1][tmp.x - 1 + i]++;
                     }
 
                     //проверка на выход за границу массива
                     if (tmp.y + 1 < 15)
                     {
                         //если в ячейке запретная зона, то делаем ее свободной
-                        if (fieldInfo[(int) tmp.y + 1][(int) tmp.x - 1 + i] < -1)
-                            fieldInfo[(int) tmp.y + 1][(int) tmp.x - 1 + i]++;
+                        if (fieldInfo[tmp.y + 1][tmp.x - 1 + i] < -1)
+                            fieldInfo[tmp.y + 1][tmp.x - 1 + i]++;
                     }
                 }
                 //проверка на выход за границу массива
@@ -264,16 +288,16 @@ public class Field
                     if (tmp.x - 1 >= 0)
                     {
                         //если в ячейке запретная зона, то делаем ее свободной
-                        if (fieldInfo[(int) tmp.y - 1 + i][(int) tmp.x - 1] < -1)
-                            fieldInfo[(int) tmp.y - 1 + i][(int) tmp.x - 1]++;
+                        if (fieldInfo[tmp.y - 1 + i][tmp.x - 1] < -1)
+                            fieldInfo[tmp.y - 1 + i][tmp.x - 1]++;
                     }
 
                     //проверка на выход за границу массива
                     if (tmp.x + 1 < 15)
                     {
                         //если в ячейке запретная зона, то делаем ее свободной
-                        if (fieldInfo[(int) tmp.y - 1 + i][(int) tmp.x + 1] < -1)
-                            fieldInfo[(int) tmp.y - 1 + i][(int) tmp.x + 1]++;
+                        if (fieldInfo[tmp.y - 1 + i][tmp.x + 1] < -1)
+                            fieldInfo[tmp.y - 1 + i][tmp.x + 1]++;
                     }
                 }
             }
@@ -290,7 +314,7 @@ public class Field
         for(int i = 0; i < unit.GetForm().length; i++)
         {
             Vector2 tmp = GetLocalSocketCoord(unit.GetForm()[i]);
-            fieldInfo[(int)tmp.y][(int)tmp.x] = -1;
+            fieldInfo[tmp.y][tmp.x] = -1;
         }
     }
 
@@ -298,7 +322,7 @@ public class Field
      * Отрисовка информации о поле
      * @param canvas
      */
-    private void DrawFieldInfo(Canvas canvas)
+    public void DrawFieldInfo(Canvas canvas)
     {
         Vector2 tmp = new Vector2();
         if(!isIso)
@@ -308,7 +332,16 @@ public class Field
                 for (int j = 0; j < size; j++)
                 {
                     tmp.SetValue(GetGlobalSocketCoord(new Vector2(j,i)));
-                    switch (fieldInfo[i][j])
+
+                    /*testTextPaint.setARGB(255,250,240,20);
+
+                    if(fieldInfo[i][j] >=0)
+                    {
+                        testTextPaint.setARGB(255,255,0,0);
+                    }
+                    canvas.drawText("" + fieldInfo[i][j], tmp.x + 5, tmp.y + 25, testTextPaint);*/
+
+                    switch (shots[i][j])
                     {
                         case 1:
                             canvas.drawBitmap(infoSigns[0], tmp.x, tmp.y, null);
@@ -328,12 +361,30 @@ public class Field
             {
                 for (int j = 0; j < size; j++)
                 {
-                    tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
-                    canvas.drawText("" + fieldInfo[i][j], tmp.x - 5, tmp.y + socketSizeY/2, testTextPaint);
+                    if(shots[i][j] == 2)
+                    {
+                        tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
+                        canvas.drawBitmap(infoSigns[2], tmp.x - 13, tmp.y - 20, null);
+                    }
+                    else if(shots[i][j] == 1)
+                    {
+                        tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
+                        canvas.drawBitmap(infoSigns[0], tmp.x - 20, tmp.y - 5, null);
+                    }
                 }
             }
         }
         //endregion
+    }
+    public void ClearFieldInfo()
+    {
+        for(int i = 0; i < size; i++)
+        {
+            for(int j = 0; j < size; j++)
+            {
+                fieldInfo[i][j] = -1;
+            }
+        }
     }
 
     //endregion
@@ -347,7 +398,7 @@ public class Field
     public Vector2 GetLocalSocketCoord(Vector2 socketGlobalCoord)
     {
         Vector2 tmp = new Vector2();
-        tmp.SetNegative();
+        tmp.SetFalse();
         //если не изометрия
         if(!isIso)
         {
@@ -420,14 +471,13 @@ public class Field
             //если не изометрия
             if (!isIso)
             {
-                selectedSocket.x = x + ((int) (touchPos.x - x) / socketSizeX) * socketSizeX;
-                selectedSocket.y = y + ((int) (touchPos.y - y) / socketSizeY) * socketSizeY;
+                selectedSocket.x = x + ((touchPos.x - x) / socketSizeX) * socketSizeX;
+                selectedSocket.y = y + ((touchPos.y - y) / socketSizeY) * socketSizeY;
             }
             else
             {
-                for (int i = 0; i < size; i++)
+                end:for (int i = 0; i < size; i++)
                 {
-                    boolean exit = false;
                     for (int j = 0; j < size; j++)
                     {
                         //проверяем касание по функции ромба для каждой ячейки
@@ -435,17 +485,14 @@ public class Field
                         {
                             selectedSocket.x = x - i * socketSizeX / 2 + width / 2 + j * socketSizeX / 2;
                             selectedSocket.y = y + i * socketSizeY / 2 + j * socketSizeY / 2;
-                            exit = true;
-                            break;
+                            break end;
                         }
                     }
-                    if (exit)
-                        break;
                 }
             }
         }
         //если удалось выделить ячейку, то придаем ей конкретную форму
-        if(!selectedSocket.IsNegative())
+        if(!selectedSocket.IsFalse())
             SetSelectedSocketForm(socketForm);
     }
 

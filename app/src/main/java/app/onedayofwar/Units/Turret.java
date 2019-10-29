@@ -18,34 +18,39 @@ import app.onedayofwar.System.Vector2;
  */
 public class Turret extends Unit {
 
-    public Turret(Resources resources, Vector2 position)
+    public Turret(Resources resources, Vector2 position, int zoneID, boolean isVisible)
     {
-        super();
+        super(isVisible);
 
-        image = BitmapFactory.decodeResource(resources, R.drawable.unit_turret);
-        stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_turret_stroke);
-
-        startPos = new Rect((int)position.x, (int)position.y, (int)position.x + image.getWidth(), (int)position.y + image.getHeight());
-
+        if(isVisible)
+        {
+            image = BitmapFactory.decodeResource(resources, R.drawable.unit_turret);
+            stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_turret_stroke);
+            icon = BitmapFactory.decodeResource(resources, R.drawable.unit_turret_icon);
+            iconPos = new Vector2(position.x, position.y);
+        }
+        this.zoneID = (byte)zoneID;
         Initialize();
     }
 
     //region Initialization
     private void Initialize()
     {
-        //для прямоугольника -76
-        ResetOffset();
-
-        pos = new Vector2(startPos.left - offset.x, startPos.top - offset.y);
+        if(isVisible)
+        {
+            //для прямоугольника -76
+            ResetOffset();
+            pos = new Vector2(0, -image.getHeight());
+        }
 
         form = new Vector2[5];
         InitializeFormArray();
 
-        accuracy = 0.5f;
-        power = 1.5f;
-        hitPoints = 3000;
+        accuracy = 100;
+        power = 1000;
+        hitPoints = 1500;
         armor = 1000;
-        reloadTime = 3;
+        reloadTime = 4;
     }
     //endregion
 
@@ -57,17 +62,28 @@ public class Turret extends Unit {
         Vector2 startPos = new Vector2(startSocket);
         Vector2[] tmpForm = new Vector2[form.length];
         Vector2 sizes = new Vector2(field.GetSocketsSizes());
+
         for(int i = 0 ; i < form.length; i++)
             tmpForm[i] = new Vector2();
 
         Vector2 tmpLocal;
+
         for(int i = 0; i < 3; i++)
         {
-            tmp.SetValue(startPos.x - sizes.x * i/2 , startPos.y + sizes.y * i/2);
+            if(field.IsIso())
+            {
+                tmp.SetValue(startPos.x - sizes.x * i/2 , startPos.y + sizes.y * i/2);
 
-            if(0.5 * (tmp.x - field.width/2 - field.x) + field.height + field.y - 3 < tmp.y)
-                return false;
+                if(0.5 * (tmp.x - field.width/2 - field.x) + field.height + field.y - 3 < tmp.y)
+                    return false;
+            }
+            else
+            {
+                tmp.SetValue(startPos.x, startPos.y + sizes.y * i);
 
+                if (tmp.y >= field.y + field.height)
+                    return false;
+            }
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
             if(field.GetFieldInfo()[(int)tmpLocal.y][(int)tmpLocal.x] != -1)
@@ -80,11 +96,20 @@ public class Turret extends Unit {
 
         for(int i = 3; i < form.length; i++)
         {
-            tmp.SetValue(startPos.x + sizes.x * (i-3), startPos.y + sizes.y * (i-3));
+            if(field.IsIso())
+            {
+                tmp.SetValue(startPos.x + sizes.x * (i - 3), startPos.y + sizes.y * (i - 3));
 
-            if( -0.5 * (tmp.x - field.width/2 - field.x) + field.height + field.y - 3 < tmp.y || -0.5 * (tmp.x - field.width/2 - field.x) + field.y - 3 > tmp.y)
-                return false;
+                if (-0.5 * (tmp.x - field.width / 2 - field.x) + field.height + field.y - 3 < tmp.y || -0.5 * (tmp.x - field.width / 2 - field.x) + field.y - 3 > tmp.y)
+                    return false;
+            }
+            else
+            {
+                tmp.SetValue(startPos.x + sizes.x * 2 * (i - 3), startPos.y + sizes.y);
 
+                if (tmp.x < field.x || tmp.x >= field.x + field.width)
+                    return false;
+            }
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
             if(field.GetFieldInfo()[(int)tmpLocal.y][(int)tmpLocal.x] != -1)
@@ -106,7 +131,7 @@ public class Turret extends Unit {
     @Override
     public byte GetZone()
     {
-        return 4;
+        return zoneID;
     }
 
     @Override

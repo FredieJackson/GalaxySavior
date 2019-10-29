@@ -14,33 +14,39 @@ import app.onedayofwar.System.Vector2;
  */
 public class Robot extends Unit {
 
-    public Robot(Resources resources, Vector2 position)
+    public Robot(Resources resources, Vector2 position, int zoneID, boolean isVisible)
     {
-        super();
+        super(isVisible);
 
-        image = BitmapFactory.decodeResource(resources, R.drawable.unit_robot);
-        stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_robot_stroke);
+        if (isVisible)
+        {
+            image = BitmapFactory.decodeResource(resources, R.drawable.unit_robot);
+            stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_robot_stroke);
+            icon = BitmapFactory.decodeResource(resources, R.drawable.unit_robot_icon);
+            iconPos = new Vector2(position.x, position.y);
+        }
 
-        startPos = new Rect((int)position.x, (int)position.y, (int)position.x + image.getWidth(), (int) position.y + image.getHeight());
-
+        this.zoneID = (byte)zoneID;
         Initialize();
     }
 
     //region Initialization
     private void Initialize()
     {
-        ResetOffset();
-
-        pos = new Vector2(startPos.left - offset.x, startPos.top - offset.y);
+        if(isVisible)
+        {
+            ResetOffset();
+            pos = new Vector2(0, -image.getHeight());
+        }
 
         form = new Vector2[1];
         InitializeFormArray();
 
-        accuracy = 0.5f;
-        power = 1.5f;
-        hitPoints = 3000;
-        armor = 1000;
-        reloadTime = 3;
+        accuracy = 100;
+        power = 250;
+        hitPoints = 500;
+        armor = 0;
+        reloadTime = 1;
     }
     //endregion
 
@@ -50,19 +56,18 @@ public class Robot extends Unit {
         Vector2 tmp = new Vector2();
         Vector2[] tmpForm = new Vector2[form.length];
         Vector2 sizes = new Vector2(field.GetSocketsSizes());
+
         for(int i = 0 ; i < form.length; i++)
             tmpForm[i] = new Vector2();
 
         Vector2 tmpLocal;
+
         for(int i = 0; i < form.length; i++)
         {
-            if(isRight)
-                tmp.SetValue(startSocket.x + sizes.x * i/2 , startSocket.y + sizes.y * i/2);
-            else
+            if(field.IsIso())
                 tmp.SetValue(startSocket.x - sizes.x * i/2 , startSocket.y + sizes.y * i/2);
-
-            if(-Math.abs(0.5 * ( tmp.x - field.width/2 - field.x)) + field.height + field.y - 3 < tmp.y)
-                return false;
+            else
+                tmp.SetValue(startSocket.x, startSocket.y);
 
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
@@ -84,7 +89,7 @@ public class Robot extends Unit {
     @Override
     public byte GetZone()
     {
-        return 0;
+        return zoneID;
     }
 
     @Override

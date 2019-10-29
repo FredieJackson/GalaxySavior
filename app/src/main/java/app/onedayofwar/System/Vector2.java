@@ -6,11 +6,12 @@ package app.onedayofwar.System;
 
 public class Vector2
 {
-    public float x;
-    public float y;
+    public int x;
+    public int y;
 
     //region Constructor
-    public Vector2(float x, float y)
+
+    public Vector2(int x, int y)
     {
         this.x = x;
         this.y = y;
@@ -35,7 +36,7 @@ public class Vector2
         y = 0;
     }
 
-    public void SetNegative()
+    public void SetFalse()
     {
         x = -1;
         y = -1;
@@ -54,23 +55,31 @@ public class Vector2
         y = sourceVector.y;
     }
 
-    public void SetValue(float x, float y)
+    public void SetValue(int x, int y)
     {
         this.x = x;
         this.y = y;
     }
 
-    public boolean IsNegative()
+    public boolean IsFalse()
     {
-        if(x == -1 && y == -1)
-            return true;
-        return false;
+        return x == -1 && y == -1;
     }
+
+    public boolean IsNegative(boolean useAnd)
+    {
+        if(useAnd)
+            return x < 0 && y < 0;
+        else
+            return x < 0 || y < 0;
+    }
+
     public void ChangeSign()
     {
         x = -x;
         y = -y;
     }
+
     public void ChangeSign(boolean changeX)
     {
         if(changeX)

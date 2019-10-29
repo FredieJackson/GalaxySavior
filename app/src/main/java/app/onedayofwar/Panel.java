@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.RectF;
 
 import app.onedayofwar.System.Button;
 import app.onedayofwar.System.Vector2;
@@ -17,22 +16,23 @@ import app.onedayofwar.System.Vector2;
 public class Panel
 {
     static public enum Type{UP, DOWN, LEFT, RIGHT}
-    float x;
-    float y;
-    int offsetX;
-    int offsetY;
-    Vector2 velocity;
-    int width;
+    public int x;
+    public int y;
+    public int offsetX;
+    public int offsetY;
+    public int velocity;
+    public int width;
     int height;
-    boolean isMoved;
-    boolean isOpened;
+    public boolean isStop;
+    public boolean isClose;
     private Type type;
     private Button closeBtn;
     private Bitmap image;
+    Rect rect;
     Paint paint;
 
     //region Constructor
-    public Panel(Resources res, float x, float y, int width, int height, Type type)
+    public Panel(Resources res, int x, int y, int width, int height, Type type)
     {
         this.x = x;
         this.y = y;
@@ -61,8 +61,9 @@ public class Panel
         offsetX = 0;
         offsetY = 0;
         SetVelocity();
-        isMoved = true;
-        isOpened = true;
+        rect = new Rect(x, y, x + width, y + height);
+        isStop = true;
+        isClose = true;
         paint = new Paint();
         paint.setARGB(255,200,60,30);
     }
@@ -73,28 +74,29 @@ public class Panel
         switch (type)
         {
             case LEFT:
-                velocity = new Vector2(-20, 0);
+                velocity = -1;
                 break;
             case UP:
-                velocity = new Vector2(0, -20);
+                velocity = -1;
                 break;
             case RIGHT:
-                velocity = new Vector2(20, 0);
+                velocity = 1;
                 break;
             case DOWN:
-                velocity = new Vector2(0, 20);
+                velocity = 1;
                 break;
         }
     }
 
     public void Update()
     {
-        if(!isMoved)
+        if(!isStop)
         {
-            offsetX += velocity.x;
-            offsetY += velocity.y;
-            if (type == Type.RIGHT)
-                closeBtn.x += velocity.x;
+            if(type == Type.DOWN || type == Type.UP)
+                offsetY += velocity;
+            else
+                offsetX += velocity;
+
 
             switch (type)
             {
@@ -103,38 +105,40 @@ public class Panel
                     {
                         offsetX = -width;
                         closeBtn.x -= closeBtn.width;
-                        velocity.ChangeSign();
+                        velocity = -velocity;
                         closeBtn.ImageFlip();
-                        isOpened = false;
-                        isMoved = true;
+                        isClose = false;
+                        isStop = true;
 
                     }
                     else if (Math.abs(offsetX) <= 0)
                     {
                         offsetX = 0;
-                        velocity.ChangeSign();
-                        isOpened = true;
-                        isMoved = true;
+                        velocity = - velocity;
+                        isClose = true;
+                        isStop = true;
                     }
                 break;
 
                 case RIGHT:
+                    closeBtn.x += velocity;
+
                     if (offsetX >= width)
                     {
                         offsetX = width;
-                        closeBtn.x -= closeBtn.width;
-                        velocity.ChangeSign();
+                        closeBtn.x = x + offsetX - closeBtn.width;
+                        velocity = -velocity;
                         closeBtn.ImageFlip();
-                        isOpened = false;
-                        isMoved = true;
-
+                        isClose = false;
+                        isStop = true;
                     }
                     else if (offsetX <= 0)
                     {
                         offsetX = 0;
-                        velocity.ChangeSign();
-                        isOpened = true;
-                        isMoved = true;
+                        closeBtn.x = x;
+                        velocity = -velocity;
+                        isClose = true;
+                        isStop = true;
                     }
                 break;
 
@@ -142,16 +146,16 @@ public class Panel
                     if (Math.abs(offsetY) >= height)
                     {
                         offsetY = -height;
-                        velocity.ChangeSign();
-                        isMoved = true;
-                        isOpened = false;
+                        velocity = -velocity;
+                        isStop = true;
+                        isClose = false;
                     }
                     else if (offsetY >= 0)
                     {
                         offsetY = 0;
-                        velocity.ChangeSign();
-                        isMoved = true;
-                        isOpened = true;
+                        velocity = -velocity;
+                        isStop = true;
+                        isClose = true;
                     }
                 break;
 
@@ -159,50 +163,55 @@ public class Panel
                     if (offsetY >= height)
                     {
                         offsetY = height;
-                        velocity.ChangeSign();
-                        isMoved = true;
-                        isOpened = false;
+                        velocity = -velocity;
+                        isStop = true;
+                        isClose = false;
                     }
                     else if (offsetY <= 0)
                     {
                         offsetY = 0;
-                        velocity.ChangeSign();
-                        isMoved = true;
-                        isOpened = true;
+                        velocity = -velocity;
+                        isStop = true;
+                        isClose = true;
                     }
                 break;
             }
         }
+        rect.set(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height);
     }
 
     public void Move()
     {
         if(type == Type.RIGHT)
         {
-            if (!isOpened)
+            if (!isClose)
             {
                 closeBtn.ImageFlip();
                 closeBtn.x += closeBtn.width;
             }
         }
-        isMoved = false;
+        isStop = false;
+    }
+
+    public Vector2 GetPosition()
+    {
+        return new Vector2(x + offsetX, y + offsetY);
     }
 
     public void Draw(Canvas canvas)
     {
-        if(image == null)
-            canvas.drawRect(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height, paint);
-        else
-            canvas.drawBitmap(image, new Rect(0,0,image.getWidth(), image.getHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);
+        //if(image == null)
+        if(isClose || !isStop)
+            canvas.drawRect(rect, paint);
+        /*else
+            canvas.drawBitmap(image, new Rect(0,0,image.getWidth(), image.getHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);*/
         if(type == Type.RIGHT)
             closeBtn.Draw(canvas);
     }
 
     public boolean IsCloseBtnPressed()
     {
-        if(closeBtn.IsClicked())
-            return true;
-        return false;
+        return closeBtn.IsClicked();
     }
 
     public void UpdateCloseBtn(Vector2 touchPos)
@@ -214,5 +223,7 @@ public class Panel
     {
         closeBtn.Reset();
     }
+
+    public void CloseBtnLock() { closeBtn.Lock(); }
 
 }
