@@ -5,15 +5,12 @@ import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
-import android.widget.Toast;
 
-import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
-import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.OldBattle.BluetoothConnection.BluetoothController;
 import app.onedayofwar.System.GLView;
 import app.onedayofwar.System.MainView;
 

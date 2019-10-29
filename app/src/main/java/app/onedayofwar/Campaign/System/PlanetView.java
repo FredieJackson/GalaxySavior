@@ -5,9 +5,9 @@ import android.opengl.GLES20;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
-import app.onedayofwar.Battle.Mods.SingleBattle;
+import app.onedayofwar.OldBattle.BattleElements.BattleEnemy;
+import app.onedayofwar.OldBattle.BattleElements.BattlePlayer;
+import app.onedayofwar.OldBattle.Mods.SingleBattle;
 import app.onedayofwar.Campaign.CharacterControl.TechMSG;
 import app.onedayofwar.Campaign.Space.Planet;
 import app.onedayofwar.Campaign.Space.Space;
@@ -140,87 +140,87 @@ public class PlanetView implements ScreenView
                 if(createType == 1)
                 {
                     unit.setTexture(Assets.robotImage);
-                    unit.setPosition(unit.getWidth() / 2 + 30, 200 + unit.getHeight() / 2);
+                    unit.setPosition(unit.getWidth() / 2 + 30,  space.getScreenHeight()/2 + unit.getHeight() / 2);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getGroundGuards()[0], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getGroundGuards()[0], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.ifvImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getGroundGuards()[1], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getGroundGuards()[1], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.rocketImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getGroundGuards()[2], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getGroundGuards()[2], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.tankImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getGroundGuards()[3], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getGroundGuards()[3], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.turretImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getGroundGuards()[4], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getGroundGuards()[4], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.sonderImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getGroundGuards()[5], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getGroundGuards()[5], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     if(!planet.unitGroundUpgrade.IsFalse())
                     {
-                        graphics.DrawText("ИДЕТ СОЗДАНИЕ:" + planet.unitUpgradeName + " " + (planet.getGroundGuards()[(int)planet.unitGroundUpgrade.x] + 1) + " УРОВЕНЬ", Assets.gsFont, glView.getScreenWidth()/2, glView.getScreenHeight()/2, 0, Assets.gsColor, 40, true);
+                        graphics.DrawText("ИДЕТ СОЗДАНИЕ:" + planet.unitUpgradeName + " " + (planet.getGroundGuards()[(int)planet.unitGroundUpgrade.x] + 1) + " УРОВЕНЬ", Assets.gsFont, glView.getScreenWidth()/2, glView.getScreenHeight()/2, 0, Assets.gsColor, buildInfoTextSize, true);
                     }
                 }
                 else if(createType == 2)
                 {
-                    unit.setTexture(Assets.robotImage);
-                    unit.setPosition(unit.getWidth() / 2 + 10, 200 + unit.getHeight() / 2);
+                    unit.setTexture(Assets.r2d2Image);
+                    unit.setPosition(unit.getWidth() / 2 + 10, space.getScreenHeight()/2 + unit.getHeight() / 2);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getSpaceGuards()[0], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getSpaceGuards()[0], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, unit.getHeight()/2);
 
                     unit.setTexture(Assets.akiraImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getSpaceGuards()[1], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getSpaceGuards()[1], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.defaintImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getSpaceGuards()[2], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getSpaceGuards()[2], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.battleshipImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getSpaceGuards()[3], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getSpaceGuards()[3], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2, 0);
 
                     unit.setTexture(Assets.bioshipImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getSpaceGuards()[4], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getSpaceGuards()[4], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2,0);
 
                     unit.setTexture(Assets.birdOfPreyImage);
                     unit.Move(unit.getWidth() / 2 + 30 , 0);
                     graphics.DrawSprite(unit);
-                    graphics.DrawText("x" + planet.getSpaceGuards()[5], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, 30, false);
+                    graphics.DrawText("x" + planet.getSpaceGuards()[5], Assets.gsFont, unit.matrix[12] + unit.getWidth() / 2, unit.matrix[13], 0, Assets.gsColor, buildInfoTextSize, false);
                     unit.Move(unit.getWidth()/2 ,0);
 
                     if(!planet.unitSpaceUpgrade.IsFalse())
                     {
-                        graphics.DrawText("ИДЕТ СОЗДАНИЕ: " + planet.unitUpgradeName + " " + (planet.getSpaceGuards()[(int)planet.unitSpaceUpgrade.x] + 1) + " УРОВЕНЬ", Assets.gsFont, glView.getScreenWidth()/2, glView.getScreenHeight()/2, 0, Assets.gsColor, 40, true);
+                        graphics.DrawText("ИДЕТ СОЗДАНИЕ: " + planet.unitUpgradeName + " " + (planet.getSpaceGuards()[(int)planet.unitSpaceUpgrade.x] + 1) + " УРОВЕНЬ", Assets.gsFont, glView.getScreenWidth()/2, glView.getScreenHeight()/2, 0, Assets.gsColor, buildInfoTextSize, true);
                     }
                 }
                 break;
@@ -238,7 +238,7 @@ public class PlanetView implements ScreenView
                 break;
 
             case RESOURCES_TRANSACTION:
-                graphics.DrawText("Склад корабля: КРЕДИТЫ: " + space.getPlayer().getResources()[0] + " // НЕФТЬ: " + space.getPlayer().getResources()[1] + " // НАНОСТАЛЬ: " + space.getPlayer().getResources()[2], Assets.gsFont, glView.getScreenWidth()/2, 60, 0, Assets.gsColor, buildInfoTextSize, true);
+                graphics.DrawText("Склад корабля: КРЕДИТЫ: " + space.getPlayer().getResources()[0] + " // НЕФТЬ: " + space.getPlayer().getResources()[1] + " // НАНОСТАЛЬ: " + space.getPlayer().getResources()[2], Assets.gsFont, glView.getScreenWidth()/2, buildInfoTextSize * 2, 0, Assets.gsColor, buildInfoTextSize, true);
                 break;
         }
         ButtonsDraw(graphics);
@@ -784,7 +784,7 @@ public class PlanetView implements ScreenView
         {
             createUnit[i] = new Button(Assets.btnOK, 0, 0, false);
             createUnit[i].Scale(Assets.btnCoeff);
-            createUnit[i].SetPosition(createUnit[i].width/2 + i * (createUnit[i].width + 100), 100);
+            createUnit[i].SetPosition(createUnit[i].width/2 + i * (createUnit[i].width + 100), space.getScreenHeight()/4);
             createUnit[i].SetInvisible();
             createUnit[i].Lock();
         }

@@ -16,7 +16,6 @@ import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 import app.onedayofwar.System.XMLParser;
 import app.onedayofwar.UI.Button;
-import app.onedayofwar.UI.Panel;
 
 /**
  * Created by Slava on 24.02.2015.
@@ -40,8 +39,6 @@ public class Space
 
     private Button moveBtn;
     private Button nextStep;
-    private Button startBattleBtn;
-    private Panel infoPanel;
 
     private Player player;
     private AI AI;
@@ -65,8 +62,8 @@ public class Space
         background = new Sprite(Assets.space);
         btnRegion = new Sprite(Assets.btnRegion);
 
-        height = 2000;
-        width = 2000;
+        height = 8000;
+        width = 8000;
 
         background.Scale(2 * (float) Assets.bgWidthCoeff, 2 * (float) Assets.bgHeightCoeff);
         background.setPosition(getScreenWidth() / 2 + Assets.btnRegion.getWidth() / 2, getScreenHeight() / 2);
@@ -75,7 +72,7 @@ public class Space
         touchPos = new Vector2();
         lastTouch = new Vector2();
 
-        pointsToMove = 20;
+        pointsToMove = 100;
 
         if(gameView.IsNewGame())
         {
@@ -102,21 +99,19 @@ public class Space
         infoTextPos = new Vector2();
         toMove.SetFalse();
 
-        moveBtn = new Button(Assets.btnMove,(int)(Assets.btnOK.getWidth()*Assets.btnCoeff/2),(int)(Assets.btnOK.getHeight() * Assets.btnCoeff/2),false);
+        moveBtn = new Button(Assets.btnMove, 0, 0,false);
         moveBtn.Scale(Assets.btnCoeff);
+        moveBtn.SetPosition(moveBtn.width/2, moveBtn.height / 2);
 
-        infoPanel = new Panel(width/2, height/8, width, height/4, Panel.Type.UP);
 
-        nextStep = new Button(Assets.btnEndTurn,(int)(Assets.btnTurn.getWidth()*Assets.btnCoeff/2), (int)(250 + Assets.btnTurn.getHeight()*Assets.btnCoeff/2), false);
+        nextStep = new Button(Assets.btnEndTurn, 0 , 0, false);
         nextStep.Scale(Assets.btnCoeff);
+        nextStep.SetPosition(nextStep.width/2, getScreenHeight()/2);
 
-        startBattleBtn = new Button(Assets.btnAttack, (int)(getScreenWidth() - Assets.btnShoot.getWidth()*Assets.btnCoeff/2), 0, false);
-        startBattleBtn.Scale(Assets.btnCoeff);
 
         TechMSG.isAttack = false;
         TechMSG.playerMove = true;
         TechMSG.selectedPlanet = -1;
-        TechMSG.infoAttack = "На вас напали, лететь на автопилоте?";
         TechMSG.isAILand = false;
         TechMSG.isPlayerLand = false;
         TechMSG.isFirstPlanetConquered = false;
@@ -130,9 +125,6 @@ public class Space
 
         tmp = new Vector2();
         tmp2 = new Vector2();
-        infoTextPos.SetValue(infoPanel.matrix[12], infoPanel.matrix[13]);
-        startBattleBtn.getMatrix()[13] = infoPanel.matrix[13];
-        infoPanel.Move();
     }
 
     public void GotoPlanet()
@@ -199,9 +191,6 @@ public class Space
         planetController.UpdatePlanets();
         player.Update(eTime);
         AI.Update(eTime);
-        infoTextPos.SetValue(infoPanel.matrix[12], infoPanel.matrix[13]);
-        infoPanel.Update(eTime);
-        startBattleBtn.getMatrix()[13] = infoPanel.matrix[13];
     }
 
 
@@ -216,10 +205,6 @@ public class Space
         moveBtn.Draw(graphics);
         nextStep.Draw(graphics);
         AI.infoPlanetsDraw(graphics);
-        if (infoPanel.isClose || !infoPanel.isStop)
-            infoPanel.Draw(graphics);
-        graphics.DrawText(TechMSG.infoAttack, Assets.gsFont, 0,infoTextPos.y, getScreenWidth() - startBattleBtn.width, Color.WHITE, 24, false);
-        startBattleBtn.Draw(graphics);
 
         //graphics.DrawText("AI....", Assets.gsFont, gameView.getGlView().getScreenWidth()/2, gameView.getGlView().getScreenHeight()/2, 0, Color.RED, 100);
     }
@@ -241,10 +226,6 @@ public class Space
         PrepareToPlayerStep();
     }
 
-    public void startBattle()
-    {
-        infoPanel.Move();
-    }
 
     public void CheckButtons()
     {
@@ -281,17 +262,12 @@ public class Space
             }
         }
 
-        else if(startBattleBtn.IsClicked())
-        {
-            selectedPlanet = TechMSG.selectedPlanet;
-            GotoPlanet();
-        }
+
     }
 
     public void ButtonsUpdate()
     {
         moveBtn.Update(touchPos);
-        startBattleBtn.Update(touchPos);
         nextStep.Update(touchPos);
     }
 
@@ -299,7 +275,6 @@ public class Space
     public void ResetButtons()
     {
         moveBtn.Reset();
-        startBattleBtn.Reset();
         nextStep.Reset();
     }
 

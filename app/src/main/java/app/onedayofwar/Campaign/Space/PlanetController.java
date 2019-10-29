@@ -38,7 +38,7 @@ public class PlanetController
     public void LoadPlanets(Graphics graphics, XMLParser xmlParser)
     {
         //xmlParser.LoadAllPlanets(this);
-        for(int i = 0 ; i < 20; i++)
+        for(int i = 0 ; i < 50; i++)
         {
             AddPlanet();
         }

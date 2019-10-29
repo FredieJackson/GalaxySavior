@@ -1,4 +1,4 @@
-package app.onedayofwar.Battle.Mods;
+package app.onedayofwar.OldBattle.Mods;
 
 
 import android.graphics.RectF;
@@ -7,24 +7,29 @@ import android.view.MotionEvent;
 
 import java.util.ArrayList;
 
-import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
-import app.onedayofwar.Battle.BattleElements.Field;
-import app.onedayofwar.Battle.System.BattleView;
-import app.onedayofwar.Battle.Units.Bullet;
-import app.onedayofwar.Battle.Units.Ground.Engineer;
-import app.onedayofwar.Battle.Units.Ground.IFV;
-import app.onedayofwar.Battle.Units.Ground.Robot;
-import app.onedayofwar.Battle.Units.Ground.SONDER;
-import app.onedayofwar.Battle.Units.Ground.Tank;
-import app.onedayofwar.Battle.Units.Ground.Turret;
-import app.onedayofwar.Battle.Units.Space.Akira;
-import app.onedayofwar.Battle.Units.Space.Battleship;
-import app.onedayofwar.Battle.Units.Space.Bioship;
-import app.onedayofwar.Battle.Units.Space.BirdOfPrey;
-import app.onedayofwar.Battle.Units.Space.Defaint;
-import app.onedayofwar.Battle.Units.Space.R2D2;
-import app.onedayofwar.Battle.Units.Unit;
+import app.onedayofwar.OldBattle.BattleElements.BattleEnemy;
+import app.onedayofwar.OldBattle.BattleElements.BattlePlayer;
+import app.onedayofwar.OldBattle.BattleElements.Field;
+import app.onedayofwar.OldBattle.Bonus.Bonus;
+import app.onedayofwar.OldBattle.Bonus.ForBonusEnemy;
+import app.onedayofwar.OldBattle.Bonus.GlareBonus;
+import app.onedayofwar.OldBattle.Bonus.PVO;
+import app.onedayofwar.OldBattle.Bonus.ReloadBonus;
+import app.onedayofwar.OldBattle.System.BattleView;
+import app.onedayofwar.OldBattle.Units.Bullet;
+import app.onedayofwar.OldBattle.Units.Ground.Engineer;
+import app.onedayofwar.OldBattle.Units.Ground.IFV;
+import app.onedayofwar.OldBattle.Units.Ground.Robot;
+import app.onedayofwar.OldBattle.Units.Ground.SONDER;
+import app.onedayofwar.OldBattle.Units.Ground.Tank;
+import app.onedayofwar.OldBattle.Units.Ground.Turret;
+import app.onedayofwar.OldBattle.Units.Space.Akira;
+import app.onedayofwar.OldBattle.Units.Space.Battleship;
+import app.onedayofwar.OldBattle.Units.Space.Bioship;
+import app.onedayofwar.OldBattle.Units.Space.BirdOfPrey;
+import app.onedayofwar.OldBattle.Units.Space.Defaint;
+import app.onedayofwar.OldBattle.Units.Space.R2D2;
+import app.onedayofwar.OldBattle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.System.Vector2;
@@ -58,6 +63,9 @@ public abstract class Battle
     protected String testLocalView = "";
 
     //region Bonuses
+    public Bonus glareBonus;
+    public Bonus pvo;
+    public Bonus reloadBonus;
     public boolean isEnemyShotPrepeared;
     //endregion
 
@@ -76,6 +84,15 @@ public abstract class Battle
     abstract public boolean PrepareEnemyShoot();
     abstract public void EnemyShoot();
     abstract public void InstallationFinish();
+    abstract public boolean PrepareToGlare();
+    abstract public boolean EnemyGlare();
+    abstract public void PlayerGlare();
+    abstract public void PVOInfoSend();
+    abstract public void PVOInfoGet();
+    abstract public void PVOSendResult();
+    abstract public void SendEnemyResult();
+    abstract public void GetReloadInfo();
+    abstract public void SendReloadInfo();
     //endregion
 
     //region Initialization
@@ -89,12 +106,24 @@ public abstract class Battle
         BattleEnemy.damage = 0;
         BattleEnemy.attackResult = -1;
         BattleEnemy.haveGround = false;
+        ForBonusEnemy.glareArr = new int[3][3];
+        ForBonusEnemy.socket = new Vector2();
+        ForBonusEnemy.canITakeResult = false;
+        ForBonusEnemy.canISendResult = false;
+        ForBonusEnemy.pvoGet = false;
+        ForBonusEnemy.pvoGet = false;
+        ForBonusEnemy.reloadGet = false;
+        ForBonusEnemy.skill = 0;
         turns = 0;
         army = new ArrayList<>();
 
-        field = new Field(battleView.screenWidth/2, battleView.screenHeight/2, BattlePlayer.fieldSize, 720 * 0.1);
-
+        field = new Field(battleView.screenWidth/2, battleView.screenHeight/2, BattlePlayer.fieldSize, true);
+        eField = new Field(battleView.screenWidth/2, battleView.screenHeight/2, BattlePlayer.fieldSize, false); //gameView.screenWidth/2 - Assets.grid.getIconWidth()/2, gameView.screenHeight/2 - Assets.grid.getIconHeight()/2, 15, false);
+        eField.Move();
         BattlePlayer.fieldSize = 0;
+        glareBonus = new GlareBonus(true);
+        pvo = new PVO(true);
+        reloadBonus = new ReloadBonus(true);
 
         selectedUnitZone = -1;
 
@@ -267,6 +296,12 @@ public abstract class Battle
     //region Update
     public void Update(float eTime)
     {
+        if(BattleEnemy.isLose && battleView.btController != null)
+        {
+            state = BattleState.Win;
+            GameOver();
+            return;
+        }
 
         if(state != BattleState.Installation)
         {
@@ -291,6 +326,7 @@ public abstract class Battle
             //Если идет подготовка к атаке
             else if(state == BattleState.AttackPrepare)
             {
+                SwapFields();
                 army.get(selectedUnitZone).Deselect();
                 state = BattleState.Attack;
                 battleView.ShootingPrepare();
@@ -299,6 +335,7 @@ public abstract class Battle
             //Если происходит выстрел
             else if(state == BattleState.Shoot)
             {
+                SwapFields();
                 state = BattleState.Defence;
                 battleView.DefendingPrepare();
                 battleView.MoveGates();
@@ -321,6 +358,13 @@ public abstract class Battle
                             case FLY:
                                 if (!battleView.pvoStart)
                                     bullet.Update(eTime);
+                                else
+                                {
+                                    if (ForBonusEnemy.pvoSend)
+                                        PVOSendResult();
+                                    else if (ForBonusEnemy.pvoGet)
+                                        PVOInfoGet();
+                                }
                                 break;
                             case BOOM:
                                 field.explodeAnimation.setPosition((int) (BattleEnemy.target.x), (int) (BattleEnemy.target.y - 25 * Assets.isoGridCoeff));
@@ -343,6 +387,24 @@ public abstract class Battle
             else if(state == BattleState.Shoot)
             {
                 PlayerShoot();
+            }
+            //Готовимся к ответу на запрос по бонусу засвета
+            if(ForBonusEnemy.canISendResult)
+            {
+                EnemyGlare();
+                ForBonusEnemy.canISendResult = false;
+            }
+            //Принимаем и засвечиваем нужную часть
+            if(ForBonusEnemy.canITakeResult)
+            {
+                PlayerGlare();
+                ForBonusEnemy.canITakeResult = false;
+            }
+            //Принимает информацию о том, что нужна перезарядка
+            if(ForBonusEnemy.reloadGet)
+            {
+                GetReloadInfo();
+                ForBonusEnemy.reloadGet = false;
             }
         }
     }
@@ -463,14 +525,18 @@ public abstract class Battle
                 //Вектор касания смещаем на определенную величину, для удобства
                 Vector2 tmp = new Vector2(battleView.touchPos.x, (float)(battleView.touchPos.y - 100 * Assets.isoGridCoeff));
 
-                //Выделяем ячейку на поле
-                field.SelectSocket(tmp, 0);
+                //Если касанемся в пределах поля
+                if(field.IsVectorInField(tmp))
+                {
+                    //Выделяем ячейку на поле
+                    field.SelectSocket(tmp, 0);
 
-                //Перемещаем юнит по ячейкам
-                army.get(unitNum[selectedUnitZone]).SetPosition(field.selectedSocket);
+                    //Перемещаем юнит по ячейкам
+                    army.get(unitNum[selectedUnitZone]).SetPosition(field.selectedSocket);
 
-                //Проверяем помехи
-                army.get(unitNum[selectedUnitZone]).CheckPosition(field);
+                    //Проверяем помехи
+                    army.get(unitNum[selectedUnitZone]).CheckPosition(field);
+                }
             }
         }
     }
@@ -569,7 +635,7 @@ public abstract class Battle
                 if (selectedUnitZone < 0)
                 {
                     //Если касание было в пределах поля
-                    if (battleView.touchPos.x < battleView.selectingPanel.matrix[12] - battleView.selectingPanel.width/2 - 5)
+                    if (field.IsVectorInField(battleView.touchPos) && battleView.touchPos.x < battleView.selectingPanel.matrix[12] - battleView.selectingPanel.width/2 - 5)
                     {
                         //Выделяем клетку поля
                         field.SelectSocket(battleView.touchPos, 0);
@@ -660,6 +726,13 @@ public abstract class Battle
                 }
             }
         }
+    }
+
+    public void SwapFields()
+    {
+        field.Move();
+        eField.Move();
+        AlignArmyPosition(0);
     }
 
     public Unit GetSelectedUnit()
@@ -793,6 +866,8 @@ public abstract class Battle
         {
             if (eField.getMatrix()[12] >= 0)
                 eField.Draw(graphics);
+            else
+                field.DrawFieldInfo(graphics);
         }
         else
         {
@@ -811,8 +886,28 @@ public abstract class Battle
 
     public void GameOver()
     {
+        byte playerShots[][] = eField.GetShots();
+        byte goodShots = 0;
+        int reward = 0;
 
+        for(int i = 0 ; i < playerShots.length; i++)
+        {
+            for (int j = 0; j < playerShots[i].length; j++)
+            {
+                if(playerShots[i][j] == 2)
+                {
+                    goodShots++;
+                }
+            }
+        }
 
+        reward += goodShots * 5;
+        if(state == BattleState.Win)
+        {
+            reward += 100;
+        }
+
+        battleView.GameOver(state, reward);
     }
     //endregion
 }

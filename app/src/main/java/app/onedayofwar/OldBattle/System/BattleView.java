@@ -1,4 +1,4 @@
-package app.onedayofwar.Battle.System;
+package app.onedayofwar.OldBattle.System;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
@@ -7,11 +7,13 @@ import android.view.MotionEvent;
 
 import app.onedayofwar.Activities.BluetoothActivity;
 import app.onedayofwar.Activities.MainActivity;
-import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
-import app.onedayofwar.Battle.Mods.Battle;
-import app.onedayofwar.Battle.Mods.Battle.BattleState;
-import app.onedayofwar.Battle.Mods.SingleBattle;
+import app.onedayofwar.OldBattle.BattleElements.BattleEnemy;
+import app.onedayofwar.OldBattle.BattleElements.BattlePlayer;
+import app.onedayofwar.OldBattle.BluetoothConnection.BluetoothController;
+import app.onedayofwar.OldBattle.Bonus.ForBonusEnemy;
+import app.onedayofwar.OldBattle.Mods.Battle;
+import app.onedayofwar.OldBattle.Mods.Battle.BattleState;
+import app.onedayofwar.OldBattle.Mods.SingleBattle;
 import app.onedayofwar.Campaign.Space.Planet;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -26,6 +28,7 @@ import app.onedayofwar.UI.Panel.Type;
 public class BattleView implements ScreenView
 {
     //region Variables
+    public BluetoothController btController;
     public int screenWidth;
     public int screenHeight;
     private GLView glView;
@@ -86,6 +89,7 @@ public class BattleView implements ScreenView
         this.planet = planet;
         screenWidth = glView.getScreenWidth();
         screenHeight = glView.getScreenHeight();
+        btController = BluetoothActivity.btController;
         bgMatrix = new float[16];
         Matrix.setIdentityM(bgMatrix, 0);
         Matrix.translateM(bgMatrix, 0, screenWidth/2, screenHeight/2, 0);
@@ -134,6 +138,9 @@ public class BattleView implements ScreenView
             case 'c':
                 battle = new SingleBattle(this);
                 break;
+            case 'b':
+                battle = new BluetoothBattle(this);
+                break;
         }
         battle.isYourTurn = isYourTurn;
 
@@ -153,6 +160,8 @@ public class BattleView implements ScreenView
     //region Update
     public void Update(float eTime)
     {
+        if(ForBonusEnemy.pvoGet || ForBonusEnemy.pvoSend)
+            pvoStart = battle.pvo.doYourFuckingJob(touchPos, battle.bullet);
 
         if(battle.state == BattleState.Installation && !selectingPanel.isStop)
         {
@@ -362,6 +371,100 @@ public class BattleView implements ScreenView
         else if(shootBtn.IsClicked() && IsGatesOpen())
         {
             battle.PreparePlayerShoot();
+        }
+
+        else if(flagBtn.IsClicked() && IsGatesOpen())
+        {
+            battle.eField.SetFlag();
+        }
+
+        else if(bonusPanel.IsCloseBtnPressed() && bonusPanel.isStop)
+        {
+            bonusPanel.Move();
+            isButtonPressed = true;
+        }
+
+        else if(glareBtn.IsClicked())
+        {
+            if(battle.glareBonus.IsReloaded())
+            {
+                BonusPrepare();
+                glare = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось " + battle.glareBonus.currentReload;
+            }
+        }
+        else if(pvoBtn.IsClicked())
+        {
+            if(battle.pvo.IsReloaded())
+            {
+                BonusPrepare();
+                pvo = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось " + battle.pvo.currentReload;
+            }
+        }
+        else if(reloadBtn.IsClicked())
+        {
+            if(battle.reloadBonus.IsReloaded())
+            {
+                BonusPrepare();
+                reloadBonus = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось "+battle.reloadBonus.currentReload;
+            }
+        }
+        else if(sugBonusBtn.IsClicked())
+        {
+            if(glare)
+            {
+                ForBonusEnemy.socket.SetValue(battle.eField.GetLocalSocketCoord(battle.eField.selectedSocket));
+                battle.PrepareToGlare();
+                glare = false;
+                ShootingPrepare();
+            }
+            else if(pvo)
+            {
+                battle.PVOInfoSend();
+                pvo = false;
+                ShootingPrepare();
+            }
+            else if(reloadBonus)
+            {
+                battle.SendReloadInfo();
+                reloadBonus = false;
+                ShootingPrepare();
+            }
+            if(infoBonusPanel.isClose)
+                infoBonusPanel.Move();
+        }
+        else if(cancelBonusBtn.IsClicked())
+        {
+            if(infoBonusPanel.isClose)
+                infoBonusPanel.Move();
+            ShootingPrepare();
+            pvo = false;
+            glare = false;
+            reloadBonus = false;
+        }
+        else if(infoBonusBtn.IsClicked())
+        {
+            infoBonusPanel.Move();
+            if(glare)
+                textBonuses = battle.glareBonus.info;
+            else if(pvo)
+                textBonuses = battle.pvo.info;
+            else if(reloadBonus)
+                textBonuses = battle.reloadBonus.info;
         }
     }
 

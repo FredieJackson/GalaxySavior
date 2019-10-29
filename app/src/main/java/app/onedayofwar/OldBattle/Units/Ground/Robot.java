@@ -1,32 +1,31 @@
-package app.onedayofwar.Battle.Units.Ground;
+package app.onedayofwar.OldBattle.Units.Ground;
 
-import app.onedayofwar.Battle.BattleElements.Field;
-import app.onedayofwar.Battle.Units.Unit;
+import app.onedayofwar.OldBattle.BattleElements.Field;
+import app.onedayofwar.OldBattle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 /**
- * Машина инжинеров
- * Размер 3х1
+ * Экзо-скелет
+ * Размер 1х1
  */
+public class Robot extends Unit {
 
-public class Engineer extends Unit {
-
-    public Engineer(Vector2 position, int zoneID, boolean isVisible)
+    public Robot(Vector2 position, int zoneID, boolean isVisible)
     {
         super(isVisible);
 
-        if(isVisible)
+        if (isVisible)
         {
-            image = new Sprite(Assets.rocketImage);
+            image = new Sprite(Assets.robotImage);
             image.Scale((float)Assets.isoGridCoeff);
 
-            icon = new Sprite(Assets.rocketIcon);
+            icon = new Sprite(Assets.robotIcon);
             icon.setPosition(position.x, position.y);
             icon.Scale((float)Assets.iconCoeff);
 
-            stroke = new Sprite(Assets.rocketStroke);
+            stroke = new Sprite(Assets.robotStroke);
             stroke.Scale((float)Assets.isoGridCoeff);
         }
 
@@ -42,14 +41,14 @@ public class Engineer extends Unit {
             ResetPosition();
         }
 
-        form = new Vector2[3];
+        form = new Vector2[1];
         InitializeFormArray();
 
         accuracy = 100;
-        power = 7500;
-        hitPoints = 1000;
-        armor = 500;
-        reloadTime = 4;
+        power = 2500;
+        hitPoints = 500;
+        armor = 0;
+        reloadTime = 1;
     }
     //endregion
 
@@ -67,14 +66,10 @@ public class Engineer extends Unit {
 
         for(int i = 0; i < form.length; i++)
         {
-
-                if (isRight)
-                    tmp.SetValue(startSocket.x + sizes.x * i, startSocket.y);
-                else
-                    tmp.SetValue(startSocket.x, startSocket.y + sizes.y * i);
-
-                if (tmp.y >= field.getMatrix()[13] + field.height/2 || tmp.x >= field.getMatrix()[12] + field.width/2)
-                    return false;
+            if(field.IsIso())
+                tmp.SetValue(startSocket.x - sizes.x * i/2 , startSocket.y + sizes.y * i/2);
+            else
+                tmp.SetValue(startSocket.x, startSocket.y);
 
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
@@ -103,17 +98,13 @@ public class Engineer extends Unit {
     @Override
     protected void ResetOffset()
     {
-        offset.SetValue((int)(55 * Assets.isoGridCoeff), (int)(-20 * Assets.isoGridCoeff));
-        strokeOffset.SetValue((int)(-4 * Assets.isoGridCoeff),(int)(-4 * Assets.isoGridCoeff));
+        offset.SetValue((int)(8 * Assets.isoGridCoeff),(int)(-3 * Assets.isoGridCoeff));
+        strokeOffset.SetValue((int)(-5 * Assets.isoGridCoeff),(int)( -5 * Assets.isoGridCoeff));
     }
 
     @Override
     protected void ChangeOffset()
     {
-        if(isRight)
-            offset.SetValue((int)(-46 * Assets.isoGridCoeff),(int)(-21 * Assets.isoGridCoeff));
-        else
-            ResetOffset();
     }
 
     @Override
@@ -121,4 +112,5 @@ public class Engineer extends Unit {
     {
 
     }
+
 }

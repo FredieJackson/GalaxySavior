@@ -24,11 +24,11 @@ public class Player extends Character
         image = new Sprite(Assets.playerSkin);
         image.Scale(0.05f * space.getScreenWidth() / image.getWidth());
 
-        velocity = 1000;
+        velocity = 1500;
         conqueredPlanets = new ArrayList<>();
         myStep = true;
 
-        image.setPosition(width/2 - 100, height/2 + 50);
+        image.setPosition(width + 300, height + 300);
         moveBehavior = new MoveBehavior(image, velocity, pointsToMove);
         UpdateConqueredPlanets();
     }

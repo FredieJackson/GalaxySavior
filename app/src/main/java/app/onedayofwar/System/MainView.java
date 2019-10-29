@@ -4,8 +4,8 @@ import android.opengl.GLES20;
 import android.view.MotionEvent;
 
 import app.onedayofwar.Activities.MainActivity;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
-import app.onedayofwar.Battle.Mods.SingleBattle;
+import app.onedayofwar.OldBattle.BattleElements.BattlePlayer;
+import app.onedayofwar.OldBattle.Mods.SingleBattle;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.ScreenView;

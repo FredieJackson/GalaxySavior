@@ -5,7 +5,7 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 
 import app.onedayofwar.Activities.MainActivity;
-import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.OldBattle.System.BattleView;
 import app.onedayofwar.Campaign.Space.Planet;
 import app.onedayofwar.Campaign.System.GameView;
 import app.onedayofwar.Graphics.Assets;
@@ -157,7 +157,7 @@ public class GLView extends GLSurfaceView
         Assets.signGlare = graphics.LoadTexture("field/mark/Plyusik.png");
 
         Assets.groundBackground = graphics.LoadTexture("desert.jpg");
-        Assets.spaceBackground = graphics.LoadTexture("desert.jpg");
+        Assets.spaceBackground = graphics.LoadTexture("spacebackground.jpg");
         Assets.monitor = graphics.LoadTexture("monitor.png");
 
         Assets.bullet = graphics.LoadTexture("unit/bullet/Pulya.png");

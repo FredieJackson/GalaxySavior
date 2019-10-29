@@ -5,7 +5,6 @@ import android.util.Log;
 import java.util.ArrayList;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
 import app.onedayofwar.Battle.System.BattleView;
 import app.onedayofwar.Battle.Units.Ground.Engineer;
 import app.onedayofwar.Battle.Units.Ground.IFV;
@@ -49,88 +48,11 @@ public class SingleBattle extends Battle
         battleView.MoveGates();
     }
 
-    @Override
-    public boolean PrepareToGlare()
-    {
-        if(eField.selectedSocket.IsFalse() || eField.GetSelectedSocketInfo() == 0)
-            return false;
-
-        for(int i = 0; i < 3; i++)
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                ForBonusEnemy.glareArr[i][j] = eField.getSquare()[i][j];
-            }
-        }
-        ForBonusEnemy.canITakeResult = true;
-        return true;
-    }
-
-    @Override
-    public boolean EnemyGlare() {return true;}
-
-    @Override
-    public void PlayerGlare()
-    {
-        glareBonus.doYourUglyJob(ForBonusEnemy.glareArr, eField);
-    }
-
-    @Override
-    public void PVOInfoSend()
-    {
-        ForBonusEnemy.pvoGet = true;
-    }
-
-    @Override
-    public void PVOInfoGet()
-    {
-        PrepareEnemyShoot();
-        field.explodeAnimation.setPosition((int) (bullet.getPos().x), (int) (bullet.getPos().y));
-        field.explodeAnimation.setTexture(Assets.airExplosion, 49, 10);
-        field.explodeAnimation.Start();
-        bullet.Reload();
-        preShoot = field.GetSelectedSocketInfo();
-        field.setShot((int) field.GetLocalSocketCoord(BattleEnemy.target).x, (int) field.GetLocalSocketCoord(BattleEnemy.target).y, (byte) preShoot);
-        BattleEnemy.target.SetFalse();
-        battleView.AttackPrepare();
-        state = BattleState.AttackPrepare;
-        battleView.pvoStart = false;
-        isEnemyShotPrepeared = false;
-        ForBonusEnemy.pvoGet = false;
-        ForBonusEnemy.pvoSend = false;
-        battleView.pvoStart = false;
-        CheckEnemyArmy();
-        CheckPlayerArmy();
-    }
-
-    @Override
-    public void PVOSendResult()  {}
-
-    @Override
-    public void SendEnemyResult(){}
-
-    @Override
-    public void GetReloadInfo()
-    {
-        for(int i = 0; i < eArmy.size(); i++)
-        {
-            eArmy.get(i).IncreaseReload(reloadBonus.skill);
-        }
-    }
-
-    @Override
-    public void SendReloadInfo()
-    {
-        ForBonusEnemy.reloadGet = true;
-    }
-
     //region BattleEnemy Loading
     public void LoadEnemy()
     {
-        SwapFields();
         InitializeEnemy();
         PlaceEnemy();
-        SwapFields();
         //Toast.makeText(gameView.getContext(), "ENEMY IS LOADED", Toast.LENGTH_LONG).show();
     }
 
@@ -179,7 +101,6 @@ public class SingleBattle extends Battle
         while(true)
         {
             count = 0;
-            eField.ClearFieldInfo();
             timeOut:for(int i = 0; i < eArmy.size(); i++)
             {
                 tryCount = 0;
@@ -210,37 +131,7 @@ public class SingleBattle extends Battle
 
     public boolean PreparePlayerShoot()
     {
-        if(eField.selectedSocket.IsFalse() || eField.GetSelectedSocketShot() == 1 || eField.GetSelectedSocketShot() == 2)
-            return false;
 
-        int target = eField.GetSelectedSocketInfo();
-        army.get(selectedUnitZone).Reload();
-        army.get(selectedUnitZone).Deselect();
-
-        if(target < 0)
-        {
-            eField.SetShot(false);
-        }
-        else
-        {
-            if(eArmy.get(target).SetDamage(army.get(selectedUnitZone).GetPower()))
-            {
-                Vector2 tmpLocalFormCoord = new Vector2();
-                for(int i = 0; i < eArmy.get(target).GetForm().length; i++)
-                {
-                    tmpLocalFormCoord.SetValue(eField.GetLocalSocketCoord(eArmy.get(target).GetForm()[i]));
-                    eField.GetShots()[(int)tmpLocalFormCoord.y][(int)tmpLocalFormCoord.x] = 2;
-                }
-            }
-            else
-            {
-                eField.SetShot(true);
-            }
-        }
-        CheckEnemyArmy();
-        selectedUnitZone = -1;
-        battleView.MoveGates();
-        state = BattleState.Shoot;
         return true;
     }
 
@@ -248,93 +139,14 @@ public class SingleBattle extends Battle
 
     public boolean PrepareEnemyShoot()
     {
-        if(isEnemyShotPrepeared)
-            return true;
 
-        byte rndUnitID;
-        Vector2 rndLocalCoord = new Vector2();
-        Vector2 rndSocket = new Vector2();
-
-        do
-        {
-            rndUnitID = (byte) (Math.random() * eArmy.size());
-        }
-        while (eArmy.get(rndUnitID).IsDead() || eArmy.get(rndUnitID).IsReloading());
-
-
-        if((int)(Math.random()*101) <= difficulty)
-        {
-            byte rndTargetID;
-            do
-            {
-                rndTargetID = (byte) (Math.random() * army.size());
-            }
-            while (army.get(rndTargetID).IsDead());
-
-            do
-            {
-                field.selectedSocket.SetValue(army.get(rndTargetID).GetForm()[(int)(Math.random() * army.get(rndTargetID).GetForm().length)]);
-            }
-            while(field.GetSelectedSocketShot() != 0);
-
-            testLocalView = "Crit! ";
-            BattleEnemy.weaponType = 1;
-        }
-        else
-        {
-            do
-            {
-                rndLocalCoord.SetValue((int) (Math.random() * field.size), (int) (Math.random() * field.size));
-                rndSocket.SetValue(field.GetGlobalSocketCoord(rndLocalCoord));
-                field.selectedSocket.SetValue(rndSocket);
-            }
-            while (field.GetSelectedSocketShot() != 0);
-
-            testLocalView = "Normal ";
-            BattleEnemy.weaponType = 0;
-        }
-
-        testLocalView += rndUnitID;
-
-        eArmy.get(rndUnitID).Reload();
-        BattleEnemy.target.SetValue(field.selectedSocket.x, field.selectedSocket.y + field.socketSizeY/2);
-        Log.i("TARGET", ""+BattleEnemy.target.x+"|"+BattleEnemy.target.y);
-        BattleEnemy.attacker = rndUnitID;
-        isEnemyShotPrepeared = true;
 
         return true;
     }
 
     public void EnemyShoot()
     {
-        byte target = field.GetSelectedSocketInfo();
-        BattleEnemy.target.SetValue(field.selectedSocket.x - field.socketSizeX/2, field.selectedSocket.y + field.socketSizeY/2);
 
-        if(target < 0)
-        {
-            field.SetShot(false);
-        }
-        else
-        {
-            if(army.get(target).SetDamage(eArmy.get(BattleEnemy.attacker).GetPower()))
-            {
-                Vector2 tmp = new Vector2();
-                for(int i = 0; i < army.get(target).GetForm().length; i++)
-                {
-                    tmp.SetValue(field.GetLocalSocketCoord(army.get(target).GetForm()[i]));
-                    field.GetShots()[(int)tmp.y][(int)tmp.x] = 2;
-                }
-            }
-            else
-            {
-                field.SetShot(true);
-            }
-            army.get(target).UpdateDamagedZones(field.selectedSocket);
-        }
-        BattleEnemy.target.SetValue(field.selectedSocket);
-        field.selectedSocket.SetFalse();
-        isEnemyShotPrepeared = false;
-        CheckPlayerArmy();
     }
 
     public void CheckEnemyArmy()

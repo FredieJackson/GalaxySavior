@@ -1,10 +1,10 @@
-package app.onedayofwar.Battle.System;
+package app.onedayofwar.OldBattle.System;
 
 import android.graphics.Color;
 import android.opengl.GLES20;
 import android.view.MotionEvent;
 
-import app.onedayofwar.Battle.Mods.Battle;
+import app.onedayofwar.OldBattle.Mods.Battle;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.ScreenView;

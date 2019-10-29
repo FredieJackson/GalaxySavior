@@ -1,16 +1,13 @@
 package app.onedayofwar.Activities;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
-import android.widget.Toast;
 
-import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
-import app.onedayofwar.Battle.BluetoothConnection.HandlerMSG;
+import app.onedayofwar.OldBattle.BluetoothConnection.BluetoothController;
+import app.onedayofwar.OldBattle.BluetoothConnection.HandlerMSG;
 import app.onedayofwar.R;
 
 public class BluetoothActivity extends Activity

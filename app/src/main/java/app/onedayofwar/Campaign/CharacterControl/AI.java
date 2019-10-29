@@ -4,7 +4,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
+import app.onedayofwar.OldBattle.BattleElements.BattlePlayer;
 import app.onedayofwar.Campaign.Space.Planet;
 import app.onedayofwar.Campaign.Space.Space;
 import app.onedayofwar.Campaign.System.UpgradeSystem;
@@ -41,9 +41,9 @@ public class AI extends Character
     {
         image = new Sprite(Assets.botSkin);
         image.Scale(0.05f * space.getScreenWidth() / image.getWidth());
-        velocity = 1000;
+        velocity = 3000;
         selectedPlanet = -1;
-        image.setPosition(width/2 + 500, height/2 + 350);
+        image.setPosition(space.getWidth() - width - 300, space.getHeight() - height - 300);
         gArmy = new byte[]{1, 1, 1, 1, 1, 1};
         sArmy = new byte[]{0, 0, 0, 0, 0, 0};
         moveBehavior = new MoveBehavior(image, velocity, 0);
@@ -66,9 +66,9 @@ public class AI extends Character
         if(myStep)
         {
             Log.i("DELTA",""+delta);
-            if(delta > dangerousZone)
+            /*if(delta > dangerousZone)
                 selectPlanetForAttack();
-            else
+            else*/
                 selectPlanetForUpdate();
         }
     }
@@ -90,7 +90,6 @@ public class AI extends Character
                 if(TechMSG.isAttack)
                 {
                     TechMSG.isAILand = true;
-                    space.startBattle();
                 }
             }
 
