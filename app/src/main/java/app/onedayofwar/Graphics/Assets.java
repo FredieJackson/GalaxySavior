@@ -8,28 +8,22 @@ import android.graphics.Typeface;
 public class Assets
 {
     //region Units
-    public static Sprite robotImageL;
-    public static Sprite robotImageR;
+    public static Sprite robotImage;
     public static Sprite robotStroke;
     public static Sprite robotIcon;
-    public static Sprite ifvImageL;
-    public static Sprite ifvImageR;
+    public static Sprite ifvImage;
     public static Sprite ifvStroke;
     public static Sprite ifvIcon;
-    public static Sprite engineerImageL;
-    public static Sprite engineerImageR;
+    public static Sprite engineerImage;
     public static Sprite engineerStroke;
     public static Sprite engineerIcon;
-    public static Sprite tankImageL;
-    public static Sprite tankImageR;
+    public static Sprite tankImage;
     public static Sprite tankStroke;
     public static Sprite tankIcon;
-    public static Sprite turretImageL;
-    public static Sprite turretImageR;
+    public static Sprite turretImage;
     public static Sprite turretStroke;
     public static Sprite turretIcon;
-    public static Sprite sonderImageL;
-    public static Sprite sonderImageR;
+    public static Sprite sonderImage;
     public static Sprite sonderStroke;
     public static Sprite sonderIcon;
     //endregion
@@ -42,6 +36,7 @@ public class Assets
     public static Sprite signMiss;
     public static Sprite signMissIso;
     public static Sprite signHit;
+    public static Sprite signFlag;
     //endregion
 
     //region Buttons
@@ -51,14 +46,21 @@ public class Assets
     public static Sprite btnShoot;
     public static Sprite btnTurn;
     public static Sprite btnPanelClose;
+    public static Sprite btnFlag;
     //endregion
 
+    public static Animation explode;
+
     public static double gridCoeff;
-    public static double screenHeightCoeff;
-    public static double screenWidthCoeff;
+    public static double isoGridCoeff;
+    public static double bgHeightCoeff;
+    public static double bgWidthCoeff;
     public static double dpiCoeff;
     public static double monitorHeightCoeff;
     public static double monitorWidthCoeff;
+    public static double spaceCoeff;
+    public static double btnCoeff;
+    public static double iconCoeff;
 
     public static Sprite background;
     public static Sprite monitor;
@@ -67,4 +69,7 @@ public class Assets
 
     public static Sprite bullet;
     public static Sprite miniRocket;
+
+    public static Sprite space;
+    public static Sprite planet;
 }

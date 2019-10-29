@@ -5,8 +5,7 @@
     android:layout_height="match_parent"
     android:weightSum="1"
     android:orientation="vertical"
-    android:gravity="center"
-    android:background="@drawable/monitorbg">
+    android:gravity="center">
 
     <TextView
         android:layout_width="wrap_content"
@@ -16,77 +15,81 @@
         android:id="@+id/selectTitle"
         android:layout_gravity="center_horizontal"
         android:layout_weight="0.1"
+        android:textSize="60px"
+        android:textStyle="bold"
+        android:textColor="#ff00b204"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:textSize="60sp"
-        android:textStyle="bold"
-        android:textColor="#ff00b204" />
+        android:layout_marginTop="43dp" />
 
-    <LinearLayout
-        android:orientation="vertical"
+    <ScrollView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="140dp"
+        android:id="@+id/scrollView2"
+        android:layout_gravity="center_horizontal"
         android:layout_below="@+id/selectTitle"
         android:layout_centerHorizontal="true">
 
-        <Button
-            android:layout_width="199dp"
-            android:layout_height="70dp"
-            android:text="Single Game"
-            android:textSize="40sp"
-            android:textStyle="bold"
-            android:id="@+id/singleBtn"
-            android:layout_gravity="center_horizontal"
-            android:onClick="ClickSingleBtn"
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_below="@+id/selectTitle"
             android:layout_centerHorizontal="true"
-            android:textColor="#ff00b204" />
+            android:orientation="vertical">
 
-        <Button
-            android:layout_width="199dp"
-            android:layout_height="70dp"
-            android:text="Bluetooth"
-            android:textSize="40sp"
-            android:textStyle="bold"
-            android:id="@+id/bluetoothBtn"
-            android:layout_gravity="center_horizontal"
-            android:layout_weight="0.1"
-            android:onClick="ClickBluetoothBtn"
-            android:layout_below="@+id/singleBtn"
-            android:layout_alignLeft="@+id/singleBtn"
-            android:layout_alignStart="@+id/singleBtn"
-            android:layout_marginTop="10dp"
-            android:textColor="#ff00b204" />
+            <Button
+                android:layout_width="300dp"
+                android:layout_height="70dp"
+                android:text="Single Game"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:id="@+id/singleGameBtn"
+                android:onClick="ClickSingleBtn"
+                android:layout_below="@+id/selectTitle"
+                android:layout_centerHorizontal="true"
+                android:textColor="#ff00b204" />
 
-        <Button
-            android:layout_width="199dp"
-            android:layout_height="70dp"
-            android:text="Internet"
-            android:textStyle="bold"
-            android:id="@+id/internetBtn"
-            android:layout_gravity="center_horizontal"
-            android:layout_weight="0.1"
-            android:onClick="ClickInternetBtn"
-            android:layout_below="@+id/bluetoothBtn"
-            android:layout_alignLeft="@+id/bluetoothBtn"
-            android:layout_alignStart="@+id/bluetoothBtn"
-            android:layout_marginTop="10dp"
-            android:textColor="#ff00b204"
-            android:textSize="45sp" />
+            <Button
+                android:layout_width="300dp"
+                android:layout_height="70dp"
+                android:text="Bluetooth"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:id="@+id/bluetoothBtn"
+                android:layout_weight="0.1"
+                android:onClick="ClickBluetoothBtn"
+                android:layout_below="@+id/campaignBtn"
+                android:layout_alignLeft="@+id/campaignBtn"
+                android:layout_alignStart="@+id/campaignBtn"
+                android:textColor="#ff00b204" />
 
-        <Button
-            android:layout_width="155dp"
-            android:layout_height="wrap_content"
-            android:text="Back"
-            android:textSize="45sp"
-            android:textStyle="bold"
-            android:id="@+id/backBtn"
-            android:layout_gravity="center_horizontal"
-            android:onClick="ClickBackBtn"
-            android:layout_below="@+id/internetBtn"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:textColor="#ff00b204" />
-    </LinearLayout>
+            <Button
+                android:layout_width="300dp"
+                android:layout_height="70dp"
+                android:text="Internet"
+                android:textStyle="bold"
+                android:id="@+id/internetBtn"
+                android:layout_weight="0.1"
+                android:onClick="ClickInternetBtn"
+                android:layout_below="@+id/quickBattle"
+                android:layout_alignLeft="@+id/quickBattle"
+                android:layout_alignStart="@+id/quickBattle"
+                android:textColor="#ff00b204"
+                android:textSize="45sp" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Back"
+                android:textSize="45sp"
+                android:textStyle="bold"
+                android:id="@+id/backBtn"
+                android:onClick="ClickBackBtn"
+                android:layout_below="@+id/internetBtn"
+                android:layout_centerHorizontal="true"
+                android:textColor="#ff00b204"
+                android:layout_gravity="center_horizontal" />
+        </LinearLayout>
+    </ScrollView>
 
 </RelativeLayout>

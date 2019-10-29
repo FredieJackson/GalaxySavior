@@ -3,7 +3,6 @@ package app.onedayofwar.Activities;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +10,9 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import app.onedayofwar.Battle.Activities.BattleActivity;
+import app.onedayofwar.Battle.BattleElements.BattlePlayer;
+import app.onedayofwar.Campaign.Activities.GameActivity;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.R;
 
@@ -22,7 +24,6 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.main);
         isBluetoothOff = false;
         Assets.mainFont = Typeface.createFromAsset(getAssets(), "fonts/hollowpoint.ttf");
@@ -31,9 +32,9 @@ public class MainActivity extends Activity
     protected void onResume()
     {
         super.onResume();
-        if(isBluetoothOff)
+        if(isBluetoothOff && btAdapter.isEnabled())
         {
-            StartGame('b');
+            StartQuickBattle('b');
             isBluetoothOff = false;
             return;
         }
@@ -41,14 +42,24 @@ public class MainActivity extends Activity
         mainFonts();
     }
 
-    public void ClickBtn1(View view)
+    public void ClickStartGameBtn(View view)
     {
         setContentView(R.layout.main_game_mode);
         gameModeFonts();
     }
     public void ClickSingleBtn(View view)
     {
-        StartGame('s');
+        setContentView(R.layout.main_single_mode);
+    }
+
+    public void ClickCampaignBtn(View view)
+    {
+        StartCampaign();
+    }
+
+    public void ClickQuickBtn(View view)
+    {
+        StartQuickBattle('s');
     }
 
     public void ClickBluetoothBtn(View view)
@@ -62,7 +73,7 @@ public class MainActivity extends Activity
         if (btAdapter.isEnabled())
         {
             Toast.makeText(this, "BLUETOOTH IS ON", Toast.LENGTH_LONG).show();
-            StartGame('b');
+            StartQuickBattle('b');
         }
         else
         {
@@ -73,29 +84,41 @@ public class MainActivity extends Activity
             startActivityForResult(enableBtIntent, 1);
         }
     }
+
     public void ClickInternetBtn(View view)
     {
-        StartGame('i');
+        StartQuickBattle('i');
     }
+
     public void ClickBackBtn(View view)
     {
         setContentView(R.layout.main);
         mainFonts();
     }
-    public void ClickBtn2(View view)
+    public void ClickInfoBtn(View view)
     {
-    }
-    public void ClickBtn3(View view)
-    {
-
+        Toast.makeText(this.getApplicationContext(), R.string.version, Toast.LENGTH_SHORT).show();
     }
 
-    private void StartGame(char type)
+    private void StartQuickBattle(char type)
+    {
+        Intent intent = new Intent(this, BattleActivity.class);
+        intent.putExtra("type", type);
+        BattlePlayer.fieldSize = 15;
+        BattlePlayer.unitCount = new byte[6];
+        BattlePlayer.unitCount[0] = 1;
+        BattlePlayer.unitCount[1] = 1;
+        BattlePlayer.unitCount[2] = 1;
+        BattlePlayer.unitCount[3] = 1;
+        BattlePlayer.unitCount[4] = 1;
+        BattlePlayer.unitCount[5] = 1;
+        startActivity(intent);
+    }
+
+    private void StartCampaign()
     {
         Intent intent = new Intent(this, GameActivity.class);
-        intent.putExtra("type", type);
         startActivity(intent);
-        setContentView(R.layout.loading);
     }
 
     private void mainFonts()
@@ -113,11 +136,9 @@ public class MainActivity extends Activity
     {
         Button button =(Button)findViewById(R.id.backBtn);
         button.setTypeface(Assets.mainFont);
-        button =(Button)findViewById(R.id.singleBtn);
+        button =(Button)findViewById(R.id.singleGameBtn);
         button.setTypeface(Assets.mainFont);
         button =(Button)findViewById(R.id.bluetoothBtn);
-        button.setTypeface(Assets.mainFont);
-        button =(Button)findViewById(R.id.internetBtn);
         button.setTypeface(Assets.mainFont);
         button =(Button)findViewById(R.id.internetBtn);
         button.setTypeface(Assets.mainFont);

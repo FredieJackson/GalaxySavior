@@ -12,7 +12,7 @@ final public class FPScounter
     private static int endTime;
     private static int frameTimes = 0;
     private static short frames = 0;
-    private static short fps = 0;
+    private static short fps = 60;
 
     /** Start counting the fps**/
     public final static void StartCounter()

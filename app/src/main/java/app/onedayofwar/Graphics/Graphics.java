@@ -3,61 +3,45 @@ package app.onedayofwar.Graphics;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.ColorFilter;
-import android.graphics.LightingColorFilter;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Rect;
+import android.opengl.Matrix;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by Slava on 03.01.2015.
+ * Created by Slava on 13.03.2015.
  */
 public class Graphics
 {
-    public static enum SpriteFormat {RGB565, ARGB4444, ARGB8888}
-    AssetManager assets;
-    public Bitmap frameBuffer;
-    int width;
-    int height;
-    Canvas canvas;
-    Paint paint;
-    static ColorFilter colorFilter;
-    Rect srcRect;
-    Rect dstRect;
+    private GLRenderer renderer;
+    private AssetManager assets;
+    private Rectangle rectangle;
+    private Line line;
+    private float[] mvpMatrix;
 
-    public Graphics(AssetManager assets, int width, int height)
+    public Graphics(GLRenderer renderer, AssetManager assets)
     {
+        this.renderer = renderer;
         this.assets = assets;
-        this.frameBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-        canvas = new Canvas(frameBuffer);
-        this.width = width;
-        this.height = height;
-        paint = new Paint();
-        dstRect = new Rect();
-        srcRect = new Rect();
+        mvpMatrix = new float[16];
+        rectangle = new Rectangle();
+        line  = new Line();
     }
 
-    public Sprite newSprite(String fileName, SpriteFormat format)
+    public Animation newAnimation(String fileName, int frames, int speed, int start, boolean isLooped)
     {
-        Bitmap.Config config;
+        return new Animation(LoadBitmap(fileName), frames, speed, start, isLooped);
+    }
 
-        if (format == SpriteFormat.RGB565)
-            config = Bitmap.Config.RGB_565;
-        else if (format == SpriteFormat.ARGB4444)
-            config = Bitmap.Config.ARGB_4444;
-        else
-            config = Bitmap.Config.ARGB_8888;
+    public Sprite newSprite(String fileName)
+    {
+        return new Sprite(LoadBitmap(fileName));
+    }
 
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = config;
+    private Bitmap LoadBitmap(String fileName)
+    {
         InputStream in = null;
         Bitmap bitmap = null;
-
         try
         {
             in = assets.open(fileName);
@@ -82,109 +66,31 @@ public class Graphics
                 }
             }
         }
-
-        if (bitmap.getConfig() == Bitmap.Config.RGB_565)
-            format = SpriteFormat.RGB565;
-        else if (bitmap.getConfig() == Bitmap.Config.ARGB_4444)
-            format = SpriteFormat.ARGB4444;
-        else
-            format = SpriteFormat.ARGB8888;
-        return new Sprite(bitmap, format);
+        return bitmap;
     }
 
-    static public void setColorFilter(int color)
+    public void DrawRect(float x, float y, int width, int height, int color, boolean isFilled)
     {
-        colorFilter = new LightingColorFilter(color, 1);
+        rectangle.setShape(x, y, width, height, color, isFilled);
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, rectangle.matrix, 0);
+        rectangle.Draw(mvpMatrix);
     }
 
-    public void clear(int color)
+    public void DrawLine(float xb, float yb, float xe, float ye, int color)
     {
-        canvas.drawRGB((color & 0xff0000) >> 16, (color & 0xff00) >> 8, (color & 0xff));
+        line.setShape(xb, yb, xe, ye, color);
+        line.Draw(renderer.vpMatrix);
     }
 
-    public void drawPixel(int x, int y, int color)
+    public void DrawSprite(Sprite sprite, float[] mMatrix)
     {
-        paint.setColor(color);
-        canvas.drawPoint(x, y, paint);
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, mMatrix, 0);
+        sprite.Draw(mvpMatrix);
     }
 
-    public void drawText(String text, int size, int x, int y, int color)
+    public void DrawAnimation(Animation animation, float[] mMatrix)
     {
-        paint.setColor(color);
-        paint.setTextSize(size);
-        canvas.drawText(text, x, y, paint);
-    }
-
-    public void drawLine(int x, int y, int x2, int y2, int color)
-    {
-        paint.setColor(color);
-        canvas.drawLine(x, y, x2, y2, paint);
-    }
-
-    public void drawRect(int x, int y, int width, int height, int color)
-    {
-        paint.setColor(color);
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawRect(x, y, x + width , y + height, paint);
-    }
-
-    public void drawSprite(Sprite sprite, int x, int y, int width, int height, int srcX, int srcY, int srcWidth, int srcHeight)
-    {
-        srcRect.left = srcX;
-        srcRect.top = srcY;
-        srcRect.right = srcX + srcWidth;
-        srcRect.bottom = srcY + srcHeight;
-        dstRect.left = x;
-        dstRect.top = y;
-        dstRect.right = x + width;
-        dstRect.bottom = y + height;
-        canvas.drawBitmap(sprite.bitmap, srcRect, dstRect, null);
-    }
-
-    public void drawSprite(Sprite sprite, Rect dst, Rect src)
-    {
-        canvas.drawBitmap(sprite.bitmap, src, dst, null);
-    }
-
-    public void drawSprite(Sprite sprite, Matrix matrix)
-    {
-        canvas.drawBitmap(sprite.bitmap, matrix, null);
-    }
-
-    public void drawSprite(Sprite sprite)
-    {
-        canvas.drawBitmap(sprite.bitmap, null, canvas.getClipBounds(), null);
-    }
-
-    public void drawSprite(Sprite sprite, int x, int y)
-    {
-        canvas.drawBitmap(sprite.bitmap, x, y, null);
-    }
-
-    public void drawSprite(Sprite sprite, int x, int y, int color)
-    {
-        paint.setColor(color);
-        paint.setColorFilter(colorFilter);
-        canvas.drawBitmap(sprite.bitmap, x, y, paint);
-        paint.setColorFilter(null);
-    }
-
-    public void drawPath(Path path, int color)
-    {
-        paint.setColor(color);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3);
-        canvas.drawPath(path, paint);
-        paint.reset();
-    }
-
-    public int getWidth()
-    {
-        return width;//frameBuffer.getWidth();
-    }
-
-    public int getHeight()
-    {
-        return height;//frameBuffer.getHeight();
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, mMatrix, 0);
+        animation.Draw(mvpMatrix);
     }
 }

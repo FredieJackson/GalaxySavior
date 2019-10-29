@@ -6,11 +6,11 @@ package app.onedayofwar.System;
 
 public class Vector2
 {
-    public int x;
-    public int y;
+    public float x;
+    public float y;
 
     //region Constructor
-    public Vector2(int x, int y)
+    public Vector2(float x, float y)
     {
         this.x = x;
         this.y = y;
@@ -54,7 +54,7 @@ public class Vector2
         y = sourceVector.y;
     }
 
-    public void SetValue(int x, int y)
+    public void SetValue(float x, float y)
     {
         this.x = x;
         this.y = y;
@@ -81,7 +81,7 @@ public class Vector2
 
     public boolean Equals(Vector2 vector)
     {
-        return (x == vector.x) && (y == vector.y);
+        return Math.abs(x - vector.x) < 0.0001f && Math.abs(y - vector.y) < 0.0001f;
     }
 
     public void ChangeSign(boolean changeX)
