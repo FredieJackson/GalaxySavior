@@ -4,8 +4,8 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.view.MotionEvent;
 
-import app.onedayofwar.Campaign.System.PlanetView;
-import app.onedayofwar.Campaign.System.GameView;
+import app.onedayofwar.Campaign.Screens.PlanetView;
+import app.onedayofwar.Campaign.Screens.GameView;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Sprite;
@@ -58,7 +58,7 @@ public class Space
         btnRegion.setPosition(0, Assets.btnRegion.getHeight()/2);
         touchPos = new Vector2();
         lastTouch = new Vector2();
-        pointsToMove = 30;
+        pointsToMove = 100000;
         xmlParser = new XMLParser(activity.getAssets());
         planetController = new PlanetController(this);
         planetController.LoadPlanets(xmlParser);
@@ -86,7 +86,7 @@ public class Space
         return player;
     }
 
-    public void onTouch(MotionEvent event)      //Здесь весь метод переделан
+    public void onTouch(MotionEvent event)
     {
         lastTouch.SetValue((int) (event.getX() - touchPos.x) * 1.5f, (int) (event.getY() - touchPos.y) * 1.5f);
         touchPos.SetValue((int) event.getX(), (int) event.getY());
@@ -99,7 +99,9 @@ public class Space
                 if (planetController.isPlanetSelected())
                 {
                     toMove.SetValue(planetController.getSelectedPlanet().getMatrix()[12], planetController.getSelectedPlanet().getMatrix()[13]);
+                    selectedPlanet = planetController.getSelectedPlanetNum();
                     planetController.doSelectedPlanetFalse();
+                    gameView.currentCamera.SetValue(GetCameraX(), GetCameraY());
                 }
                 else
                     toMove.SetFalse();
@@ -134,10 +136,10 @@ public class Space
     public void Update(float eTime)
     {
         planetController.UpdatePlanets();
-        player.Update(eTime);           //Одна новая команда
+        player.Update(eTime);
     }
 
-    public void Draw(Graphics graphics)     //Тут тоже парочка
+    public void Draw(Graphics graphics)
     {
         graphics.DrawParallaxSprite(background, spaceVelocityCoeff);
         drawStars();
@@ -172,4 +174,9 @@ public class Space
     {
         return gameView.getGlView().getScreenWidth();
     }
+
+    public float GetCameraX(){return gameView.getCameraX();}
+
+    public float GetCameraY(){return gameView.getCameraY();}
+
 }

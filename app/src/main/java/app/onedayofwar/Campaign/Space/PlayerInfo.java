@@ -1,7 +1,6 @@
 package app.onedayofwar.Campaign.Space;
 
 import android.graphics.Color;
-import android.util.Log;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -16,21 +15,25 @@ public class PlayerInfo
     private byte[] army;
     private Vector2 toMove;
     private Vector2 lastV;
-    private Vector2 newV;
-    Vector2 dir;
-    Space space;
-    int pointsToMove;
-    int color;
+    private Vector2 dir;
+    private Vector2 angleVector;
+    private float rightAngle;
+    private float leftAngle;
+    private Space space;
+    private int pointsToMove;
+    private int color;
     private Sprite image;
     private int velocity;
-    private boolean isLand;
+    private int currentVelocity;
+    private int counter;
+    private int counterLand;
     public int height;
     public int width;
-    private int counter;
-    public float angle;
+    public double angle;
+    private boolean isLand;
     private boolean needRotate;
-    private boolean firstBattle;
     private boolean needLand;
+    private boolean needTakeOff;
 
 
     public PlayerInfo(Space space, int pointsToMove)
@@ -47,23 +50,23 @@ public class PlayerInfo
         toMove = new Vector2();
         toMove.SetFalse();
         dir = new Vector2();
-
         dir.SetFalse();
+
         lastV = new Vector2();
-        newV = new Vector2();
+        angleVector = new Vector2();
 
         velocity = 1000;
+        currentVelocity = velocity;
         width = image.getWidth();
         height = image.getHeight();
-        counter = 0;
 
-        image.setPosition(width/2, height/2);
+        image.setPosition(width/2 + 500, height/2+350);
 
         color = Color.RED;
         isLand = false;
-        firstBattle = false;
         needLand = false;
         needRotate = false;
+        needTakeOff = false;
     }
 
     public float[] getMatrix()
@@ -76,6 +79,10 @@ public class PlayerInfo
 
         graphics.DrawSprite(image);
         //graphics.("" + pointsToMove, 15, 50, 50, color);
+        if(!toMove.IsFalse())
+            graphics.DrawLine(image.matrix[12], image.matrix[13], toMove.x, toMove.y, color);
+        graphics.DrawLine(image.matrix[12], image.matrix[13], image.matrix[12] + lastV.x, image.matrix[13]+lastV.y, Color.WHITE);
+        graphics.DrawLine(image.matrix[12], image.matrix[13],image.matrix[12] + dir.x*100, image.matrix[13] + dir.y*100, Color.BLUE);
     }
 
 
@@ -92,24 +99,27 @@ public class PlayerInfo
             toMove.SetValue(touchPos.x - x, touchPos.y - y);
             needLand = false;
         }
-        if(!dir.IsFalse())
+
+        if(!toMove.IsFalse())
         {
-            lastV.SetValue(dir.x*velocity,dir.y*velocity);
-            newV.SetValue(toMove.x - image.matrix[12], toMove.y - image.matrix[13]);
-            angle = (float)Math.acos((lastV.x*newV.x + lastV.y*newV.y)/(Math.sqrt(lastV.x*lastV.x + lastV.y*lastV.y)*Math.sqrt(newV.x*newV.x + newV.y*newV.y)));
-            needRotate = true;
-            angle *= 180/Math.PI;
+            if(!dir.IsFalse())
+                lastV.SetValue(dir.x, dir.y);
+            else
+                lastV.SetValue(0, velocity);
+            dir.SetValue((toMove.x - image.matrix[12]), (toMove.y - image.matrix[13]));
         }
-        else
+
+        angle = Math.acos((lastV.x*dir.x + lastV.y*dir.y)/(Math.sqrt(lastV.x*lastV.x + lastV.y*lastV.y)*Math.sqrt(dir.x*dir.x+dir.y*dir.y)));
+        angle *= 180f/Math.PI;
+        needRotate = true;
+        angleVector.SetValue(lastV.y, -lastV.x);
+        rightAngle = (float)(Math.acos((angleVector.x*dir.x + angleVector.y*dir.y)/(Math.sqrt(angleVector.x*angleVector.x + angleVector.y*angleVector.y)*Math.sqrt(dir.x*dir.x + dir.y*dir.y))));
+        angleVector.SetValue(-lastV.y, lastV.x);
+        leftAngle = (float)(Math.acos((angleVector.x*dir.x + angleVector.y*dir.y)/(Math.sqrt(angleVector.x*angleVector.x + angleVector.y*angleVector.y)*Math.sqrt(dir.x*dir.x + dir.y*dir.y))));
+        if(leftAngle < rightAngle)
         {
-            lastV.SetValue(0,velocity);
-            newV.SetValue(toMove.x - image.matrix[12], toMove.y - image.matrix[13]);
-            angle = (float)Math.acos((lastV.x*newV.x + lastV.y*newV.y)/(Math.sqrt(lastV.x*lastV.x + lastV.y*lastV.y)*Math.sqrt(newV.x*newV.x + newV.y*newV.y)));
-            needRotate = true;
-            angle *= 180/Math.PI;
+            angle *= -1;
         }
-        Log.i("ANGLE", ""+angle);
-        dir.SetValue((toMove.x - getMatrix()[12]), (toMove.y - getMatrix()[13]));
         dir.Normalize();
     }
 
@@ -117,53 +127,73 @@ public class PlayerInfo
     {
         if(needRotate)
         {
-            image.Rotate(angle/5, 0, 0, 1);
+            image.Rotate((float)angle/10, 0, 0, 1);
             counter++;
-            if(counter == 5)
+            if(counter == 10)
             {
                 needRotate = false;
                 counter = 0;
             }
         }
+
         if(needLand)
             letsLending(eTime);
-        if(isLand && !firstBattle)
+
+        if (needTakeOff)
         {
-            space.GotoPlanet();
-            isLand = false;
-            firstBattle = true;
+            counterLand++;
+            if(counterLand == 5)
+            {
+                needTakeOff = false;
+                counterLand = 0;
+            }
+            image.Scale(1.43f);
+            currentVelocity = velocity;
+            needLand = false;
+        }
+
+        if(isLand)
+        {
+            currentVelocity *= 0.75;
+            pointsToMove = velocity;
+            image.Scale(0.7f);
+            counterLand++;
+            if(counterLand == 5)
+            {
+                isLand = false;
+                counterLand = 0;
+                space.GotoPlanet();
+            }
         }
 
         if(!toMove.IsFalse())
         {
-            if(Math.abs(toMove.x - getMatrix()[12]) < velocity*eTime*dir.x || Math.abs(getMatrix()[13] - toMove.y) < velocity*eTime*dir.y)
+            if(Math.abs(toMove.x - getMatrix()[12]) < Math.abs((int)(currentVelocity*eTime*dir.x))  || Math.abs(getMatrix()[13] - toMove.y) < Math.abs((int)(currentVelocity*eTime*dir.y)))
                 toMove.SetFalse();
 
-
-                if(!toMove.IsFalse() && pointsToMove > 0){
-                    getMatrix()[12] += (int)(velocity*dir.x*eTime);
-                    getMatrix()[13] += (int)(velocity*dir.y*eTime);
-                    if(!isLand)
-                        pointsToMove--;
-                    if(pointsToMove == 0)
-                    {
-                        toMove.SetFalse();
-                        image.setColorFilter(color);
-                    }
+            if(!toMove.IsFalse() && pointsToMove > 0)
+            {
+                image.Move(currentVelocity*dir.x*eTime, currentVelocity*dir.y*eTime);
+                if(!isLand)
+                    pointsToMove--;
+                if(pointsToMove == 0)
+                {
+                    toMove.SetFalse();
+                    image.setColorFilter(color);
                 }
+            }
         }
     }
 
     public void letsLending(float eTime)
     {
-        if(Math.abs(getMatrix()[12] - toMove.x) < 5*velocity*eTime*dir.x || Math.abs(getMatrix()[13] - toMove.y) < 5*velocity*eTime*dir.y)
-        {
-            Log.i("TEST","ok");
-            velocity *= 0.75;
-            pointsToMove = velocity;
-            image.Scale(0.7f);
+        if(Math.abs(getMatrix()[12] - toMove.x) < Math.abs(5*currentVelocity*eTime*dir.x) || Math.abs(getMatrix()[13] - toMove.y) < Math.abs(5*currentVelocity*eTime*dir.y))
             isLand = true;
-        }
+    }
+
+    public void lestTakeOff()
+    {
+        needTakeOff = true;
     }
 
     public byte[] getArmy()

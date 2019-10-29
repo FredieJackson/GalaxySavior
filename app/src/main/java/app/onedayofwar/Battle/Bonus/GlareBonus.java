@@ -26,73 +26,73 @@ public class GlareBonus extends Bonus
         Vector2 socket = ForBonusEnemy.socket;
         if(tmp[0][0] == 100)
         {
-            if(field.GetShots()[(int)(socket.y - 1)][(int)(socket.x - 1)] != 2)
-                field.setValue((int)(socket.x - 1),(int)(socket.y - 1), (byte) 100);
+            if(field.GetShots()[(int)(socket.y - 1)][(int)(socket.x - 1)] != 2 )
+                field.setShot((int) (socket.x - 1), (int) (socket.y - 1), (byte) 100);
         }
-        else if(tmp[0][0] != -100)
-            field.setValue((int)(socket.x - 1),(int)(socket.y - 1), (byte) 3);
+        else if(tmp[0][0] != -100 && field.GetShots()[(int)(socket.y - 1)][(int)(socket.x - 1)] != 1)
+            field.setShot((int) (socket.x - 1), (int) (socket.y - 1), (byte) 3);
 
         if(tmp[0][1] == 100)
         {
-            if(field.GetShots()[(int)(socket.y - 1)][(int)socket.x] != 2)
-                field.setValue((int)(socket.x),(int)(socket.y - 1), (byte) 100);
+            if(field.GetShots()[(int)(socket.y - 1)][(int)socket.x] != 2 )
+                field.setShot((int) (socket.x), (int) (socket.y - 1), (byte) 100);
         }
-        else if(tmp[0][1] != -100)
-            field.setValue((int)(socket.x),(int)(socket.y - 1), (byte) 3);
+        else if(tmp[0][1] != -100 && field.GetShots()[(int)(socket.y - 1)][(int)socket.x] != 1)
+            field.setShot((int) (socket.x), (int) (socket.y - 1), (byte) 3);
 
         if(tmp[0][2] == 100)
         {
-            if(field.GetShots()[(int)(socket.y - 1)][(int)(socket.x + 1)] != 2)
-                field.setValue((int)(socket.x + 1),(int)(socket.y - 1), (byte) 100);
+            if(field.GetShots()[(int)(socket.y - 1)][(int)(socket.x + 1)] != 2 )
+                field.setShot((int) (socket.x + 1), (int) (socket.y - 1), (byte) 100);
         }
-        else if(tmp[0][2] != -100)
-            field.setValue((int)(socket.x + 1),(int)(socket.y - 1), (byte) 3);
+        else if(tmp[0][2] != -100 && field.GetShots()[(int)(socket.y - 1)][(int)(socket.x + 1)] != 1)
+            field.setShot((int) (socket.x + 1), (int) (socket.y - 1), (byte) 3);
 
         if(tmp[1][0] == 100)
         {
-            if(field.GetShots()[(int)(socket.y)][(int)(socket.x - 1)] != 2)
-                field.setValue((int)(socket.x - 1),(int)(socket.y), (byte) 100);
+            if(field.GetShots()[(int)(socket.y)][(int)(socket.x - 1)] != 2 )
+                field.setShot((int) (socket.x - 1), (int) (socket.y), (byte) 100);
         }
-        else if(tmp[1][0] != -100)
-            field.setValue((int)(socket.x - 1),(int)(socket.y), (byte) 3);
+        else if(tmp[1][0] != -100 && field.GetShots()[(int)(socket.y)][(int)(socket.x - 1)] != 1)
+            field.setShot((int) (socket.x - 1), (int) (socket.y), (byte) 3);
 
         if(tmp[1][1] == 100)
         {
-            if(field.GetShots()[(int)(socket.y)][(int)socket.x] != 2)
-                field.setValue((int)(socket.x),(int)(socket.y), (byte) 100);
+            if(field.GetShots()[(int)(socket.y)][(int)socket.x] != 2 )
+                field.setShot((int) (socket.x), (int) (socket.y), (byte) 100);
         }
-        else
-            field.setValue((int)(socket.x),(int)(socket.y), (byte) 3);
+        else if(field.GetShots()[(int)(socket.y)][(int)socket.x] != 1)
+            field.setShot((int) (socket.x), (int) (socket.y), (byte) 3);
         if(tmp[1][2] == 100)
         {
-            if(field.GetShots()[(int)(socket.y)][(int)(socket.x + 1)] != 2)
-                field.setValue((int)(socket.x + 1),(int)(socket.y), (byte) 100);
+            if(field.GetShots()[(int)(socket.y)][(int)(socket.x + 1)] != 2 )
+                field.setShot((int) (socket.x + 1), (int) (socket.y), (byte) 100);
         }
-        else if(tmp[1][2] != -100)
-            field.setValue((int)(socket.x + 1),(int)(socket.y), (byte) 3);
+        else if(tmp[1][2] != -100 && field.GetShots()[(int)(socket.y)][(int)(socket.x + 1)] != 1)
+            field.setShot((int) (socket.x + 1), (int) (socket.y), (byte) 3);
 
         if(tmp[2][0] == 100)
         {
-            if(field.GetShots()[(int)(socket.y + 1)][(int)(socket.x - 1)] != 2)
-                field.setValue((int)(socket.x - 1),(int)(socket.y + 1), (byte) 100);
+            if(field.GetShots()[(int)(socket.y + 1)][(int)(socket.x - 1)] != 2 )
+                field.setShot((int) (socket.x - 1), (int) (socket.y + 1), (byte) 100);
         }
-        else if(tmp[2][0] != -100)
-            field.setValue((int)(socket.x - 1),(int)(socket.y + 1), (byte) 3);
+        else if(tmp[2][0] != -100 && field.GetShots()[(int)(socket.y + 1)][(int)(socket.x - 1)] != 1)
+            field.setShot((int) (socket.x - 1), (int) (socket.y + 1), (byte) 3);
 
         if(tmp[2][1] == 100)
         {
-            if(field.GetShots()[(int)(socket.y + 1)][(int)socket.x] != 2)
-                field.setValue((int)(socket.x),(int)(socket.y + 1), (byte) 100);
+            if(field.GetShots()[(int)(socket.y + 1)][(int)socket.x] != 2 )
+                field.setShot((int) (socket.x), (int) (socket.y + 1), (byte) 100);
         }
-        else if(tmp[2][1] != -100)
-            field.setValue((int)(socket.x),(int)(socket.y + 1), (byte) 3);
+        else if(tmp[2][1] != -100 && field.GetShots()[(int)(socket.y + 1)][(int)socket.x] != 1)
+            field.setShot((int) (socket.x), (int) (socket.y + 1), (byte) 3);
         if(tmp[2][2] == 100)
         {
-            if(field.GetShots()[(int)(socket.y + 1)][(int)(socket.x + 1)] != 2)
-                field.setValue((int)(socket.x + 1),(int)(socket.y + 1), (byte) 100);
+            if(field.GetShots()[(int)(socket.y + 1)][(int)(socket.x + 1)] != 2 )
+                field.setShot((int) (socket.x + 1), (int) (socket.y + 1), (byte) 100);
         }
-        else if(tmp[2][2] != -100)
-            field.setValue((int)(socket.x + 1),(int)(socket.y + 1), (byte) 3);
+        else if(tmp[2][2] != -100 && field.GetShots()[(int)(socket.y + 1)][(int)(socket.x + 1)] != 1)
+            field.setShot((int) (socket.x + 1), (int) (socket.y + 1), (byte) 3);
 
         currentReload = reload;
     }

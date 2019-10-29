@@ -70,7 +70,7 @@ public class PlanetController
 
             while (true)
             {
-                planetPos.SetValue((int) (Math.random() * (space.getWidth() - 2 * planetR)), rowHeight * i);
+                planetPos.SetValue((int) (Math.random() * (space.getWidth() - planetR)), rowHeight * i);
                 //Log.i("LOADING WHILE", "planetPos " + i + " : " + planetPos.x + " ; " + planetPos.y);
 
                 for (int j = 1; j <= attitude; j++)
@@ -133,10 +133,6 @@ public class PlanetController
 
     public void UpdatePlanets()
     {
-        /*for(Planet planet : planets)
-        {
-            planet.Update();
-        }*/
     }
 
     public void NextTurn()
@@ -158,6 +154,8 @@ public class PlanetController
     }
 
     public Planet getPlanet(int num){return planets.get(num);} //Новое
+
+    public int getSelectedPlanetNum(){return selectedPlanet;}
 
     public void doSelectedPlanetFalse(){selectedPlanet = -1;} //Новое
 }

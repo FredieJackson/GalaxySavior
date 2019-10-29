@@ -20,8 +20,6 @@
         </activity>
 
         <activity android:name=".Activities.BluetoothActivity" android:screenOrientation="landscape"/>
-        <activity android:name=".Battle.Activities.BattleOverActivity" android:screenOrientation="landscape"/>
-        <activity android:name=".Campaign.Activities.GameActivity" android:screenOrientation="landscape"/>
 
     </application>
 

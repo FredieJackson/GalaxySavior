@@ -10,8 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Handler;
-import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -22,7 +21,11 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import app.onedayofwar.Activities.BluetoothActivity;
+import app.onedayofwar.Activities.MainActivity;
+import app.onedayofwar.Battle.BattleElements.BattleEnemy;
+import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.R;
+import app.onedayofwar.System.GLView;
 
 /**
  * Created by Slava on 09.02.2015.
@@ -31,114 +34,84 @@ public class BluetoothController
 {
     private static final UUID APP_UUID = UUID.fromString("9f691062-ff6b-4f86-9f6f-8329174d2343");
     private static final String APP_NAME = "ODOWBT";
-    public int state;
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
+
 
     private BluetoothAdapter bluetoothAdapter;
     private ListView devicesListView;
     private ArrayList<BluetoothDevice> devices;
     private ArrayAdapter<String> btArrayAdapter;
     private int selectedDevice;
-    private BluetoothActivity activity;
-    private final Handler handler;
+    private BluetoothActivity btActivity;
+    private GLView glView;
 
     private ServerThread serverThread;
     private ClientThread clientThread;
     private ConnectedThread connectedThread;
     private BluetoothSocket enemySocket;
+    public static boolean isLoaded;
 
     public boolean isEnemyConnected;
 
-    public BluetoothController(final BluetoothActivity activity)
+    public BluetoothController(GLView glView)
     {
-        this.activity = activity;
+        this.glView = glView;
+
+        Log.i("BTC", "CONSTRUCTOR");
+        glView.getActivity().startActivityForResult(new Intent(glView.getActivity(), BluetoothActivity.class), 17);
+        BluetoothActivity.btController = this;
 
         isEnemyConnected = false;
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        isLoaded = false;
 
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-        activity.startActivity(discoverableIntent);
+        glView.getActivity().startActivity(discoverableIntent);
+    }
 
-        //region MSG Handler
-        handler = new Handler()
+    public void ShowAttackDialog()
+    {
+        if(!isLoaded)
+            return;
+        Log.i("BT", "RECEIVE ATTACK");
+        AlertDialog.Builder attackRequestDialog = new AlertDialog.Builder(btActivity);
+        attackRequestDialog.setTitle(enemySocket.getRemoteDevice().getName() + " вызывает вас на бой!");
+
+        attackRequestDialog.setPositiveButton("В атаку!", new DialogInterface.OnClickListener()
         {
             @Override
-            public void handleMessage(Message msg)
+            public void onClick(DialogInterface dialog, int which)
             {
-                switch (msg.what)
-                {
-                    case HandlerMSG.SHOW_ATTACK_REQUEST_DIALOG:
-                        AlertDialog.Builder attackRequestDialog = new AlertDialog.Builder(activity);
-                        attackRequestDialog.setTitle(enemySocket.getRemoteDevice().getName() + " вызывает вас на бой!");
-
-                        attackRequestDialog.setPositiveButton("В атаку!", new DialogInterface.OnClickListener()
-                        {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
-                                StopClientThread();
-                                StartConnectedThread(enemySocket);
-                                connectedThread.write(HandlerMSG.ACCEPT_FIGHT_REQUEST);
-                                isEnemyConnected = true;
-                                StartGame(false);
-                            }
-                        });
-                        attackRequestDialog.setNegativeButton("Отказать", new DialogInterface.OnClickListener()
-                        {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
-                                StopClientThread();
-                                StartConnectedThread(enemySocket);
-                                connectedThread.write(HandlerMSG.REJECT_FIGHT_REQUEST);
-                            }
-                        });
-                        attackRequestDialog.show();
-                        break;
-
-                    case HandlerMSG.SHOW_ARG1_TOAST:
-                        Toast.makeText(activity.getApplicationContext(), "" + msg.arg1, Toast.LENGTH_SHORT).show();
-                        break;
-
-                    case HandlerMSG.SHOW_TXT_TOAST:
-                        Toast.makeText(activity.getApplicationContext(), "" + msg.obj, Toast.LENGTH_SHORT).show();
-                        break;
-
-                    case HandlerMSG.SEND_DATA_TO_TARGET:
-                        break;
-
-                    case HandlerMSG.START_GAME:
-                        activity.StartGame(msg.arg1 == 1);
-                        break;
-
-                    case HandlerMSG.CONNECTION_LOST:
-                        Toast.makeText(activity.getApplicationContext(), "CONNECTION LOST", Toast.LENGTH_SHORT).show();
-                        Stop();
-                        activity.finish();
-                        break;
-
-                    case HandlerMSG.GAME_OVER:
-                        Stop();
-                        //activity.GameOver();
-                        break;
-                }
+                StopClientThread();
+                StartConnectedThread(enemySocket);
+                connectedThread.write(HandlerMSG.ACCEPT_FIGHT_REQUEST);
+                isEnemyConnected = true;
+                StartBattle(false);
             }
-        };
-        //endregion
+        });
+        attackRequestDialog.setNegativeButton("Отказать", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                StopClientThread();
+                StartConnectedThread(enemySocket);
+                connectedThread.write(HandlerMSG.REJECT_FIGHT_REQUEST);
+                StopConnectedThread();
+                StartServerThread();
+            }
+        });
+        attackRequestDialog.show();
+    }
 
-        devices = new ArrayList<>();
-        devicesListView = (ListView)activity.findViewById(R.id.listView);
-        btArrayAdapter = new ArrayAdapter<>(activity, android.R.layout.simple_list_item_single_choice);
-        activity.registerReceiver(myBluetoothReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-        Scan();
-        devicesListView.setAdapter(btArrayAdapter);
-        devicesListView.setOnItemClickListener(deviceClickListener);
-        selectedDevice = -1;
-        StartServerThread();
-        Toast.makeText(activity.getApplicationContext(), "Server Started", Toast.LENGTH_SHORT).show();
+    public void ConnectionLost()
+    {
+        //Toast.makeText(glView.getActivity().getApplicationContext(), "CONNECTION LOST", Toast.LENGTH_SHORT).show();
+        if(glView.getActivity().gameState == MainActivity.GameState.BRESULT)
+            return;
+        Log.i("BT", "CONNECTION LOST");
+        Stop();
+        glView.gotoMainMenu();
     }
 
     private void doDiscovery()
@@ -152,11 +125,38 @@ public class BluetoothController
         bluetoothAdapter.startDiscovery();
     }
 
-    public void SetActivity(Activity activity)
+    public void StartBattle(boolean isYourTurn)
     {
-        this.activity = (BluetoothActivity)activity;
+        BattlePlayer.fieldSize = 15;
+        BattlePlayer.unitCount = new byte[]{2, 1, 0, 1, 0, 0};
+        glView.getActivity().unregisterReceiver(myBluetoothReceiver);
+        btActivity.setResult(isYourTurn ? Activity.RESULT_FIRST_USER : Activity.RESULT_OK);
+        btActivity.finish();
+        btActivity = null;
     }
 
+    public void Load(BluetoothActivity activity)
+    {
+        btActivity = activity;
+        isLoaded = true;
+        devices = new ArrayList<>();
+        devicesListView = (ListView)activity.findViewById(R.id.listView);
+        btArrayAdapter = new ArrayAdapter<>(activity, android.R.layout.simple_list_item_single_choice);
+        glView.getActivity().registerReceiver(myBluetoothReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        Scan();
+        devicesListView.setAdapter(btArrayAdapter);
+        devicesListView.setOnItemClickListener(deviceClickListener);
+        selectedDevice = -1;
+        StartServerThread();
+        Toast.makeText(glView.getActivity().getApplicationContext(), "Server Started", Toast.LENGTH_SHORT).show();
+    }
+
+    public void Destroy()
+    {
+        isLoaded = false;
+        Stop();
+        glView.getActivity().unregisterReceiver(myBluetoothReceiver);
+    }
 
     public void Scan()
     {
@@ -174,7 +174,7 @@ public class BluetoothController
     //region Attack Request
     public void SendAttackRequest()
     {
-        if(connectedThread == null)
+        if(connectedThread == null && devices != null)
         {
             if (selectedDevice != -1)
             {
@@ -183,11 +183,11 @@ public class BluetoothController
         }
     }
 
-    public void RecieveAttackRequest(BluetoothSocket eSocket)
+    public void ReceiveAttackRequest(BluetoothSocket eSocket)
     {
         enemySocket = eSocket;
         StopServerThread();
-        handler.obtainMessage(HandlerMSG.SHOW_ATTACK_REQUEST_DIALOG).sendToTarget();
+        btActivity.ShowAttackDialog();
     }
     //endregion
 
@@ -196,21 +196,18 @@ public class BluetoothController
     {
         serverThread = new ServerThread(APP_NAME, APP_UUID, this);
         serverThread.start();
-        state = STATE_LISTEN;
     }
 
     public void StartClientThread(BluetoothDevice targetDevice)
     {
         clientThread = new ClientThread(targetDevice, APP_UUID, this);
         clientThread.start();
-        state = STATE_CONNECTING;
     }
 
     public void StartConnectedThread(BluetoothSocket targetSocket)
     {
         connectedThread = new ConnectedThread(targetSocket, this);
         connectedThread.start();
-        state = STATE_CONNECTED;
     }
     //endregion
 
@@ -219,7 +216,6 @@ public class BluetoothController
     {
         if (clientThread != null)
         {
-            //clientThread.CloseSocket();
             clientThread = null;
         }
     }
@@ -237,7 +233,6 @@ public class BluetoothController
     {
         if (connectedThread != null)
         {
-            //connectedThread.CloseSocket();
             connectedThread = null;
         }
     }
@@ -263,19 +258,13 @@ public class BluetoothController
     }
     //endregion
 
-    public void Destroy()
-    {
-        Stop();
-        activity.unregisterReceiver(myBluetoothReceiver);
-    }
-
     //region Listeners
     private final AdapterView.OnItemClickListener deviceClickListener = new AdapterView.OnItemClickListener()
     {
         @Override
         public void onItemClick(AdapterView<?> parent, View itemClicked, int position, long id)
         {
-            Toast.makeText(activity.getApplicationContext(), devices.get(position).getName() + "\n" + devices.get(position).getAddress(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(btActivity.getApplicationContext(), devices.get(position).getName() + "\n" + devices.get(position).getAddress(), Toast.LENGTH_SHORT).show();
             selectedDevice = position;
         }
     };
@@ -304,30 +293,9 @@ public class BluetoothController
     };
     //endregion
 
-
-    public void StartGame(boolean isYourTurn)
-    {
-        handler.obtainMessage(HandlerMSG.START_GAME, isYourTurn ? 1 : 0, 0).sendToTarget();
-    }
-
     public void GameOver()
     {
-        handler.obtainMessage(HandlerMSG.GAME_OVER).sendToTarget();
-    }
-
-    public void ShowToast(int arg)
-    {
-        handler.obtainMessage(HandlerMSG.SHOW_ARG1_TOAST, arg, 0).sendToTarget();
-    }
-
-    public void ShowToast(String txt)
-    {
-        handler.obtainMessage(HandlerMSG.SHOW_TXT_TOAST, txt).sendToTarget();
-    }
-
-    public void ConnectionLost()
-    {
-        handler.obtainMessage(HandlerMSG.CONNECTION_LOST).sendToTarget();
+        BattleEnemy.isLose = true;
     }
 
     public void SendData(String data)

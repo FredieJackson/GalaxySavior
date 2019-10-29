@@ -5,7 +5,7 @@ import android.util.Log;
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
 import app.onedayofwar.Battle.BluetoothConnection.HandlerMSG;
 import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
-import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Battle.Screens.BattleView;
 import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.Vector2;
@@ -63,7 +63,7 @@ public class BluetoothBattle extends Battle
         Vector2 tmp = new Vector2(eField.GetLocalSocketCoord(eField.selectedSocket));
 
         Log.i("SELECTED_SOCKET", "x: " + tmp.x + " y: " + tmp.y);
-        battleView.btController.SendData(HandlerMSG.GLARE_MSG + '|' + tmp.x + '|' + tmp.y);
+        battleView.btController.SendData(HandlerMSG.GLARE_MSG + '|' + (int)tmp.x + '|' + (int)tmp.y);
         return true;
     }
 
@@ -82,7 +82,7 @@ public class BluetoothBattle extends Battle
         {
             for(int j = 0; j < 3; j++)
             {
-                tmp += "|"+field.getSquare()[i][j];
+                tmp += "|" + field.getSquare()[i][j];
             }
         }
         battleView.btController.SendData(tmp);
@@ -124,7 +124,8 @@ public class BluetoothBattle extends Battle
         field.explodeAnimation.Start();
         bullet.Reload();
         preShoot = field.GetSelectedSocketInfo();
-        field.setValue((int) field.GetLocalSocketCoord(BattleEnemy.target).x, (int) field.GetLocalSocketCoord(BattleEnemy.target).y, (byte) preShoot);
+        Vector2 localCoord = field.GetLocalSocketCoord(BattleEnemy.target);
+        field.setShot((int) localCoord.x, (int) localCoord.y, (byte) preShoot);
         BattleEnemy.target.SetFalse();
         battleView.AttackPrepare();
         state = BattleState.AttackPrepare;
@@ -150,7 +151,7 @@ public class BluetoothBattle extends Battle
 
         Log.i("SELECTED_SOCKET", "x: " + tmp.x + " y: " + tmp.y);
 
-        battleView.btController.SendData(HandlerMSG.ATTACK + '|' + tmp.x + '|' + tmp.y + '|' + army.get(selectedUnitZone).GetPower() + '|' + 1);
+        battleView.btController.SendData(HandlerMSG.ATTACK + '|' + (int)tmp.x + '|' + (int)tmp.y + '|' + army.get(selectedUnitZone).GetPower() + '|' + 1);
         eField.GetFieldInfo()[(int)tmp.y][(int)tmp.x] = 0;
         state = BattleState.Shoot;
         return true;
@@ -161,6 +162,7 @@ public class BluetoothBattle extends Battle
     {
         if(BattleEnemy.attackResult != -1)
         {
+            Log.i("PLAYER SHOOT", "ATK RSL " + BattleEnemy.attackResult);
             army.get(selectedUnitZone).Reload();
             army.get(selectedUnitZone).Deselect();
             if(BattleEnemy.attackResult == 3)
@@ -195,6 +197,7 @@ public class BluetoothBattle extends Battle
 
         BattleEnemy.target.SetValue(field.GetGlobalSocketCoord(BattleEnemy.target));
         field.selectedSocket.SetValue(BattleEnemy.target);
+        SendEnemyResult();
         isResultSend = true;
         return true;
     }
@@ -222,7 +225,7 @@ public class BluetoothBattle extends Battle
                     for (int i = 0; i < army.get(target).GetForm().length; i++)
                     {
                         tmp.SetValue(field.GetLocalSocketCoord(army.get(target).GetForm()[i]));
-                        resultData += "" + tmp.x + '.' + tmp.y + '.';
+                        resultData += "" + (int)tmp.x + '.' + (int)tmp.y + '.';
                     }
                     resultData = resultData.substring(0, resultData.length() - 1);
                 }
@@ -307,6 +310,7 @@ public class BluetoothBattle extends Battle
             state = BattleState.Lose;
             battleView.btController.SendData(HandlerMSG.LOSE);
             GameOver();
+            return;
         }
         else if(!isGood)
         {

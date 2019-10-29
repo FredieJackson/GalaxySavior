@@ -1,6 +1,7 @@
-package app.onedayofwar.Campaign.System;
+package app.onedayofwar.Campaign.Screens;
 
 import android.graphics.Paint;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import app.onedayofwar.Activities.MainActivity;
@@ -18,11 +19,11 @@ public class GameView implements ScreenView
 {
     private Space space;
 
-    private Vector2 touchPos;
-
     private GLView glView;
     public Paint paint;
     private int turns;
+    public Vector2 currentCamera;
+
 
     public String info = "";
 
@@ -38,6 +39,7 @@ public class GameView implements ScreenView
 
         paint = new Paint();
         paint.setARGB(255, 250, 240, 20);
+        currentCamera = new Vector2();
     }
 
     public void OnTouch(MotionEvent event)
@@ -51,6 +53,8 @@ public class GameView implements ScreenView
     public void Resume()
     {
         glView.getActivity().gameState = MainActivity.GameState.CAMPAIGN;
+        glView.moveCamera(currentCamera.x, currentCamera.y);
+        Log.i("CAMERA", ""+currentCamera.x+"|"+currentCamera.y);
     }
 
 

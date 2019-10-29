@@ -55,10 +55,9 @@ public class ConnectedThread extends Thread
     {
         Log.i("CONNECTED", "START");
         byte[] buffer = new byte[1024];
-        int bytes = -1;
+        int bytes;
 
         //btController.ShowToast("CONNECT TO" + socket.getRemoteDevice().getName());
-        // Keep listening to the InputStream while connected
         while (true)
         {
             try
@@ -71,9 +70,9 @@ public class ConnectedThread extends Thread
                 {
                     if (recievedData.equals(HandlerMSG.ACCEPT_FIGHT_REQUEST))
                     {
-                        btController.ShowToast("CONNECTED TO " + socket.getRemoteDevice().getName());
+                        //btController.ShowToast("CONNECTED TO " + socket.getRemoteDevice().getName());
                         btController.isEnemyConnected = true;
-                        btController.StartGame(true);
+                        btController.StartBattle(true);
                     }
                     else
                     {
@@ -95,10 +94,6 @@ public class ConnectedThread extends Thread
                     GetPVOResult();
                     GetReloadInfo();
                 }
-                //btController.ShowToast(bytes);
-                // Read from the InputStream
-                // Send the obtained bytes to the UI Activity
-                // mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
             }
             catch (IOException e)
             {

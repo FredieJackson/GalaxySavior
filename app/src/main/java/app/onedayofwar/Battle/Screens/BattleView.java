@@ -1,7 +1,9 @@
-package app.onedayofwar.Battle.System;
+package app.onedayofwar.Battle.Screens;
 
 import android.graphics.Color;
+import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import java.util.ArrayDeque;
@@ -93,6 +95,7 @@ public class BattleView implements ScreenView
         bgMatrix = new float[16];
         Matrix.setIdentityM(bgMatrix, 0);
         Matrix.translateM(bgMatrix, 0, screenWidth/2, screenHeight/2, 0);
+        Log.i("BATTLE", "" + isYourTurn);
     }
     //endregion
 
@@ -102,13 +105,9 @@ public class BattleView implements ScreenView
         glView.getActivity().gameState = MainActivity.GameState.BATTLE;
     }
 
-    public void SetPlanet(Planet planet)
-    {
-        this.planet = planet;
-    }
-
     public void Initialize(Graphics graphics)
     {
+        Log.i("BATTLE", "INITIALIZE");
         background = new Sprite(Assets.background);
         background.setPosition(screenWidth/2 ,screenHeight /2);
         background.Scale((float)Assets.bgWidthCoeff, (float)Assets.bgHeightCoeff);
@@ -138,11 +137,13 @@ public class BattleView implements ScreenView
                 battle = new BluetoothBattle(this);
                 break;
         }
+        battle.isYourTurn = isYourTurn;
+
         pvo = false;
         glare = false;
         reloadBonus = false;
         pvoStart = false;
-        bonusInfoPos = new Vector2(0,0);
+        bonusInfoPos = new Vector2();
         textBonuses = "";
         bonusPanel.Move();
         infoBonusPanel.Move();
@@ -584,6 +585,7 @@ public class BattleView implements ScreenView
         if (battle.state == BattleState.Attack || battle.state == BattleState.Shoot)
         {
             //Assets.monitor.Draw(graphics);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         }
         else
         {

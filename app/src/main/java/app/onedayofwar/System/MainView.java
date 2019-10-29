@@ -1,9 +1,9 @@
 package app.onedayofwar.System;
 
-import android.content.Intent;
+import android.opengl.GLES20;
+import android.util.Log;
 import android.view.MotionEvent;
 
-import app.onedayofwar.Activities.BluetoothActivity;
 import app.onedayofwar.Activities.MainActivity;
 import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.Mods.SingleBattle;
@@ -27,10 +27,13 @@ public class MainView implements ScreenView
     Button quickBattle;
     Button back;
 
+    public static byte startBTBattle;
+
     public MainView(GLView glView)
     {
         this.glView = glView;
         touchPos = new Vector2();
+        startBTBattle = 0;
     }
 
     @Override
@@ -69,11 +72,17 @@ public class MainView implements ScreenView
     @Override
     public void Update(float eTime)
     {
+        if(startBTBattle > 0)
+        {
+            glView.StartBattle(null, 'b', startBTBattle == 1);
+            startBTBattle = 0;
+        }
     }
 
     @Override
     public void Draw(Graphics graphics)
     {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         ButtonsDraw(graphics);
     }
 
@@ -102,6 +111,7 @@ public class MainView implements ScreenView
     public void Resume()
     {
         glView.getActivity().gameState = MainActivity.GameState.MENU;
+        touchPos.SetZero();
     }
 
     /**
@@ -133,9 +143,8 @@ public class MainView implements ScreenView
         }
         else if(bluetoothGame.IsClicked())
         {
-            BattlePlayer.unitCount = new byte[] {1, 1, 1, 1, 1, 1};
-            BattlePlayer.fieldSize = 15;
-            glView.getActivity().startActivityForResult(new Intent(glView.getActivity(), BluetoothActivity.class), 1000);
+            glView.getActivity().CheckBT();
+            Log.i("MV", "BT CLICK");
         }
         else if(campaing.IsClicked())
         {

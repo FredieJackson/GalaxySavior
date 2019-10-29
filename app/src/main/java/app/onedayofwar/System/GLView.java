@@ -1,12 +1,12 @@
 package app.onedayofwar.System;
 
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 
-import app.onedayofwar.Activities.BluetoothActivity;
 import app.onedayofwar.Activities.MainActivity;
-import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Battle.Screens.BattleView;
 import app.onedayofwar.Campaign.Space.Planet;
-import app.onedayofwar.Campaign.System.GameView;
+import app.onedayofwar.Campaign.Screens.GameView;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.GLRenderer;
 import app.onedayofwar.Graphics.Graphics;
@@ -169,9 +169,9 @@ public class GLView extends GLSurfaceView
         BattleView battleView = new BattleView(this, planet, type, isYourTurn);
         if(type == 'b')
         {
-            BluetoothActivity.btController.SetActivity(activity);
-            battleView.btController = BluetoothActivity.btController;
+            battleView.btController = activity.getBtController();
         }
+        Log.i("BT", "Start battle");
         changeScreen(battleView);
         activity.gameState = MainActivity.GameState.BATTLE;
     }

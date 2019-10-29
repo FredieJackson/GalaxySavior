@@ -2,6 +2,7 @@ package app.onedayofwar.Battle.Mods;
 
 
 import android.graphics.RectF;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
 import app.onedayofwar.Battle.Bonus.GlareBonus;
 import app.onedayofwar.Battle.Bonus.PVO;
 import app.onedayofwar.Battle.Bonus.ReloadBonus;
-import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Battle.Screens.BattleView;
 import app.onedayofwar.Battle.Units.Bullet;
 import app.onedayofwar.Battle.Units.Ground.Engineer;
 import app.onedayofwar.Battle.Units.Ground.IFV;
@@ -95,6 +96,7 @@ public abstract class Battle
         BattleEnemy.target = new Vector2();
         BattleEnemy.target.SetFalse();
         BattleEnemy.weaponType = 0;
+        BattleEnemy.isLose = false;
         BattleEnemy.damage = 0;
         BattleEnemy.attackResult = -1;
         ForBonusEnemy.glareArr = new int[3][3];
@@ -224,6 +226,13 @@ public abstract class Battle
     //region Update
     public void Update(float eTime)
     {
+        if(BattleEnemy.isLose && battleView.btController != null)
+        {
+            state = BattleState.Win;
+            GameOver();
+            return;
+        }
+
         if(state != BattleState.Installation)
         {
             field.UpdateAnimation(eTime);
@@ -269,15 +278,18 @@ public abstract class Battle
             {
                 if(PrepareEnemyShoot())
                 {
-                    if(!BattleEnemy.target.IsFalse()) {
-                        switch (bullet.state) {
+                    if(!BattleEnemy.target.IsFalse())
+                    {
+                        switch (bullet.state)
+                        {
                             case LAUNCH:
                                 bullet.Launch(BattleEnemy.target.x, BattleEnemy.target.y, BattleEnemy.weaponType);
                                 break;
                             case FLY:
                                 if (!battleView.pvoStart)
                                     bullet.Update(eTime);
-                                else {
+                                else
+                                {
                                     if (ForBonusEnemy.pvoSend)
                                         PVOSendResult();
                                     else if (ForBonusEnemy.pvoGet)
@@ -291,6 +303,8 @@ public abstract class Battle
                                 bullet.Reload();
                                 BattleEnemy.target.SetFalse();
                                 EnemyShoot();
+
+                                Log.i("BATTLE", "ENEMY SHOOT");
                                 battleView.AttackPrepare();
                                 state = BattleState.AttackPrepare;
                                 isEnemyShotPrepeared = false;

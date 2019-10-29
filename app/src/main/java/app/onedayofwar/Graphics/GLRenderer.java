@@ -1,18 +1,15 @@
 package app.onedayofwar.Graphics;
 
-import android.content.res.Resources;
-import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Stack;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -32,15 +29,14 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
     private long sleepTime;
     private float eTime = 0.016f;
 
-
     final float[] vpMatrix = new float[16];
     final float[] projectionMatrix = new float[16];
+
     private final float[] viewMatrix = new float[16];
 
     private ArrayDeque<MotionEvent> motionEvents;
 
     private ArrayDeque<ScreenView> screenHistory;
-
 
     public GLRenderer(GLView glView)
     {
@@ -116,6 +112,7 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
     {
         if(screenView != null)
             screenHistory.add(screenView);
+        motionEvents.clear();
         viewMatrix[12] = 0;
         viewMatrix[13] = 0;
         screenView = screen;
@@ -124,6 +121,8 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
 
     public void GoBack()
     {
+        if(screenHistory.isEmpty())
+            return;
         viewMatrix[12] = 0;
         viewMatrix[13] = 0;
         screenView = screenHistory.pollLast();
@@ -132,6 +131,8 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
 
     public void GoMenu()
     {
+        if(screenHistory.isEmpty())
+            return;
         viewMatrix[12] = 0;
         viewMatrix[13] = 0;
         screenView = screenHistory.pollFirst();

@@ -103,10 +103,10 @@ public class Field
         }
     }
 
-    public void setValue(int x, int y, byte value)
+    public void setShot(int x, int y, byte value)
     {
-        if(x>0 && y>0 && x<size && y<size)
-            shots[y][x] =  value;
+        if(x >= 0 && y >= 0 && x < size && y < size)
+            shots[y][x] = value;
     }
 
     public int getHeight()

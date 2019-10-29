@@ -1,6 +1,7 @@
-package app.onedayofwar.Battle.System;
+package app.onedayofwar.Battle.Screens;
 
 import android.graphics.Color;
+import android.opengl.GLES20;
 import android.view.MotionEvent;
 
 import app.onedayofwar.Battle.Mods.Battle;
@@ -42,6 +43,7 @@ public class GameOverView implements ScreenView
     @Override
     public void Draw(Graphics graphics)
     {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         graphics.DrawText("YOU " + (isVictory ? "WIN!" : "LOSE!"), Assets.arialFont, glView.getScreenWidth()/2, glView.getScreenHeight()/2, 0, Color.GREEN, 72);
         graphics.DrawText("Reward: " + reward, Assets.arialFont, glView.getScreenWidth()/2, glView.getScreenHeight()/2 + 80, 0, Color.GREEN, 72);
     }
@@ -58,6 +60,7 @@ public class GameOverView implements ScreenView
             }
             else
             {
+                glView.getActivity().ResetBTController();
                 glView.gotoMainMenu();
             }
         }

@@ -122,7 +122,7 @@ public class Graphics
         sprite.Draw(mvpMatrix);
     }
 
-    public void DrawText(String text, TextFont font, float x, float y, float rightBorder, int color, int size)
+    public void DrawText(String text, TextFont font, float x, float y, float rightBorder, int color, float size)
     {
         font.DrawText(text, this, x, y, rightBorder, color, size);
     }

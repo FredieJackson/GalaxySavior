@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
 import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
-import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Battle.Screens.BattleView;
 import app.onedayofwar.Battle.Units.Ground.Engineer;
 import app.onedayofwar.Battle.Units.Ground.IFV;
 import app.onedayofwar.Battle.Units.Ground.Robot;
@@ -90,7 +90,7 @@ public class SingleBattle extends Battle
         field.explodeAnimation.Start();
         bullet.Reload();
         preShoot = field.GetSelectedSocketInfo();
-        field.setValue((int) field.GetLocalSocketCoord(BattleEnemy.target).x, (int) field.GetLocalSocketCoord(BattleEnemy.target).y, (byte) preShoot);
+        field.setShot((int) field.GetLocalSocketCoord(BattleEnemy.target).x, (int) field.GetLocalSocketCoord(BattleEnemy.target).y, (byte) preShoot);
         BattleEnemy.target.SetFalse();
         battleView.AttackPrepare();
         state = BattleState.AttackPrepare;

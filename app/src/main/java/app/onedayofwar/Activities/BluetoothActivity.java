@@ -1,58 +1,43 @@
 package app.onedayofwar.Activities;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.DisplayMetrics;
-import android.view.Display;
+import android.os.Message;
 import android.view.View;
-import android.widget.Button;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
-import app.onedayofwar.Battle.Mods.SingleBattle;
-import app.onedayofwar.Battle.System.BattleView;
-import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Battle.BluetoothConnection.HandlerMSG;
 import app.onedayofwar.R;
 
 public class BluetoothActivity extends Activity
 {
-
     public static BluetoothController btController;
-    BluetoothAdapter btAdapter;
-    private boolean isBluetoothOff;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.bluetooth);
-        isBluetoothOff = true;
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(btAdapter == null)
+        btController.Load(this);
+        handler = new Handler()
         {
-            Toast.makeText(this, "ERROR: BLUETOOTH UNSUPPORTED", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-        if (btAdapter.isEnabled())
-        {
-            Toast.makeText(this, "BLUETOOTH IS ON", Toast.LENGTH_LONG).show();
-        }
-        else
-        {
-            Toast.makeText(this, "BLUETOOTH IS OFF", Toast.LENGTH_LONG).show();
-            setContentView(R.layout.loading);
-            isBluetoothOff = true;
-            startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 1);
-        }
+            @Override
+            public void handleMessage(Message msg)
+            {
+                super.handleMessage(msg);
+                switch (msg.what)
+                {
+                    case HandlerMSG.SHOW_ATTACK_REQUEST_DIALOG:
+                        btController.ShowAttackDialog();
+                        break;
+                }
+            }
+        };
     }
 
     public void scanBtnClick(View view)
@@ -65,38 +50,16 @@ public class BluetoothActivity extends Activity
         btController.SendAttackRequest();
     }
 
-    @Override
-    protected void onDestroy()
+    public void ShowAttackDialog()
     {
-        super.onDestroy();
-        Toast.makeText(getApplicationContext(), "OnDestroy", Toast.LENGTH_SHORT).show();
-        if(!isBluetoothOff)
-            btController.Destroy();
+        handler.obtainMessage(HandlerMSG.SHOW_ATTACK_REQUEST_DIALOG).sendToTarget();
     }
 
     @Override
-    protected void onResume()
+    public void onBackPressed()
     {
-        super.onResume();
-        if(isBluetoothOff && btAdapter.isEnabled())
-            isBluetoothOff = false;
-    }
-
-    public void StartGame(boolean isYourTurn)
-    {
-        setResult(isYourTurn ? RESULT_FIRST_USER : RESULT_OK);
-        btController.CancelScan();
+        btController.Destroy();
         finish();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(btAdapter.isEnabled())
-            btController = new BluetoothController(this);
-        else
-            finish();
     }
 }
 

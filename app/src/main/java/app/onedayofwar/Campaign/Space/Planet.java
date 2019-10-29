@@ -2,8 +2,7 @@ package app.onedayofwar.Campaign.Space;
 
 import android.graphics.Color;
 import android.graphics.RectF;
-import android.opengl.Matrix;
-import android.widget.Switch;
+import android.util.Log;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -42,19 +41,20 @@ public class Planet
         this.buildings = buildings.clone();
         this.size = size;
         isPlanetConquered = false;
-        buildingUpgrade = new Vector2();
-        buildingUpgrade.SetFalse();
         planet = new RectF();
         touch = new RectF();
+        buildingUpgrade = new Vector2();
+        buildingUpgrade.SetFalse();
     }
 
     public Planet()
     {
         isPlanetConquered = false;
-        buildingUpgrade = new Vector2();
-        buildingUpgrade.SetFalse();
         planet = new RectF();
         touch = new RectF();
+        buildingUpgrade = new Vector2();
+        buildingUpgrade.SetFalse();
+        Log.i("PLANET", getGroundGuards().toString());
     }
 
     public void loadToMap(Texture texture, Vector2 position)
@@ -89,17 +89,11 @@ public class Planet
         return touch.intersect(planet);
     }
 
-    //int motionEvents = 0;
-
     public void Draw(Graphics g)
     {
-        if(!isPlanetConquered)
-        {
-            g.DrawSprite(image);
-        }
-        g.DrawRect(touch.centerX(), touch.centerY(), 4, 4, Color.RED, false);
-
-        //motionEvents++;
+        g.DrawSprite(image);
+        if(isPlanetConquered)
+            g.DrawText("+", Assets.arialFont, getMatrix()[12], getMatrix()[13], 0, buildingUpgrade.IsFalse() ? Color.YELLOW : Color.RED , 72);
     }
 
     public void Update()
@@ -135,11 +129,21 @@ public class Planet
 
     public void NextTurn()
     {
-        credits += buildings[1] * 20;
-        oil += buildings[1] * 40;
-        nanoSteel += buildings[1] * 30;
-
-
+        if(!buildingUpgrade.IsFalse())
+        {
+            buildingUpgrade.y--;
+            if(buildingUpgrade.y == 0)
+            {
+                buildings[(int)buildingUpgrade.x]++;
+                buildingUpgrade.SetFalse();
+            }
+        }
+        else
+        {
+            credits += buildings[1] * 20;
+            oil += buildings[1] * 40;
+            nanoSteel += buildings[1] * 30;
+        }
     }
 
     public boolean IsConquered()
@@ -158,7 +162,7 @@ public class Planet
                 {
                     credits -= buildings[0] * 500;
                     nanoSteel -= buildings[0] * 650;
-                    buildingUpgrade.SetValue(0, buildings[0] * 10);
+                    buildingUpgrade.SetValue(0, buildings[0] * 10 + (buildings[0] == 0 ? 5 : 0));
                     upgradeName = "MARKET";
                 }
                 break;
@@ -167,7 +171,7 @@ public class Planet
                 {
                     credits -= buildings[1] * 500;
                     nanoSteel -= buildings[1] * 650;
-                    buildingUpgrade.SetValue(1, buildings[1] * 10);
+                    buildingUpgrade.SetValue(1, buildings[1] * 10 + (buildings[1] == 0 ? 5 : 0));
                     upgradeName = "OIL DRILL";
                 }
                 break;
@@ -176,7 +180,7 @@ public class Planet
                 {
                     credits -= buildings[2] * 500;
                     nanoSteel -= buildings[2] * 650;
-                    buildingUpgrade.SetValue(2, buildings[2] * 10);
+                    buildingUpgrade.SetValue(2, buildings[2] * 10 + (buildings[2] == 0 ? 5 : 0));
                     upgradeName = "NANOSTEEL MINES";
                 }
                 break;
@@ -185,7 +189,7 @@ public class Planet
                 {
                     credits -= buildings[3] * 500;
                     nanoSteel -= buildings[3] * 650;
-                    buildingUpgrade.SetValue(3, buildings[3] * 10);
+                    buildingUpgrade.SetValue(3, buildings[3] * 10 + (buildings[3] == 0 ? 5 : 0));
                     upgradeName = "FACTORY";
                 }
                 break;
@@ -194,10 +198,15 @@ public class Planet
                 {
                     credits -= buildings[4] * 500;
                     nanoSteel -= buildings[4] * 650;
-                    buildingUpgrade.SetValue(4, buildings[4] * 10);
+                    buildingUpgrade.SetValue(4, buildings[4] * 10 + (buildings[4] == 0 ? 5 : 0));
                     upgradeName = "WORKSHOP";
                 }
                 break;
         }
+    }
+
+    public void CreateUnit(int unit)
+    {
+
     }
 }

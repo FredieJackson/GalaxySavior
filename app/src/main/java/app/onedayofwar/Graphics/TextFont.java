@@ -20,7 +20,7 @@ public class TextFont
         parser.LoadFont(fileName, glyphs);
     }
 
-    void DrawText(String text, Graphics graphics, float x, float y, float rightBorder, int color, int size)
+    void DrawText(String text, Graphics graphics, float x, float y, float rightBorder, int color, float size)
     {
         sprite.ResetMatrix();
         sprite.setPosition(x, y + size/2);
