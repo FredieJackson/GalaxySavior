@@ -1,0 +1,31 @@
+uniform mat4 uMVMatrix;
+uniform mat4 uMVPMatrix;
+
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+mat3 TransposeInverse(mat4 M)
+{
+    mat3 NormalMatrix;
+    NormalMatrix[0][0] = (M[1][1] * M[2][2] - M[1][2] * M[2][1]);
+    NormalMatrix[1][0] = (M[0][2] * M[2][1] - M[0][1] * M[2][2]);
+    NormalMatrix[2][0] = (M[0][1] * M[1][2] - M[0][2] * M[1][1]);
+    NormalMatrix[0][1] = (M[1][2] * M[2][0] - M[1][0] * M[2][2]);
+    NormalMatrix[1][1] = (M[0][0] * M[2][2] - M[0][2] * M[2][0]);
+    NormalMatrix[2][1] = (M[0][2] * M[1][0] - M[0][0] * M[1][2]);
+    NormalMatrix[0][2] = (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+    NormalMatrix[1][2] = (M[0][1] * M[2][0] - M[0][0] * M[2][1]);
+    NormalMatrix[2][2] = (M[0][0] * M[1][1] - M[0][1] * M[1][0]);
+    return NormalMatrix;
+}
+
+void main()
+{
+    mat3 normalMatrix = TransposeInverse(uMVMatrix);
+    vNormal = normalize(normalMatrix * aNormal);
+    vPosition = vec3(uMVMatrix * vec4(aPosition, 1.0));
+    gl_Position = uMVPMatrix * vec4(aPosition, 1.0);
+}

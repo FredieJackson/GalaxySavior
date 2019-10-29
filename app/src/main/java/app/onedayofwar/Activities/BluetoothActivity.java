@@ -1,21 +1,16 @@
 package app.onedayofwar.Activities;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
-import android.widget.Toast;
 
-import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
-import app.onedayofwar.Battle.BluetoothConnection.HandlerMSG;
 import app.onedayofwar.R;
 
 public class BluetoothActivity extends Activity
 {
-    public static BluetoothController btController;
+    /*public static BluetoothController btController;
     private Handler handler;
 
     @Override
@@ -60,6 +55,6 @@ public class BluetoothActivity extends Activity
     {
         btController.Destroy();
         finish();
-    }
+    }*/
 }
 

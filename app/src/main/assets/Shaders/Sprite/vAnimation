@@ -1,0 +1,13 @@
+uniform mat4 uMVPMatrix;
+uniform mat4 uTexMat;
+
+attribute vec2 aTexCoord;
+attribute vec4 aPosition;
+
+varying vec2 vTexCoord;
+
+void main()
+{
+	vTexCoord = (uTexMat * vec4(aTexCoord, 0.0, 1.0)).xy;
+    gl_Position = uMVPMatrix * aPosition; 
+}

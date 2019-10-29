@@ -1,0 +1,20 @@
+precision mediump float;
+
+varying vec4 vColor;
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vTexCoord;
+
+uniform sampler2D uTexture;
+uniform sampler2D uATexture;
+uniform vec3 uLightPosition;
+
+void main()
+{
+    vec4 color = vec4(texture2D(uTexture, vTexCoord).rgb, 1.0);
+    vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
+    float distance = length(uLightPosition - vPosition);
+    vec3 lightVector = normalize(uLightPosition - vPosition);
+
+    gl_FragColor = vec4(0.2, 0.2, 0.2, 1.0) * color + color * 300.0 * lightColor * clamp(dot(vNormal, lightVector), 0.0, 1.0)/(3.14 * distance);
+}

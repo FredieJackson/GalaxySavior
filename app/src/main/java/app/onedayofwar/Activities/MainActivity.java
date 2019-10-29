@@ -2,30 +2,27 @@ package app.onedayofwar.Activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
-import android.widget.Toast;
 
-import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
-import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.System.GLView;
-import app.onedayofwar.System.MainView;
+import app.onedayofwar.GEngine.GLSurface;
+import app.onedayofwar.Game.Screens.MainScreen;
+import app.onedayofwar.Game.Screens.ScreenController;
 
 public class MainActivity extends Activity
 {
-    private GLView glView;
+    private GLSurface glSurface;
+    private ScreenController screenController;
 
     public enum GameState {BATTLE, BRESULT, MENU, CAMPAIGN}
     public GameState gameState;
 
-    private BluetoothAdapter btAdapter;
-    private BluetoothController btController;
+    //private BluetoothAdapter btAdapter;
+    //private BluetoothController btController;
 
 
     @Override
@@ -33,26 +30,24 @@ public class MainActivity extends Activity
     {
         super.onCreate(savedInstanceState);
         gameState = GameState.MENU;
-
         Display display = getWindowManager().getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
-        glView = new GLView(this, metrics.widthPixels, metrics.heightPixels);
-        setContentView(glView);
+        screenController = new ScreenController();
+        glSurface = new GLSurface(this, screenController);
+        setContentView(glSurface);
     }
-
-
 
     @Override
     public void onBackPressed()
     {
         if(gameState == GameState.BRESULT)
         {
-            if(btController != null)
+            /*if(btController != null)
             {
                 ResetBTController();
             }
-            glView.gotoMainMenu();
+            glView.gotoMainMenu();*/
             return;
         }
 
@@ -98,11 +93,11 @@ public class MainActivity extends Activity
                     finish();
                 else
                 {
-                    if(gameState == GameState.BATTLE && btController != null)
+                    /*if(gameState == GameState.BATTLE && btController != null)
                     {
                         ResetBTController();
                     }
-                    glView.gotoMainMenu();
+                    glView.gotoMainMenu();*/
                 }
             }
         });
@@ -122,24 +117,24 @@ public class MainActivity extends Activity
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == 100)
         {
-            if (btAdapter.isEnabled())
+           /* if (btAdapter.isEnabled())
             {
                 Log.i("BT", "BT SWITCHED ON");
                 LoadBTController();
-            }
+            }*/
         }
         if(requestCode == 17)
         {
             if(resultCode != RESULT_CANCELED)
             {
-                MainView.startBTBattle = resultCode == RESULT_FIRST_USER ? (byte)1 : (byte)2;
+                MainScreen.startBTBattle = resultCode == RESULT_FIRST_USER ? (byte)1 : (byte)2;
             }
         }
     }
 
     public void CheckBT()
     {
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        /*btAdapter = BluetoothAdapter.getDefaultAdapter();
         if(btAdapter == null)
         {
             Log.i("BT", "BT UNSUPPORTED");
@@ -154,10 +149,10 @@ public class MainActivity extends Activity
         {
             Log.i("BT", "BT OFF");
             startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 100);
-        }
+        }*/
     }
 
-    public BluetoothController getBtController()
+    /*public BluetoothController getBtController()
     {
         return btController;
     }
@@ -173,5 +168,5 @@ public class MainActivity extends Activity
             return;
         btController.Stop();
         btController = null;
-    }
+    }*/
 }
