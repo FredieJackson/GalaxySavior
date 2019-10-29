@@ -3,6 +3,7 @@ package app.onedayofwar.Activities;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -16,7 +17,7 @@ public class MainActivity extends Activity
 {
     private GLView glView;
 
-    public enum GameState {BATTLE, MENU, CAMPAIGN}
+    public enum GameState {BATTLE, BRESULT, MENU, CAMPAIGN}
     public GameState gameState;
 
 
@@ -40,7 +41,14 @@ public class MainActivity extends Activity
     @Override
     public void onBackPressed()
     {
+        if(gameState == GameState.BRESULT)
+        {
+            glView.gotoMainMenu();
+            return;
+        }
+
         AlertDialog.Builder quitDialog = new AlertDialog.Builder(this);
+
         String title;
         String positive;
         String negative;
@@ -88,5 +96,15 @@ public class MainActivity extends Activity
         });
 
         quitDialog.show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1000 && resultCode != RESULT_CANCELED)
+        {
+            glView.StartBattle(null, 'b', resultCode == RESULT_FIRST_USER);
+        }
     }
 }

@@ -1,34 +1,26 @@
 package app.onedayofwar.Battle.System;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
+import android.graphics.Color;
 import android.opengl.Matrix;
-import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.View.OnTouchListener;
 
 import java.util.ArrayDeque;
 
+import app.onedayofwar.Activities.BluetoothActivity;
 import app.onedayofwar.Activities.MainActivity;
-import app.onedayofwar.Battle.Activities.BattleOverActivity;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
+import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
 import app.onedayofwar.Battle.Mods.Battle;
 import app.onedayofwar.Battle.Mods.Battle.BattleState;
 import app.onedayofwar.Battle.Mods.BluetoothBattle;
 import app.onedayofwar.Battle.Mods.SingleBattle;
+import app.onedayofwar.Campaign.Space.Planet;
 import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.Graphics.GLRenderer;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.ScreenView;
 import app.onedayofwar.Graphics.Sprite;
-import app.onedayofwar.Graphics.TextFont;
 import app.onedayofwar.System.GLView;
 import app.onedayofwar.System.Vector2;
-import app.onedayofwar.System.XMLParser;
 import app.onedayofwar.UI.Button;
 import app.onedayofwar.UI.Panel;
 import app.onedayofwar.UI.Panel.Type;
@@ -44,11 +36,14 @@ public class BattleView implements ScreenView
 
 
     public Vector2 touchPos;
+    public Vector2 bonusInfoPos;
     private Battle battle;
 
     public Panel selectingPanel;
     public Panel gateUp;
     public Panel gateDown;
+    public Panel bonusPanel;
+    public Panel infoBonusPanel;
 
     //region Buttons Variables
     private Button cancelBtn;
@@ -57,24 +52,43 @@ public class BattleView implements ScreenView
     private Button installationFinishBtn;
     private Button shootBtn;
     private Button flagBtn;
+    private Button glareBtn;
+    private Button sugBonusBtn;
+    private Button pvoBtn;
+    private Button reloadBtn;
+    private Button cancelBonusBtn;
+    private Button infoBonusBtn;
     public boolean isButtonPressed;
     //endregion
 
+    //region Bonus boolean
+    private boolean glare;
+    private boolean pvo;
+    private boolean reloadBonus;
+    //endregion
+
     private Sprite background;
+    public boolean pvoStart;
+    private String textBonuses;
 
     private float[] bgMatrix;
     private ArrayDeque<MotionEvent> motionEvents;
 
     char typeOfGame;
+    private boolean isYourTurn;
+    public Planet planet;
     //endregion
 
     //region Constructor
-    public BattleView(GLView glView, char typeOfGame, boolean isYourTurn)
+    public BattleView(GLView glView, Planet planet, char typeOfGame, boolean isYourTurn)
     {
         this.glView = glView;
+        this.isYourTurn = isYourTurn;
+        this.typeOfGame = typeOfGame;
+        this.planet = planet;
         screenWidth = glView.getScreenWidth();
         screenHeight = glView.getScreenHeight();
-        this.typeOfGame = typeOfGame;
+        btController = BluetoothActivity.btController;
         motionEvents = new ArrayDeque<>();
         bgMatrix = new float[16];
         Matrix.setIdentityM(bgMatrix, 0);
@@ -88,9 +102,9 @@ public class BattleView implements ScreenView
         glView.getActivity().gameState = MainActivity.GameState.BATTLE;
     }
 
-    public void LoadBT(BluetoothController controller)
+    public void SetPlanet(Planet planet)
     {
-        btController = controller;
+        this.planet = planet;
     }
 
     public void Initialize(Graphics graphics)
@@ -103,6 +117,10 @@ public class BattleView implements ScreenView
 
         gateUp = new Panel(screenWidth/2, screenHeight/4, screenWidth, screenHeight/2, Type.UP);
         gateDown = new Panel(screenWidth/2, screenHeight - screenHeight/4, screenWidth, screenHeight/2, Type.DOWN);
+
+        bonusPanel = new Panel(7*screenWidth/8,screenHeight/2,screenWidth/4,screenHeight,Type.RIGHT);
+        infoBonusPanel = new Panel(screenWidth/2, screenHeight/8, screenWidth, screenHeight/4, Type.UP);
+
 
         Matrix.scaleM(bgMatrix, 0, (float)Assets.bgWidthCoeff, -(float)Assets.bgHeightCoeff, 1);
 
@@ -120,7 +138,14 @@ public class BattleView implements ScreenView
                 battle = new BluetoothBattle(this);
                 break;
         }
-
+        pvo = false;
+        glare = false;
+        reloadBonus = false;
+        pvoStart = false;
+        bonusInfoPos = new Vector2(0,0);
+        textBonuses = "";
+        bonusPanel.Move();
+        infoBonusPanel.Move();
         ButtonsInitialize();
         MoveGates();
     }
@@ -129,6 +154,9 @@ public class BattleView implements ScreenView
     //region Update
     public void Update(float eTime)
     {
+        if(ForBonusEnemy.pvoGet || ForBonusEnemy.pvoSend)
+            pvoStart = battle.pvo.doYourFuckingJob(touchPos, battle.bullet);
+
         if(battle.state == BattleState.Installation && !selectingPanel.isStop)
         {
             selectingPanel.Update(eTime);
@@ -141,6 +169,15 @@ public class BattleView implements ScreenView
         {
             gateUp.Update(eTime);
             gateDown.Update(eTime);
+        }
+        if(battle.state == BattleState.Attack)
+        {
+            bonusPanel.Update(eTime);
+            infoBonusPanel.Update(eTime);
+            bonusInfoPos.SetValue(0, infoBonusPanel.matrix[13] - screenHeight/8);
+            glareBtn.getMatrix()[12] = bonusPanel.matrix[12];
+            pvoBtn.getMatrix()[12] = bonusPanel.matrix[12];
+            reloadBtn.getMatrix()[12] = bonusPanel.matrix[12];
         }
     }
 
@@ -168,6 +205,20 @@ public class BattleView implements ScreenView
         flagBtn.Unlock();
         installBtn.Lock();
         installBtn.SetInvisible();
+        pvoBtn.Unlock();
+        pvoBtn.SetVisible();
+        glareBtn.Unlock();
+        glareBtn.SetVisible();
+        reloadBtn.Unlock();
+        reloadBtn.SetVisible();
+        installBtn.Lock();
+        installBtn.SetInvisible();
+        sugBonusBtn.Lock();
+        sugBonusBtn.SetInvisible();
+        cancelBonusBtn.Lock();
+        cancelBonusBtn.SetInvisible();
+        infoBonusBtn.Lock();
+        infoBonusBtn.SetInvisible();
     }
 
     public void DefendingPrepare()
@@ -178,6 +229,28 @@ public class BattleView implements ScreenView
         flagBtn.Lock();
         installBtn.Lock();
         installBtn.SetInvisible();
+        pvoBtn.Lock();
+        pvoBtn.SetInvisible();
+        glareBtn.Lock();
+        glareBtn.SetInvisible();
+        reloadBtn.Lock();
+        reloadBtn.SetInvisible();
+        installBtn.Lock();
+        installBtn.SetInvisible();
+    }
+
+    public void BonusPrepare()
+    {
+        sugBonusBtn.SetVisible();
+        sugBonusBtn.Unlock();
+        cancelBonusBtn.Unlock();
+        cancelBonusBtn.SetVisible();
+        infoBonusBtn.Unlock();
+        infoBonusBtn.SetVisible();
+        shootBtn.SetInvisible();
+        shootBtn.Lock();
+        flagBtn.Lock();
+        flagBtn.SetInvisible();
     }
 
     public void AttackPrepare()
@@ -282,6 +355,95 @@ public class BattleView implements ScreenView
         {
             battle.eField.SetFlag();
         }
+
+        else if(bonusPanel.IsCloseBtnPressed() && bonusPanel.isStop)
+        {
+            bonusPanel.Move();
+            isButtonPressed = true;
+        }
+
+        else if(glareBtn.IsClicked())
+        {
+            if(battle.glareBonus.IsReloaded())
+            {
+                BonusPrepare();
+                glare = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось " + battle.glareBonus.currentReload;
+            }
+        }
+        else if(pvoBtn.IsClicked())
+        {
+            if(battle.pvo.IsReloaded())
+            {
+                BonusPrepare();
+                pvo = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось " + battle.pvo.currentReload;
+            }
+        }
+        else if(reloadBtn.IsClicked())
+        {
+            if(battle.reloadBonus.IsReloaded())
+            {
+                BonusPrepare();
+                reloadBonus = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось "+battle.reloadBonus.currentReload;
+            }
+        }
+        else if(sugBonusBtn.IsClicked())
+        {
+            if(glare)
+            {
+                ForBonusEnemy.socket.SetValue(battle.eField.GetLocalSocketCoord(battle.eField.selectedSocket));
+                battle.PrepareToGlare();
+                glare = false;
+                ShootingPrepare();
+            }
+            else if(pvo)
+            {
+                battle.PVOInfoSend();
+                pvo = false;
+                ShootingPrepare();
+            }
+            else if(reloadBonus)
+            {
+                battle.SendReloadInfo();
+                reloadBonus = false;
+                ShootingPrepare();
+            }
+            if(infoBonusPanel.isClose)
+                infoBonusPanel.Move();
+        }
+        else if(cancelBonusBtn.IsClicked())
+        {
+            if(infoBonusPanel.isClose)
+                infoBonusPanel.Move();
+            ShootingPrepare();
+            pvo = false;
+            glare = false;
+            reloadBonus = false;
+        }
+        else if(infoBonusBtn.IsClicked())
+        {
+            infoBonusPanel.Move();
+            if(glare)
+                textBonuses = "Наш шпион на их территории, он расскажет вам о положении кораблей в квадрате 3*3.\nСтоимость бонуса " + battle.glareBonus.cost+"\nВремя перезрядки "+battle.glareBonus.reload;
+            else if(pvo)
+                textBonuses = "Инженера нашей каолиции разработали противо-воздушные ракеты. Просто проведите пальцем по ракете, которая в этом ходе будет лететь на вас, и она взорвется!\nСтоимость "+battle.pvo.cost+ "\nВремя перезарядки "+battle.pvo.reload;
+            else if(reloadBonus)
+                textBonuses = "Мы раскрутим им все гайки на колесах! Перезарядка всех кораблей будет увеличена на "+battle.reloadBonus.skill+"\nСтоимость "+battle.reloadBonus.cost+"\nВремя перезарядки "+battle.reloadBonus.reload;
+        }
     }
 
     /**
@@ -290,9 +452,16 @@ public class BattleView implements ScreenView
     private void ButtonsUpdate()
     {
         selectingPanel.UpdateCloseBtn(touchPos);
+        bonusPanel.UpdateCloseBtn(touchPos);
         installationFinishBtn.Update(touchPos);
         shootBtn.Update(touchPos);
         flagBtn.Update(touchPos);
+        glareBtn.Update(touchPos);
+        pvoBtn.Update(touchPos);
+        reloadBtn.Update(touchPos);
+        sugBonusBtn.Update(touchPos);
+        cancelBonusBtn.Update(touchPos);
+        infoBonusBtn.Update(touchPos);
 
         if(battle.state == BattleState.Installation)
         {
@@ -321,6 +490,13 @@ public class BattleView implements ScreenView
         selectingPanel.ResetCloseBtn();
         shootBtn.Reset();
         flagBtn.Reset();
+        bonusPanel.ResetCloseBtn();
+        glareBtn.Reset();
+        reloadBtn.Reset();
+        pvoBtn.Reset();
+        sugBonusBtn.Reset();
+        cancelBonusBtn.Reset();
+        infoBonusBtn.Reset();
     }
 
     /**
@@ -344,6 +520,12 @@ public class BattleView implements ScreenView
             installBtn.Draw(graphics);
             shootBtn.Draw(graphics);
             flagBtn.Draw(graphics);
+            glareBtn.Draw(graphics);
+            pvoBtn.Draw(graphics);
+            reloadBtn.Draw(graphics);
+            sugBonusBtn.Draw(graphics);
+            cancelBonusBtn.Draw(graphics);
+            infoBonusBtn.Draw(graphics);
         }
     }
 
@@ -369,6 +551,30 @@ public class BattleView implements ScreenView
         flagBtn.Scale(Assets.btnCoeff);
         flagBtn.SetInvisible();
         flagBtn.Lock();
+        sugBonusBtn = new Button(Assets.btnInstall, (int)(170 * Assets.monitorWidthCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), (int)(390 * Assets.monitorHeightCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), false);
+        sugBonusBtn.Lock();
+        sugBonusBtn.Scale(Assets.btnCoeff);
+        sugBonusBtn.SetInvisible();
+        reloadBtn = new Button(Assets.btnFinishInstallation, (int)(1000 * Assets.monitorWidthCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), (int)(450 * Assets.monitorHeightCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), false);
+        pvoBtn = new Button(Assets.btnFinishInstallation, (int)(1000 * Assets.monitorWidthCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), (int)(250 * Assets.monitorHeightCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), false);
+        glareBtn = new Button(Assets.btnFinishInstallation, (int)(1000 * Assets.monitorWidthCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), (int)(50 * Assets.monitorHeightCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), false);
+        cancelBonusBtn = new Button(Assets.btnCancel, (int)(170 * Assets.monitorWidthCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), (int)(170 * Assets.monitorHeightCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), false);
+        cancelBonusBtn.Lock();
+        cancelBonusBtn.SetInvisible();
+        infoBonusBtn = new Button(Assets.btnFlag, (int)(170 * Assets.monitorWidthCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), (int)(600 * Assets.monitorHeightCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), false);
+        infoBonusBtn.Lock();
+        infoBonusBtn.SetInvisible();
+        pvoBtn.Lock();
+        pvoBtn.SetInvisible();
+        glareBtn.Lock();
+        glareBtn.SetInvisible();
+        reloadBtn.Lock();
+        reloadBtn.SetInvisible();
+        cancelBonusBtn.Scale(Assets.btnCoeff);
+        glareBtn.Scale(Assets.btnCoeff);
+        pvoBtn.Scale(Assets.btnCoeff);
+        reloadBtn.Scale(Assets.btnCoeff);
+        infoBonusBtn.Scale(Assets.btnCoeff);
     }
     //endregion
 
@@ -386,7 +592,14 @@ public class BattleView implements ScreenView
 
         battle.DrawFields(graphics);
 
-        ButtonsDraw(graphics);
+        if(battle.state == BattleState.Attack || battle.state == BattleState.Shoot)
+        {
+            if (bonusPanel.isClose || !bonusPanel.isStop)
+                bonusPanel.Draw(graphics);
+            bonusPanel.DrawButton(graphics);
+        }
+
+            ButtonsDraw(graphics);
 
         if(battle.state != BattleState.Attack && battle.state != BattleState.Shoot)
             battle.DrawUnits(graphics);
@@ -405,22 +618,23 @@ public class BattleView implements ScreenView
             gateUp.Draw(graphics);
             gateDown.Draw(graphics);
         }
+
+        if(battle.state == BattleState.Attack)
+        {
+            if (infoBonusPanel.isClose || !infoBonusPanel.isStop)
+                infoBonusPanel.Draw(graphics);
+            graphics.DrawText(textBonuses, Assets.arialFont, bonusInfoPos.x, bonusInfoPos.y, screenWidth, Color.WHITE, 40);
+        }
     }
     //endregion
 
     //region Test
     public void GameOver(BattleState state, int reward)
     {
-        /*Intent intent = new Intent(activity, BattleOverActivity.class);
-        intent.putExtra("result", state == BattleState.Win);
-        intent.putExtra("reward", reward);
-        activity.startActivityForResult(intent, 2);*/
-    }
-
-    public void GameOver()
-    {
-        battle.state = BattleState.Win;
-        battle.GameOver();
+        if(planet != null && state == BattleState.Win)
+            planet.ConquerPlanet();
+        glView.changeScreen(new GameOverView(glView, state, reward, planet != null));
+        glView.getActivity().gameState = MainActivity.GameState.BRESULT;
     }
     //endregion
 }

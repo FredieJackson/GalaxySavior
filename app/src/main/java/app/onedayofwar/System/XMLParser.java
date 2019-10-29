@@ -94,7 +94,7 @@ public class XMLParser
         int i = 0;
         int oil = 0;
         int nanoSteel = 0;
-        int syncoCrystals = 0;
+        int credits = 0;
         byte size = 0;
         byte[] buildings = null;
         byte[] spaceGuards = null;
@@ -117,7 +117,7 @@ public class XMLParser
                         {
                             oil = Integer.parseInt(parser.getAttributeValue(0));
                             nanoSteel = Integer.parseInt(parser.getAttributeValue(1));
-                            syncoCrystals = Integer.parseInt(parser.getAttributeValue(2));
+                            credits = Integer.parseInt(parser.getAttributeValue(2));
                             //Log.i("RESOURCES" , "" + oil);
                             //Log.i("RESOURCES" , "" + nanoSteel);
                             //Log.i("RESOURCES" , "" + syncoCrystals);
@@ -152,7 +152,7 @@ public class XMLParser
                         else if (parser.getName().equals("planet"))
                         {
                             num++;
-                            planetController.AddPlanet(oil, nanoSteel, syncoCrystals, spaceGuards, groundGuards, buildings, size);
+                            planetController.AddPlanet(oil, nanoSteel, credits, spaceGuards, groundGuards, buildings, size);
                             //Log.i("NEWPLANET" , "CREATE");
                         }
                     break;

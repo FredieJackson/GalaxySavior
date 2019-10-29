@@ -9,20 +9,19 @@ import java.util.ArrayList;
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
 import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.BattleElements.Field;
+import app.onedayofwar.Battle.Bonus.Bonus;
+import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
+import app.onedayofwar.Battle.Bonus.GlareBonus;
+import app.onedayofwar.Battle.Bonus.PVO;
+import app.onedayofwar.Battle.Bonus.ReloadBonus;
 import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Battle.Units.Bullet;
 import app.onedayofwar.Battle.Units.Ground.Engineer;
 import app.onedayofwar.Battle.Units.Ground.IFV;
 import app.onedayofwar.Battle.Units.Ground.Robot;
 import app.onedayofwar.Battle.Units.Ground.SONDER;
 import app.onedayofwar.Battle.Units.Ground.Tank;
 import app.onedayofwar.Battle.Units.Ground.Turret;
-import app.onedayofwar.Battle.Units.Space.Akira;
-import app.onedayofwar.Battle.Units.Space.Battleship;
-import app.onedayofwar.Battle.Units.Space.Bioship;
-import app.onedayofwar.Battle.Units.Space.BirdOfPrey;
-import app.onedayofwar.Battle.Units.Bullet;
-import app.onedayofwar.Battle.Units.Space.Defaint;
-import app.onedayofwar.Battle.Units.Space.R2D2;
 import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -50,11 +49,18 @@ public abstract class Battle
     protected byte selectedUnitZone;
     //endregion
 
-
-    Bullet bullet;
+    public int preShoot;
+    public Bullet bullet;
     //endregion
 
     protected String testLocalView = "";
+
+    //region Bonuses
+    public Bonus glareBonus;
+    public Bonus pvo;
+    public Bonus reloadBonus;
+    public boolean isEnemyShotPrepeared;
+    //endregion
 
     //region Constructor
     protected Battle(BattleView battleView)
@@ -71,6 +77,15 @@ public abstract class Battle
     abstract public boolean PrepareEnemyShoot();
     abstract public void EnemyShoot();
     abstract public void InstallationFinish();
+    abstract public boolean PrepareToGlare();
+    abstract public boolean EnemyGlare();
+    abstract public void PlayerGlare();
+    abstract public void PVOInfoSend();
+    abstract public void PVOInfoGet();
+    abstract public void PVOSendResult();
+    abstract public void SendEnemyResult();
+    abstract public void GetReloadInfo();
+    abstract public void SendReloadInfo();
     //endregion
 
     //region Initialization
@@ -82,6 +97,14 @@ public abstract class Battle
         BattleEnemy.weaponType = 0;
         BattleEnemy.damage = 0;
         BattleEnemy.attackResult = -1;
+        ForBonusEnemy.glareArr = new int[3][3];
+        ForBonusEnemy.socket = new Vector2();
+        ForBonusEnemy.canITakeResult = false;
+        ForBonusEnemy.canISendResult = false;
+        ForBonusEnemy.pvoGet = false;
+        ForBonusEnemy.pvoGet = false;
+        ForBonusEnemy.reloadGet = false;
+        ForBonusEnemy.skill = 0;
         turns = 0;
         army = new ArrayList<>();
 
@@ -89,6 +112,9 @@ public abstract class Battle
         eField = new Field((int)(405 * Assets.monitorWidthCoeff + Assets.grid.getWidth() * Assets.gridCoeff), battleView.screenHeight/2, BattlePlayer.fieldSize, false); //gameView.screenWidth/2 - Assets.grid.getIconWidth()/2, gameView.screenHeight/2 - Assets.grid.getIconHeight()/2, 15, false);
         eField.Move();
         BattlePlayer.fieldSize = 0;
+        glareBonus = new GlareBonus(true);
+        pvo = new PVO(true);
+        reloadBonus = new ReloadBonus(true);
 
         selectedUnitZone = -1;
 
@@ -243,29 +269,57 @@ public abstract class Battle
             {
                 if(PrepareEnemyShoot())
                 {
-                    switch (bullet.state)
-                    {
-                        case LAUNCH:
-                            bullet.Launch(BattleEnemy.target.x, BattleEnemy.target.y, BattleEnemy.weaponType);
-                            break;
-                        case FLY:
-                            bullet.Update(eTime);
-                            break;
-                        case BOOM:
-                            field.explodeAnimation.setPosition((int)(BattleEnemy.target.x), (int)(BattleEnemy.target.y - 25 * Assets.isoGridCoeff));
-                            field.explodeAnimation.Start();
-                            bullet.Reload();
-                            BattleEnemy.target.SetFalse();
-                            EnemyShoot();
-                            battleView.AttackPrepare();
-                            state = BattleState.AttackPrepare;
-                            break;
+                    if(!BattleEnemy.target.IsFalse()) {
+                        switch (bullet.state) {
+                            case LAUNCH:
+                                bullet.Launch(BattleEnemy.target.x, BattleEnemy.target.y, BattleEnemy.weaponType);
+                                break;
+                            case FLY:
+                                if (!battleView.pvoStart)
+                                    bullet.Update(eTime);
+                                else {
+                                    if (ForBonusEnemy.pvoSend)
+                                        PVOSendResult();
+                                    else if (ForBonusEnemy.pvoGet)
+                                        PVOInfoGet();
+                                }
+                                break;
+                            case BOOM:
+                                field.explodeAnimation.setPosition((int) (BattleEnemy.target.x), (int) (BattleEnemy.target.y - 25 * Assets.isoGridCoeff));
+                                field.explodeAnimation.setTexture(Assets.explosion, 24, 100);
+                                field.explodeAnimation.Start();
+                                bullet.Reload();
+                                BattleEnemy.target.SetFalse();
+                                EnemyShoot();
+                                battleView.AttackPrepare();
+                                state = BattleState.AttackPrepare;
+                                isEnemyShotPrepeared = false;
+                                break;
+                        }
                     }
                 }
             }
             else if(state == BattleState.Shoot)
             {
                 PlayerShoot();
+            }
+            //Готовимся к ответу на запрос по бонусу засвета
+            if(ForBonusEnemy.canISendResult)
+            {
+                EnemyGlare();
+                ForBonusEnemy.canISendResult = false;
+            }
+            //Принимаем и засвечиваем нужную часть
+            if(ForBonusEnemy.canITakeResult)
+            {
+                PlayerGlare();
+                ForBonusEnemy.canITakeResult = false;
+            }
+            //Принимает информацию о том, что нужна перезарядка
+            if(ForBonusEnemy.reloadGet)
+            {
+                GetReloadInfo();
+                ForBonusEnemy.reloadGet = false;
             }
         }
     }
@@ -409,12 +463,8 @@ public abstract class Battle
     {
         if (state == BattleState.AttackPrepare)
         {
-            //Получаем локальные координаты клетки поля
-            //Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
-            //Получаем инфу клетки поля
             if(field.selectedSocket.IsFalse())
                 return;
-
             byte tmpID = field.GetSelectedSocketInfo();
             //Если в клетке стоит юнит
             if (tmpID > -1)
@@ -423,7 +473,6 @@ public abstract class Battle
                 {
                     if (selectedUnitZone > -1)
                         army.get(selectedUnitZone).Deselect();
-
                     selectedUnitZone = tmpID;
                     army.get(tmpID).Select();
                 }
@@ -431,7 +480,6 @@ public abstract class Battle
             else
             {
                 RectF touchRect = new RectF(battleView.touchPos.x - 3, battleView.touchPos.y - 3, battleView.touchPos.x + 3, battleView.touchPos.y + 3);
-
                 for(byte i = 0; i < army.size(); i++)
                 {
                     if (touchRect.intersect(army.get(i).GetBounds()))
@@ -440,7 +488,6 @@ public abstract class Battle
                         {
                             if (selectedUnitZone > -1)
                                 army.get(selectedUnitZone).Deselect();
-
                             selectedUnitZone = i;
                             army.get(i).Select();
                         }
@@ -465,7 +512,6 @@ public abstract class Battle
                     {
                         //Выделенному типу присваиваем ид этой зоны
                         selectedUnitZone = i;
-
                         //Перемещаем в конец, чтоб перекрывал остальные юниты
                         for(byte u = 0; u < drawArmySequence.length; u++)
                         {
@@ -481,22 +527,16 @@ public abstract class Battle
                                 break;
                             }
                         }
-
                         //Задвигаем панель выбора юнитов
                         battleView.selectingPanel.Move();
-
                         //Выделяем ячейку на поле
                         field.selectedSocket.SetValue(field.GetGlobalSocketCoord(field.size / 2, field.size / 2));
-
                         //Устанавливаем позицию по центру поля
                         army.get(unitNum[selectedUnitZone]).SetPosition(field.selectedSocket);
-
                         //Подсвечиваем юнит
                         army.get(unitNum[selectedUnitZone]).Select();
-
                         //Проверяем помехи
                         army.get(unitNum[selectedUnitZone]).CheckPosition(field);
-
                         //Пока текущий ид выделенного типа указывает на установленный юнит
                         while (army.get(unitNum[selectedUnitZone]).isInstalled)
                             //Увеличиваем текущий ид
@@ -532,11 +572,10 @@ public abstract class Battle
                             army.get(tmpID).ResetPosition();
                             //Помечаем его как не установленный
                             army.get(tmpID).isInstalled = false;
-
+                            //Обновляем границы выделения
                             army.get(tmpID).UpdateBounds();
-
-                            //army.get(tmpID).SetIconPos(army.get(tmpID).GetStartPosition());
-
+                            //Выравниваем иконку
+                            army.get(tmpID).getIconMatrix()[12] = battleView.selectingPanel.matrix[12];
                             //Если его ид меньше текущего ида кораблей определенного типа или установлены все корабли данного типа
                             if (tmpID < unitNum[army.get(tmpID).GetZone()] || unitNum[army.get(tmpID).GetZone()] == -1)
                                 //записываем в текущий ид кораблей определенного типа значение ида юнита
@@ -546,6 +585,7 @@ public abstract class Battle
                         {
                             for(byte i = 0; i < army.size(); i++)
                             {
+                                //Проверяем на касание в границах выделения юнитов
                                 if (touchRect.intersect(army.get(i).GetBounds()))
                                 {
                                     //Если меню выбора закрыто
@@ -560,11 +600,10 @@ public abstract class Battle
                                     army.get(i).ResetPosition();
                                     //Помечаем его как не установленный
                                     army.get(i).isInstalled = false;
-
+                                    //Обновляем границы выделения
                                     army.get(i).UpdateBounds();
-
-                                    //army.get(i).SetIconPos(army.get(i).GetStartPosition());
-
+                                    //Выравниваем иконку
+                                    army.get(i).getIconMatrix()[12] = battleView.selectingPanel.matrix[12];
                                     //Если его ид меньше текущего ида кораблей определенного типа или установлены все корабли данного типа
                                     if (i < unitNum[army.get(i).GetZone()] || unitNum[army.get(i).GetZone()] == -1)
                                         //записываем в текущий ид кораблей определенного типа значение ида юнита

@@ -49,7 +49,7 @@ public class PlanetController
     public void LoadPlanets(XMLParser xmlParser)
     {
         //xmlParser.LoadAllPlanets(this);
-        for(int i = 0 ; i < 50; i++)
+        for(int i = 0 ; i < 20; i++)
         {
             AddPlanet();
         }
@@ -133,9 +133,17 @@ public class PlanetController
 
     public void UpdatePlanets()
     {
-        for(Planet planet : planets)
+        /*for(Planet planet : planets)
         {
             planet.Update();
+        }*/
+    }
+
+    public void NextTurn()
+    {
+        for(int i = 0; i < planets.size(); i++)
+        {
+            planets.get(i).NextTurn();
         }
     }
 
@@ -147,12 +155,6 @@ public class PlanetController
     public boolean isPlanetSelected()
     {
         return selectedPlanet != -1;
-    }
-
-    public void attackSelectedPlanet(boolean isConquered)
-    {
-        if(isConquered)
-            planets.get(selectedPlanet).ConquerPlanet();
     }
 
     public Planet getPlanet(int num){return planets.get(num);} //Новое

@@ -135,8 +135,7 @@ public class MainView implements ScreenView
         {
             BattlePlayer.unitCount = new byte[] {1, 1, 1, 1, 1, 1};
             BattlePlayer.fieldSize = 15;
-
-            glView.getActivity().startActivityForResult(new Intent(glView.getActivity(), BluetoothActivity.class), 1);
+            glView.getActivity().startActivityForResult(new Intent(glView.getActivity(), BluetoothActivity.class), 1000);
         }
         else if(campaing.IsClicked())
         {
@@ -145,9 +144,9 @@ public class MainView implements ScreenView
         else if(quickBattle.IsClicked())
         {
             SingleBattle.difficulty = (byte)(Math.random() * 101);
-            BattlePlayer.unitCount = new byte[] {1, 1, 1, 1, 1, 1};
+            BattlePlayer.unitCount = new byte[] {2, 0, 0, 0, 0, 0};
             BattlePlayer.fieldSize = 15;
-            glView.StartBattle('s', Math.random() > 0.5);
+            glView.StartBattle(null, 's', Math.random() > 0.5);
         }
         else if(back.IsClicked())
         {

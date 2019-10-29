@@ -2,6 +2,7 @@ package app.onedayofwar.Graphics;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -17,7 +18,7 @@ public class Animation
 {
     private int frames;
     private int currentFrame;
-    private int speed;
+    private int latency;
     private float tick;
     private int width;
     private int height;
@@ -40,18 +41,20 @@ public class Animation
 
     private float[] color;
 
-    private int textureID;
+    private Texture texture;
+    private float[] buffer;
 
     private Vector2 scale;
 
     public Animation(Texture texture, int frames, int latency, int start, boolean isLooped)
     {
+        buffer = new float[8];
         scale = new Vector2(1, 1);
         this.frames = frames;
-        this.speed = latency;
+        this.latency = latency;
         this.width = texture.getWidth()/frames;
         this.height = texture.getHeight();
-        textureID = texture.getId();
+        this.texture = texture;
         this.isLooped = isLooped;
         this.start = start;
         isStart = false;
@@ -125,7 +128,7 @@ public class Animation
     {
         if(isStart)
         {
-            if (tick >= speed)
+            if (tick >= latency)
             {
                 if (currentFrame == frames - 1)
                 {
@@ -147,9 +150,38 @@ public class Animation
         }
     }
 
+    public void setTexture(Texture texture, int frames, int latency)
+    {
+        this.texture = texture;
+        this.frames = frames;
+        this.latency = latency;
+        Matrix.setIdentityM(textureMatrix, 0);
+        width = texture.getWidth()/frames;
+        height = texture.getHeight();
+
+        vertexBuffer.position(0);
+        buffer[0] = -width/2; buffer[1] = height/2;
+        buffer[2] = -width/2; buffer[3] = -height/2;
+        buffer[4] = width/2; buffer[5] = -height/2;
+        buffer[6] = width/2; buffer[7] = height/2;
+        vertexBuffer.put(buffer);
+        vertexBuffer.position(0);
+
+        uvBuffer.position(0);
+        buffer[0] = 0f; buffer[1] = 0f;
+        buffer[2] = 0f; buffer[3] = 1f;
+        buffer[4] = 1f/frames; buffer[5] = 1f;
+        buffer[6] = 1f/frames; buffer[7] = 0f;
+        uvBuffer.put(buffer);
+        uvBuffer.position(0);
+
+        width = (int)(width * scale.x);
+        height = (int)(height * scale.y);
+    }
+
     void Draw(float[] mvpMatrix)
     {
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureID);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture.getId());
 
         // Add program to OpenGL ES environment
         GLES20.glUseProgram(program);

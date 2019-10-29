@@ -1,23 +1,15 @@
 package app.onedayofwar.Campaign.System;
 
-import android.content.Intent;
 import android.graphics.Paint;
-import android.opengl.GLSurfaceView;
 import android.view.MotionEvent;
-import android.view.View;
-
-import java.util.ArrayDeque;
 
 import app.onedayofwar.Activities.MainActivity;
 import app.onedayofwar.Campaign.Space.Space;
 import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.Graphics.GLRenderer;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.ScreenView;
-import app.onedayofwar.Graphics.TextFont;
 import app.onedayofwar.System.GLView;
 import app.onedayofwar.System.Vector2;
-import app.onedayofwar.System.XMLParser;
 
 /**
  * Created by Slava on 16.02.2015.
@@ -105,5 +97,12 @@ public class GameView implements ScreenView
     public GLView getGlView()
     {
         return glView;
+    }
+
+    public float getCameraX(){ return glView.getCameraX();}
+
+    public float getCameraY()
+    {
+        return glView.getCameraY();
     }
 }

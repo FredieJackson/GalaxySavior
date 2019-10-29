@@ -109,10 +109,10 @@ public class Graphics
         animation.Draw(mvpMatrix);
     }
 
-    public void DrawParallaxSprite(Sprite sprite)
+    public void DrawParallaxSprite(Sprite sprite, float spaceVelocityCoef)
     {
         Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, sprite.matrix, 0);
-        mvpMatrix[12] /= 2; mvpMatrix[13] /= 2;
+        mvpMatrix[12] *= spaceVelocityCoef; mvpMatrix[13] *= spaceVelocityCoef;
         sprite.Draw(mvpMatrix);
     }
 
@@ -122,9 +122,9 @@ public class Graphics
         sprite.Draw(mvpMatrix);
     }
 
-    public void DrawText(String text, TextFont font, float x, float y, int color, int size)
+    public void DrawText(String text, TextFont font, float x, float y, float rightBorder, int color, int size)
     {
-        font.DrawText(text, this, x, y, color, size);
+        font.DrawText(text, this, x, y, rightBorder, color, size);
     }
 
 }

@@ -20,12 +20,11 @@ public class TextFont
         parser.LoadFont(fileName, glyphs);
     }
 
-    void DrawText(String text, Graphics graphics, float x, float y, int color, int size)
+    void DrawText(String text, Graphics graphics, float x, float y, float rightBorder, int color, int size)
     {
-        sprite.matrix[0] = size * 1f / TEXTURE_SIZE;
-        sprite.matrix[5] = -size * 1f / TEXTURE_SIZE;
-        sprite.matrix[12] = x;
-        sprite.matrix[13] = y + size /2;
+        sprite.ResetMatrix();
+        sprite.setPosition(x, y + size/2);
+        sprite.Scale(size * 1f / TEXTURE_SIZE);
         sprite.setColorFilter(color);
         for(int i = 0; i < text.length(); i++)
         {
@@ -41,6 +40,11 @@ public class TextFont
                 {
                     Glyph glyph = glyphs.get(j);
                     sprite.setCoords(glyph.x, glyph.y, glyph.width, glyph.height);
+                    if(rightBorder > 0 && sprite.matrix[12] + sprite.getWidth() > rightBorder)
+                    {
+                        sprite.matrix[12] = x;
+                        sprite.Move(0, sprite.getHeight());
+                    }
                     sprite.Move(sprite.getWidth()/2, 0);
                     graphics.DrawSprite(sprite);
                     sprite.Move(sprite.getWidth()/2 + TEXTURE_SIZE * 1f / size, 0);

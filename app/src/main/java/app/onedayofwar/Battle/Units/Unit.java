@@ -2,7 +2,6 @@ package app.onedayofwar.Battle.Units;
 
 import android.graphics.Color;
 import android.graphics.RectF;
-import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
 import app.onedayofwar.Graphics.Animation;
@@ -73,7 +72,6 @@ abstract public class Unit
     abstract public boolean SetForm(Vector2 startSocket, Field field, boolean isInstallUnit);
     abstract protected void ChangeOffset();
     abstract protected void ResetOffset();
-    abstract protected void TurnImage();
     abstract public byte GetZone();
     //endregion
 
@@ -81,7 +79,6 @@ abstract public class Unit
     public void Draw(Graphics graphics)
     {
         DrawStroke(graphics);
-        //g.drawSprite(image, pos.x + offset.x, pos.y + offset.y);
 
         image.matrix[12] -= offset.x;
         image.matrix[13] -= offset.y;
@@ -92,15 +89,11 @@ abstract public class Unit
         DrawDamagedZones(graphics);
         if (reload > 0 && !isDead)
             DrawReload(graphics);
-
-        //g.drawRect(bounds.left, bounds.top, bounds.width(), bounds.height(), Color.GREEN, false);
-        //g.drawRect(pos.x + offset.x, pos.y + offset.y, image.getIconWidth(), image.getIconHeight(), Color.RED, false);
     }
 
     public void DrawReload(Graphics graphics)
     {
-        graphics.DrawText("" + reload, Assets.arialFont, image.matrix[12], image.matrix[13], Color.YELLOW, 50);
-        //g.drawText("" + reload, 24, pos.x + offset.x + image.getIconWidth()/2, pos.y + offset.y + image.getIconHeight()/2, strokePaint.getColor());
+        graphics.DrawText("" + reload, Assets.arialFont, image.matrix[12], image.matrix[13], 0, Color.YELLOW, 50);
     }
 
     public void DrawStroke(Graphics graphics)
@@ -112,16 +105,11 @@ abstract public class Unit
              graphics.DrawSprite(stroke);
              stroke.matrix[12] += offset.x;
              stroke.matrix[13] += offset.y;
-            //g.drawSprite(stroke, pos.x + offset.x + strokeOffset.x, pos.y + offset.y + strokeOffset.y, strokePaint.getColor());
         }
     }
 
     public void DrawIcon(Graphics graphics)
     {
-       /* if(!iconPos.IsNegative(false))
-        {
-            //g.drawSprite(icon, iconPos.x, iconPos.y);
-        }*/
         graphics.DrawSprite(icon);
 
     }
@@ -181,19 +169,9 @@ abstract public class Unit
         }
     }
 
-    public void SetIconPos(Vector2 pos)
-    {
-        icon.setPosition(pos.x, pos.y);
-    }
-
     public RectF GetIconPosition()
     {
         return new RectF(getIconMatrix()[12] - getIconWidth()/2, getIconMatrix()[13] - getIconHeight()/2, getIconMatrix()[12] + getIconWidth()/2, getIconMatrix()[13] + getIconHeight()/2);
-    }
-
-    public Vector2 GetStartPosition()
-    {
-        return new Vector2((int)(getMatrix()[12] - getIconWidth()/2),(int)(getMatrix()[13] + getIconHeight()/2));
     }
 
     public RectF GetBounds()
@@ -230,6 +208,12 @@ abstract public class Unit
             TurnImage();
             ChangeOffset();
         }
+    }
+
+    protected void TurnImage()
+    {
+        image.hFlip();
+        stroke.hFlip();
     }
 
     public void strokeSetYellow()
@@ -309,15 +293,6 @@ abstract public class Unit
             image.setColorFilter(Color.RED);
             isDead = true;
         }
-
-        /*for(int i = 0; i < form.length; i++)
-        {
-            if(form[i].Equals(damagedZone))
-            {
-                damagedForm[i] = true;
-                break;
-            }
-        }*/
         return false;
     }
 
@@ -357,5 +332,10 @@ abstract public class Unit
     {
         reload = 0;
         power = power / 2;
+    }
+
+    public void IncreaseReload(int i)
+    {
+        reload += i;
     }
 }

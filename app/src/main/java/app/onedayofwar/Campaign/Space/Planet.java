@@ -3,6 +3,7 @@ package app.onedayofwar.Campaign.Space;
 import android.graphics.Color;
 import android.graphics.RectF;
 import android.opengl.Matrix;
+import android.widget.Switch;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -17,27 +18,32 @@ public class Planet
 {
     public int oil;
     public int nanoSteel;
-    private int syncoCrystals;
-    private byte[] spaceGuards;
-    private byte[] groundGuards = {1,1,1,1,1,1};
-    private byte[] buildings;
+    public int credits;
+    private byte[] spaceGuards = {0,0,0,0,0,0};
+    private byte[] groundGuards = {0,0,0,0,0,0};
+    //0-credits; 1-oil; 2-nanosteel; 3-factory; 4-workshop;
+    private byte[] buildings = {1, 1, 1, 0, 0};
     private byte size;
     private int radius;
     private Sprite image;
     private boolean isPlanetConquered;
     private RectF touch;
     private RectF planet;
+    public Vector2 buildingUpgrade;
+    public String upgradeName;
 
-    public Planet(int oil, int nanoSteel, int syncoCrystals, byte[] spaceGuards, byte[] groundGuards, byte[] buildings, byte size)
+    public Planet(int oil, int nanoSteel, int credits, byte[] spaceGuards, byte[] groundGuards, byte[] buildings, byte size)
     {
         this.oil = oil;
         this.nanoSteel = nanoSteel;
-        this.syncoCrystals = syncoCrystals;
+        this.credits = credits;
         this.spaceGuards = spaceGuards.clone();
         this.groundGuards = groundGuards.clone();
         this.buildings = buildings.clone();
         this.size = size;
         isPlanetConquered = false;
+        buildingUpgrade = new Vector2();
+        buildingUpgrade.SetFalse();
         planet = new RectF();
         touch = new RectF();
     }
@@ -45,6 +51,8 @@ public class Planet
     public Planet()
     {
         isPlanetConquered = false;
+        buildingUpgrade = new Vector2();
+        buildingUpgrade.SetFalse();
         planet = new RectF();
         touch = new RectF();
     }
@@ -62,6 +70,11 @@ public class Planet
     public byte[] getGroundGuards()
     {
         return groundGuards;
+    }
+
+    public byte[] getBuildings()
+    {
+        return buildings;
     }
 
     public byte getFieldSize()
@@ -97,10 +110,7 @@ public class Planet
     public void ConquerPlanet()
     {
 
-        //isPlanetConquered = true;
-
-
-
+        isPlanetConquered = true;
         /*for (int i = 0; i < 4; i++)
         {
             Log.i("PLANET", matrix.Get(0 + i * 4) + " | " + matrix.Get(1 + i * 4) + " | " + matrix.Get(2 + i * 4)  + " | " + matrix.Get(3 + i * 4));
@@ -125,6 +135,69 @@ public class Planet
 
     public void NextTurn()
     {
+        credits += buildings[1] * 20;
+        oil += buildings[1] * 40;
+        nanoSteel += buildings[1] * 30;
 
+
+    }
+
+    public boolean IsConquered()
+    {
+        return isPlanetConquered;
+    }
+
+    public void UpgradeBuilding(int building)
+    {
+        if(!buildingUpgrade.IsFalse())
+            return;
+        switch (building)
+        {
+            case 0:
+                if(credits >= buildings[0] * 500 && nanoSteel >= buildings[0] * 650)
+                {
+                    credits -= buildings[0] * 500;
+                    nanoSteel -= buildings[0] * 650;
+                    buildingUpgrade.SetValue(0, buildings[0] * 10);
+                    upgradeName = "MARKET";
+                }
+                break;
+            case 1:
+                if(credits >= buildings[1] * 500 && nanoSteel >= buildings[1] * 650)
+                {
+                    credits -= buildings[1] * 500;
+                    nanoSteel -= buildings[1] * 650;
+                    buildingUpgrade.SetValue(1, buildings[1] * 10);
+                    upgradeName = "OIL DRILL";
+                }
+                break;
+            case 2:
+                if(credits >= buildings[2] * 500 && nanoSteel >= buildings[2] * 650)
+                {
+                    credits -= buildings[2] * 500;
+                    nanoSteel -= buildings[2] * 650;
+                    buildingUpgrade.SetValue(2, buildings[2] * 10);
+                    upgradeName = "NANOSTEEL MINES";
+                }
+                break;
+            case 3:
+                if(credits >= buildings[3] * 500 && nanoSteel >= buildings[3] * 650)
+                {
+                    credits -= buildings[3] * 500;
+                    nanoSteel -= buildings[3] * 650;
+                    buildingUpgrade.SetValue(3, buildings[3] * 10);
+                    upgradeName = "FACTORY";
+                }
+                break;
+            case 4:
+                if(credits >= buildings[4] * 500 && nanoSteel >= buildings[4] * 650)
+                {
+                    credits -= buildings[4] * 500;
+                    nanoSteel -= buildings[4] * 650;
+                    buildingUpgrade.SetValue(4, buildings[4] * 10);
+                    upgradeName = "WORKSHOP";
+                }
+                break;
+        }
     }
 }

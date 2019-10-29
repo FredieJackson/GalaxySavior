@@ -2,7 +2,6 @@ package app.onedayofwar.Campaign.Space;
 
 import android.app.Activity;
 import android.graphics.Color;
-import android.util.Log;
 import android.view.MotionEvent;
 
 import app.onedayofwar.Campaign.System.PlanetView;
@@ -25,18 +24,20 @@ public class Space
     private GameView gameView;
     private Vector2 touchPos;
     private Vector2 lastTouch;
+    private Vector2 tmp2;
     private int width;
     private int height;
     private Sprite background;
     private Sprite btnRegion;
     private Vector2 toMove;
     private Vector2 tmp;
-    private Button ok;
-    private Button newPoints;
+    private Button moveBtn;
+    private Button nextTurnBtn;
     private PlayerInfo player;
     private int color;
     private int selectedPlanet;
     private int pointsToMove;
+    private float spaceVelocityCoeff;
 
 
     public Space(Activity activity, GameView gameView)
@@ -52,11 +53,12 @@ public class Space
         btnRegion = new Sprite(Assets.btnRegion);
         height = 2000;
         width = 2000;
+        background.Scale(2*(float)Assets.bgWidthCoeff, 2*(float)Assets.bgHeightCoeff);
         background.setPosition(getScreenWidth()/2 + Assets.btnRegion.getWidth()/2, getScreenHeight()/2);
         btnRegion.setPosition(0, Assets.btnRegion.getHeight()/2);
         touchPos = new Vector2();
         lastTouch = new Vector2();
-        pointsToMove = 100000;
+        pointsToMove = 30;
         xmlParser = new XMLParser(activity.getAssets());
         planetController = new PlanetController(this);
         planetController.LoadPlanets(xmlParser);
@@ -64,21 +66,24 @@ public class Space
         color = Color.RED;
         toMove = new Vector2();
         toMove.SetFalse();
-        ok = new Button(Assets.btnInstall,(int)(Assets.btnInstall.getWidth()*Assets.btnCoeff/2),(int)(Assets.btnInstall.getHeight() * Assets.btnCoeff/2),false);
-        newPoints = new Button(Assets.btnFinishInstallation,(int)(Assets.btnFinishInstallation.getWidth()*Assets.btnCoeff/2),(int)(200 + Assets.btnFinishInstallation.getHeight() * Assets.btnCoeff/2), false);
+        moveBtn = new Button(Assets.btnInstall,(int)(Assets.btnInstall.getWidth()*Assets.btnCoeff/2),(int)(Assets.btnInstall.getHeight() * Assets.btnCoeff/2),false);
+        nextTurnBtn = new Button(Assets.btnFinishInstallation,(int)(Assets.btnFinishInstallation.getWidth()*Assets.btnCoeff/2),(int)(200 + Assets.btnFinishInstallation.getHeight() * Assets.btnCoeff/2), false);
+        moveBtn.Scale(Assets.btnCoeff);
+        nextTurnBtn.Scale(Assets.btnCoeff);
+
+        spaceVelocityCoeff = Assets.space.getHeight()*1.0f/(width*2);
         tmp = new Vector2();
+        tmp2 = new Vector2();
     }
 
-    public void StartBattle()
+    public void GotoPlanet()
     {
-        //Метод в основном новый
-        Log.i("START BATTLE", "");
-        gameView.getGlView().changeScreen(new PlanetView(gameView.getGlView(), planetController.getPlanet(selectedPlanet)));
+        gameView.getGlView().changeScreen(new PlanetView(gameView.getGlView(), this, planetController.getPlanet(selectedPlanet)));
     }
 
-    public void SetBattleResult(String damage)
+    public PlayerInfo getPlayer()
     {
-        planetController.attackSelectedPlanet(damage.charAt(0) == '1');
+        return player;
     }
 
     public void onTouch(MotionEvent event)      //Здесь весь метод переделан
@@ -89,8 +94,8 @@ public class Space
         switch (event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
-
-                planetController.SelectPlanet(tmp);
+                tmp2.SetValue(tmp.x - gameView.getCameraX(), tmp.y - gameView.getCameraY());
+                planetController.SelectPlanet(tmp2);
                 if (planetController.isPlanetSelected())
                 {
                     toMove.SetValue(planetController.getSelectedPlanet().getMatrix()[12], planetController.getSelectedPlanet().getMatrix()[13]);
@@ -99,20 +104,18 @@ public class Space
                 else
                     toMove.SetFalse();
 
-                ok.Update(touchPos);
-                newPoints.Update(touchPos);
+                moveBtn.Update(touchPos);
+                nextTurnBtn.Update(touchPos);
 
-                if(ok.IsClicked() && tmp.x > Assets.btnRegion.getWidth()/2)
+                if(moveBtn.IsClicked() && tmp.x > Assets.btnRegion.getWidth()/2)
                     player.followToTap(tmp, toMove, (int)gameView.getGlView().getCameraX(), (int)gameView.getGlView().getCameraY());
 
-                if(player.getPointsToMove() == 0 && newPoints.IsClicked())
+                if(nextTurnBtn.IsClicked())
                 {
+                    planetController.NextTurn();
                     player.setPointsToMove(pointsToMove);
                     player.getImage().removeColorFilter();
                 }
-
-
-
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -120,12 +123,12 @@ public class Space
                     gameView.MoveCamera(lastTouch);
                 break;
             case MotionEvent.ACTION_UP:
-                ok.Reset();
-                newPoints.Reset();
+                moveBtn.Reset();
+                nextTurnBtn.Reset();
                 break;
         }
         tmp.SetValue(touchPos);
-        }
+    }
 
 
     public void Update(float eTime)
@@ -136,13 +139,13 @@ public class Space
 
     public void Draw(Graphics graphics)     //Тут тоже парочка
     {
-        graphics.DrawParallaxSprite(background);
+        graphics.DrawParallaxSprite(background, spaceVelocityCoeff);
         drawStars();
         planetController.DrawPlanets(graphics);
         player.Draw(graphics);
         graphics.DrawStaticSprite(btnRegion);
-        ok.Draw(graphics);
-        newPoints.Draw(graphics);
+        moveBtn.Draw(graphics);
+        nextTurnBtn.Draw(graphics);
     }
 
     public void drawStars()

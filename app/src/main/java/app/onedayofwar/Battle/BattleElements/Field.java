@@ -2,6 +2,7 @@ package app.onedayofwar.Battle.BattleElements;
 
 import android.graphics.Color;
 
+import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
 import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Animation;
 import app.onedayofwar.Graphics.Assets;
@@ -74,7 +75,7 @@ public class Field
 
         if(isIso)
         {
-            explodeAnimation = new Animation(Assets.explode, 24, 100, 0, false);
+            explodeAnimation = new Animation(Assets.explosion, 24, 100, 0, false);
             explodeAnimation.Scale((float)Assets.isoGridCoeff);
         }
     }
@@ -100,6 +101,12 @@ public class Field
         {
             DrawSelectedSocket(g);
         }
+    }
+
+    public void setValue(int x, int y, byte value)
+    {
+        if(x>0 && y>0 && x<size && y<size)
+            shots[y][x] =  value;
     }
 
     public int getHeight()
@@ -153,6 +160,73 @@ public class Field
             }
         }
 
+    }
+
+    public int[][] getSquare()
+    {
+        int tmp[][] = new int[3][3];
+        int x, y;
+        x = (int) ForBonusEnemy.socket.x;
+        y = (int)ForBonusEnemy.socket.y;
+        if(x - 1 >= 0 && y - 1 >=0)
+        {
+            if (GetFieldInfo()[y - 1][x - 1] >= 0)
+                tmp[0][0] = 100;
+        }
+        else
+            tmp[0][0] = -100;
+        if(y - 1 >=0)
+        {
+            if(GetFieldInfo()[y - 1][x] >= 0)
+                tmp[0][1] = 100;
+        }
+        else
+            tmp[0][1] = -100;
+        if(x + 1 < size && y - 1 >= 0)
+        {
+            if(GetFieldInfo()[y -1][x + 1]>=0)
+                tmp[0][2] = 100;
+        }
+        else
+            tmp[0][2] = -100;
+        if(x - 1 >= 0)
+        {
+            if (GetFieldInfo()[y][x - 1] >= 0)
+                tmp[1][0] = 100;
+        }
+        else
+            tmp[1][0] = -100;
+        if(GetFieldInfo()[y][x] >= 0)
+            tmp[1][1] = 100;
+        if(x + 1 < size)
+        {
+            if(GetFieldInfo()[y][x + 1] >= 0)
+                tmp[1][2] = 100;
+        }
+        else
+            tmp[1][2] = -100;
+        if(x - 1 >= 0 && y + 1 < size)
+        {
+            if (GetFieldInfo()[y + 1][x - 1] >= 0)
+                tmp[2][0] = 100;
+        }
+        else
+            tmp[2][0] = -100;
+        if(y + 1 < size)
+        {
+            if(GetFieldInfo()[y + 1][x] >= 0)
+                tmp[2][1] = 100;
+        }
+        else
+            tmp[2][1] = -100;
+        if(x + 1 < size && y + 1 < size)
+        {
+            if (GetFieldInfo()[y + 1][x + 1] >= 0)
+                tmp[2][2] = 100;
+        }
+        else
+            tmp[2][2] = -100;
+        return tmp;
     }
 
     public byte GetSelectedSocketInfo()
@@ -387,6 +461,14 @@ public class Field
                             break;
                         case 3:
                             signSprite.setTexture(Assets.signFlag);
+                            g.DrawSprite(signSprite);
+                            break;
+                        case 100:
+                            signSprite.setTexture(Assets.signGlare);
+                            g.DrawSprite(signSprite);
+                            break;
+                        case 101:
+                            signSprite.setTexture(Assets.signError);
                             g.DrawSprite(signSprite);
                             break;
                     }

@@ -25,7 +25,7 @@ import app.onedayofwar.R;
 public class BluetoothActivity extends Activity
 {
 
-    private BluetoothController btController;
+    public static BluetoothController btController;
     BluetoothAdapter btAdapter;
     private boolean isBluetoothOff;
 
@@ -51,14 +51,8 @@ public class BluetoothActivity extends Activity
             Toast.makeText(this, "BLUETOOTH IS OFF", Toast.LENGTH_LONG).show();
             setContentView(R.layout.loading);
             isBluetoothOff = true;
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
+            startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 1);
         }
-
-        if(btAdapter.isEnabled())
-            btController = new BluetoothController(this);
-        else
-            finish();
     }
 
     public void scanBtnClick(View view)
@@ -90,8 +84,19 @@ public class BluetoothActivity extends Activity
 
     public void StartGame(boolean isYourTurn)
     {
-        //battleView.LoadBT(btController);
+        setResult(isYourTurn ? RESULT_FIRST_USER : RESULT_OK);
         btController.CancelScan();
+        finish();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(btAdapter.isEnabled())
+            btController = new BluetoothController(this);
+        else
+            finish();
     }
 }
 

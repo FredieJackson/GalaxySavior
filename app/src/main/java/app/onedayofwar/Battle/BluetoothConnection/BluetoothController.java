@@ -1,5 +1,6 @@
 package app.onedayofwar.Battle.BluetoothConnection;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -151,6 +152,12 @@ public class BluetoothController
         bluetoothAdapter.startDiscovery();
     }
 
+    public void SetActivity(Activity activity)
+    {
+        this.activity = (BluetoothActivity)activity;
+    }
+
+
     public void Scan()
     {
         selectedDevice = -1;
@@ -278,7 +285,6 @@ public class BluetoothController
         @Override
         public void onReceive(Context context, Intent intent)
         {
-            // TODO Auto-generated method stub
             String action = intent.getAction();
             if(BluetoothDevice.ACTION_FOUND.equals(action))
             {

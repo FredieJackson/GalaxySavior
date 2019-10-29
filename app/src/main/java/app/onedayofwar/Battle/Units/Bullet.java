@@ -1,7 +1,6 @@
 package app.onedayofwar.Battle.Units;
 
 import android.opengl.Matrix;
-import android.util.Log;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -45,11 +44,6 @@ public class Bullet
         if(image.matrix[13] + image.getHeight() >= destination.y)
         {
             state = State.BOOM;
-            destination.SetZero();
-            lastAngle = 0;
-            curveAngle = 0;
-            Matrix.setIdentityM(image.matrix, 0);
-            Matrix.scaleM(image.matrix, 0, 1, -1, 1);
             return;
         }
         velocityY = destination.y / destination.x / destination.x * image.matrix[12] * image.matrix[12] - image.matrix[13];
@@ -78,5 +72,16 @@ public class Bullet
     public void Reload()
     {
         state = State.LAUNCH;
+        destination.SetZero();
+        lastAngle = 0;
+        curveAngle = 0;
+        image.ResetMatrix();
+        image.Scale((float)Assets.isoGridCoeff);
     }
+
+    public Vector2 getPos(){return new Vector2(image.matrix[12], image.matrix[13]);}
+
+    public int getWidth(){return image.getWidth();}
+
+    public int getHeight(){return image.getHeight();}
 }

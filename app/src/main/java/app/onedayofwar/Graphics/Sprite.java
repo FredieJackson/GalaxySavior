@@ -2,7 +2,6 @@ package app.onedayofwar.Graphics;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -199,6 +198,23 @@ public class Sprite
         scale.y *= s;
         width = (int)(width * s);
         height = (int)(height * s);
+    }
+
+    public void hFlip()
+    {
+        Matrix.scaleM(matrix, 0, -1, 1, 1);
+    }
+
+    public void Rotate(float angle, float x, float y, float z)
+    {
+        Matrix.rotateM(matrix, 0, angle, x, y, z);
+    }
+
+    public void ResetMatrix()
+    {
+        Matrix.setIdentityM(matrix, 0);
+        Matrix.scaleM(matrix, 0, 1, -1, 1);
+        scale.SetValue(1, 1);
     }
 
     public void setColorFilter(int color)

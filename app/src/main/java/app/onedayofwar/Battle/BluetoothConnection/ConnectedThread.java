@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
+import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
 
 /**
  * This thread runs during a connection with a remote device.
@@ -88,6 +89,11 @@ public class ConnectedThread extends Thread
                     CheckWin();
                     CheckAttack();
                     CheckAttackResult();
+                    TakeGlareClaim();
+                    TakeGlairResult();
+                    GetPVOInfo();
+                    GetPVOResult();
+                    GetReloadInfo();
                 }
                 //btController.ShowToast(bytes);
                 // Read from the InputStream
@@ -210,6 +216,55 @@ public class ConnectedThread extends Thread
                 return;
             BattleEnemy.attackResultData = new String(tmp[2]);
             Log.i("CONNECTED.ARSLT_DATA", "" + BattleEnemy.attackResultData);
+        }
+    }
+    //Прием данных для бонуса засвета
+    public void TakeGlareClaim()
+    {
+        if(recievedData.startsWith(HandlerMSG.GLARE_MSG))
+        {
+            String[] tmp = recievedData.split("\\|");
+            ForBonusEnemy.socket.x = (int)Float.parseFloat(tmp[1]);
+            ForBonusEnemy.socket.y = (int)Float.parseFloat(tmp[2]);
+            ForBonusEnemy.canISendResult = true;
+        }
+    }
+    //Прием результата бонуса засвета
+    public void TakeGlairResult()
+    {
+        if(recievedData.startsWith(HandlerMSG.GLARE_RESULT_MSG))
+        {
+            int k = 1;
+            String[] tmp = recievedData.split("\\|");
+            for(int i = 0; i < 3; i++)
+            {
+                for(int j = 0; j < 3; j++)
+                {
+                    ForBonusEnemy.glareArr[i][j] = Integer.parseInt(tmp[k]);
+                    k++;
+                }
+            }
+            ForBonusEnemy.canITakeResult = true;
+        }
+    }
+    public void GetPVOInfo()
+    {
+        if(recievedData.startsWith(HandlerMSG.PVO_INFO))
+            ForBonusEnemy.pvoSend = true;
+    }
+    public void GetPVOResult()
+    {
+        if(recievedData.startsWith(HandlerMSG.PVO_RESULT))
+            ForBonusEnemy.pvoGet = true;
+    }
+
+    public void GetReloadInfo()
+    {
+        if(recievedData.startsWith(HandlerMSG.RELOAD_RESULT))
+        {
+            String[] tmp = recievedData.split("\\|");
+            ForBonusEnemy.skill = Integer.parseInt(tmp[1]);
+            ForBonusEnemy.reloadGet = true;
         }
     }
 }

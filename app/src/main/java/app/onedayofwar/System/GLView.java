@@ -1,12 +1,11 @@
 package app.onedayofwar.System;
 
-import android.app.Activity;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
 
+import app.onedayofwar.Activities.BluetoothActivity;
 import app.onedayofwar.Activities.MainActivity;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Campaign.Space.Planet;
 import app.onedayofwar.Campaign.System.GameView;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.GLRenderer;
@@ -106,6 +105,8 @@ public class GLView extends GLSurfaceView
         Assets.signMissIso = graphics.LoadTexture("field/mark/miss_iso.png");
         Assets.signHit = graphics.LoadTexture("field/mark/hit_green.png");
         Assets.signFlag = graphics.LoadTexture("field/mark/flag.png");
+        Assets.signError = graphics.LoadTexture("field/mark/error.png");
+        Assets.signGlare = graphics.LoadTexture("field/mark/glare_green.png");
 
         Assets.btnCancel = graphics.LoadTexture("button/cancel.png");
         Assets.btnInstall = graphics.LoadTexture("button/install.png");
@@ -121,7 +122,8 @@ public class GLView extends GLSurfaceView
         Assets.bullet = graphics.LoadTexture("unit/bullet/bullet.png");
         Assets.miniRocket = graphics.LoadTexture("unit/bullet/miniRocket.png");
 
-        Assets.explode = graphics.LoadTexture("animation/explode.png");
+        Assets.explosion = graphics.LoadTexture("animation/land_explosion.png");
+        Assets.airExplosion = graphics.LoadTexture("animation/air_explosion.png");
         Assets.fire = graphics.LoadTexture("animation/fire2.png");
 
         Assets.spaceCoeff = 1.0d * screenHeight / Assets.space.getHeight();
@@ -133,6 +135,11 @@ public class GLView extends GLSurfaceView
         Assets.bgWidthCoeff = screenWidth *1f/ Assets.background.getWidth();
 
         renderer.changeScreen(new MainView(this));
+    }
+
+    public void gotoMainMenu()
+    {
+        renderer.GoMenu();
     }
 
     public void changeScreen(ScreenView screen)
@@ -156,9 +163,16 @@ public class GLView extends GLSurfaceView
         activity.gameState = MainActivity.GameState.CAMPAIGN;
     }
 
-    public void StartBattle(char type, boolean isYourTurn)
+    public void StartBattle(Planet planet, char type, boolean isYourTurn)
     {
-        changeScreen(new BattleView(this, type, isYourTurn));
+
+        BattleView battleView = new BattleView(this, planet, type, isYourTurn);
+        if(type == 'b')
+        {
+            BluetoothActivity.btController.SetActivity(activity);
+            battleView.btController = BluetoothActivity.btController;
+        }
+        changeScreen(battleView);
         activity.gameState = MainActivity.GameState.BATTLE;
     }
 

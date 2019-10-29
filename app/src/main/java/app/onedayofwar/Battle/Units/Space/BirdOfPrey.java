@@ -186,13 +186,6 @@ public class BirdOfPrey extends Unit {
     }
 
     @Override
-    protected void TurnImage()
-    {
-        image.Scale(-1, 1);
-        stroke.Scale(-1, 1);
-    }
-
-    @Override
     public void Update()
     {
 

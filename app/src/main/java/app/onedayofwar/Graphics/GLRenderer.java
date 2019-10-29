@@ -1,6 +1,7 @@
 package app.onedayofwar.Graphics;
 
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -10,6 +11,7 @@ import android.view.View;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Stack;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -37,14 +39,14 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
 
     private ArrayDeque<MotionEvent> motionEvents;
 
-    private Stack<ScreenView> screenHistory;
+    private ArrayDeque<ScreenView> screenHistory;
 
 
     public GLRenderer(GLView glView)
     {
         this.glView = glView;
         motionEvents = new ArrayDeque<>();
-        screenHistory = new Stack<>();
+        screenHistory = new ArrayDeque<>();
     }
 
     @Override
@@ -86,6 +88,7 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
         screenView.Update(eTime);
         screenView.Draw(graphics);
 
+
         sleepTime = 15 - (int)((System.currentTimeMillis() - startTime));
         if(sleepTime > 0)
         {
@@ -123,8 +126,17 @@ public class GLRenderer implements GLSurfaceView.Renderer, View.OnTouchListener
     {
         viewMatrix[12] = 0;
         viewMatrix[13] = 0;
-        screenView = screenHistory.pop();
+        screenView = screenHistory.pollLast();
         screenView.Resume();
+    }
+
+    public void GoMenu()
+    {
+        viewMatrix[12] = 0;
+        viewMatrix[13] = 0;
+        screenView = screenHistory.pollFirst();
+        screenView.Resume();
+        screenHistory.clear();
     }
 
     public float getCameraX()

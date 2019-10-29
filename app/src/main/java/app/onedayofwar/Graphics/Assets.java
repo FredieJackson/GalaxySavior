@@ -43,6 +43,8 @@ public class Assets
     public static Texture signMissIso;
     public static Texture signHit;
     public static Texture signFlag;
+    public static Texture signError;
+    public static Texture signGlare;
     //endregion
 
     //region Buttons
@@ -61,8 +63,9 @@ public class Assets
     public static Texture btnBack;
     //endregion
 
-    public static Texture explode;
+    public static Texture explosion;
     public static Texture fire;
+    public static Texture airExplosion;
 
     public static Texture background;
     public static Texture monitor;
