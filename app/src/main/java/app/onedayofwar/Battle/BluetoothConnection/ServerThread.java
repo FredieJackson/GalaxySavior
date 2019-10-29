@@ -57,7 +57,7 @@ public class ServerThread extends Thread
             {
                 //Do work to manage the connection (in a separate thread)
                 CloseSocket();
-                btController.ReceiveAttackRequest(socket);
+                btController.RecieveAttackRequest(socket);
                 break;
             }
         }

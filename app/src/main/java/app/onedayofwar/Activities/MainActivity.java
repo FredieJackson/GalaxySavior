@@ -1,176 +1,148 @@
 package app.onedayofwar.Activities;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
+import app.onedayofwar.Battle.Activities.BattleActivity;
+import app.onedayofwar.Battle.BattleElements.BattlePlayer;
+import app.onedayofwar.Campaign.Activities.GameActivity;
 import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.System.GLView;
-import app.onedayofwar.System.MainView;
+import app.onedayofwar.R;
 
 public class MainActivity extends Activity
 {
-    private GLView glView;
-
-    public enum GameState {BATTLE, BRESULT, MENU, CAMPAIGN}
-    public GameState gameState;
-
-    private BluetoothAdapter btAdapter;
-    private BluetoothController btController;
-
-
+    BluetoothAdapter btAdapter;
+    private boolean isBluetoothOff;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        gameState = GameState.MENU;
-
-        Display display = getWindowManager().getDefaultDisplay();
-        DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-
-        glView = new GLView(this, metrics.widthPixels, metrics.heightPixels);
+        setContentView(R.layout.main);
+        isBluetoothOff = false;
         Assets.mainFont = Typeface.createFromAsset(getAssets(), "fonts/hollowpoint.ttf");
-        setContentView(glView);
     }
-
-
-
     @Override
-    public void onBackPressed()
+    protected void onResume()
     {
-        if(gameState == GameState.BRESULT)
+        super.onResume();
+        if(isBluetoothOff && btAdapter.isEnabled())
         {
-            if(btController != null)
-            {
-                ResetBTController();
-            }
-            glView.gotoMainMenu();
+            StartQuickBattle('b');
+            isBluetoothOff = false;
             return;
         }
-
-        AlertDialog.Builder quitDialog = new AlertDialog.Builder(this);
-
-        String title;
-        String positive;
-        String negative;
-        switch(gameState)
-        {
-            case MENU:
-                title = "Выйти?";
-                positive = "Да!";
-                negative = "нет!";
-                break;
-            case BATTLE:
-                title = "Ваши приказания?";
-                positive = "Отступаем!";
-                negative = "Ни шагу назад!";
-                break;
-            case CAMPAIGN:
-                title = "Выйти?";
-                positive = "Да!";
-                negative = "Нет!";
-                break;
-            default:
-                title = "Выйти?";
-                positive = "Да!";
-                negative = "Нет!";
-                break;
-        }
-        quitDialog.setTitle(title);
-
-        quitDialog.setPositiveButton(positive, new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                if (gameState == GameState.MENU)
-                    finish();
-                else
-                {
-                    if(gameState == GameState.BATTLE && btController != null)
-                    {
-                        ResetBTController();
-                    }
-                    glView.goBack();
-                }
-            }
-        });
-
-        quitDialog.setNegativeButton(negative, new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which){}
-        });
-
-        quitDialog.show();
+        setContentView(R.layout.main);
+        mainFonts();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    public void ClickStartGameBtn(View view)
     {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 100)
-        {
-            if (btAdapter.isEnabled())
-            {
-                Log.i("BT", "BT SWITCHED ON");
-                LoadBTController();
-            }
-        }
-        if(requestCode == 17)
-        {
-            if(resultCode != RESULT_CANCELED)
-            {
-                MainView.startBTBattle = resultCode == RESULT_FIRST_USER ? (byte)1 : (byte)2;
-            }
-        }
+        setContentView(R.layout.main_game_mode);
+        gameModeFonts();
+    }
+    public void ClickSingleBtn(View view)
+    {
+        setContentView(R.layout.main_single_mode);
     }
 
-    public void CheckBT()
+    public void ClickCampaignBtn(View view)
+    {
+        StartCampaign();
+    }
+
+    public void ClickQuickBtn(View view)
+    {
+        StartQuickBattle('s');
+    }
+
+    public void ClickBluetoothBtn(View view)
     {
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         if(btAdapter == null)
         {
-            Log.i("BT", "BT UNSUPPORTED");
+            Toast.makeText(this, "ERROR: BLUETOOTH UNSUPPORTED", Toast.LENGTH_LONG).show();
             return;
         }
         if (btAdapter.isEnabled())
         {
-            Log.i("BT", "BT ON");
-            LoadBTController();
+            Toast.makeText(this, "BLUETOOTH IS ON", Toast.LENGTH_LONG).show();
+            StartQuickBattle('b');
         }
         else
         {
-            Log.i("BT", "BT OFF");
-            startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 100);
+            Toast.makeText(this, "BLUETOOTH IS OFF", Toast.LENGTH_LONG).show();
+            setContentView(R.layout.loading);
+            isBluetoothOff = true;
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 1);
         }
     }
 
-    public BluetoothController getBtController()
+    public void ClickInternetBtn(View view)
     {
-        return btController;
+        StartQuickBattle('i');
     }
 
-    public void LoadBTController()
+    public void ClickBackBtn(View view)
     {
-        btController = new BluetoothController(glView);
+        setContentView(R.layout.main);
+        mainFonts();
+    }
+    public void ClickInfoBtn(View view)
+    {
+        Toast.makeText(this.getApplicationContext(), R.string.version, Toast.LENGTH_SHORT).show();
     }
 
-    public void ResetBTController()
+    private void StartQuickBattle(char type)
     {
-        if(btController == null)
-            return;
-        btController.Stop();
-        btController = null;
+        Intent intent = new Intent(this, BattleActivity.class);
+        intent.putExtra("type", type);
+        BattlePlayer.fieldSize = 15;
+        BattlePlayer.unitCount = new byte[6];
+        BattlePlayer.unitCount[0] = 1;
+        BattlePlayer.unitCount[1] = 1;
+        BattlePlayer.unitCount[2] = 1;
+        BattlePlayer.unitCount[3] = 1;
+        BattlePlayer.unitCount[4] = 1;
+        BattlePlayer.unitCount[5] = 1;
+        startActivity(intent);
+    }
+
+    private void StartCampaign()
+    {
+        Intent intent = new Intent(this, GameActivity.class);
+        startActivity(intent);
+    }
+
+    private void mainFonts()
+    {
+        Button button =(Button)findViewById(R.id.startGameBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.settingsBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.infoBtn);
+        button.setTypeface(Assets.mainFont);
+        TextView text =(TextView)findViewById(R.id.appTitle);
+        text.setTypeface(Assets.mainFont);
+    }
+    private void gameModeFonts()
+    {
+        Button button =(Button)findViewById(R.id.backBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.singleGameBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.bluetoothBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.internetBtn);
+        button.setTypeface(Assets.mainFont);
+        TextView text =(TextView)findViewById(R.id.selectTitle);
+        text.setTypeface(Assets.mainFont);
     }
 }

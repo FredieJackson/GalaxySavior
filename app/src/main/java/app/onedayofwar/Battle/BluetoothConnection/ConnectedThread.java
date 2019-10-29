@@ -13,7 +13,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
 
 /**
  * This thread runs during a connection with a remote device.
@@ -55,9 +54,10 @@ public class ConnectedThread extends Thread
     {
         Log.i("CONNECTED", "START");
         byte[] buffer = new byte[1024];
-        int bytes;
+        int bytes = -1;
 
         //btController.ShowToast("CONNECT TO" + socket.getRemoteDevice().getName());
+        // Keep listening to the InputStream while connected
         while (true)
         {
             try
@@ -70,9 +70,9 @@ public class ConnectedThread extends Thread
                 {
                     if (recievedData.equals(HandlerMSG.ACCEPT_FIGHT_REQUEST))
                     {
-                        //btController.ShowToast("CONNECTED TO " + socket.getRemoteDevice().getName());
+                        btController.ShowToast("CONNECTED TO " + socket.getRemoteDevice().getName());
                         btController.isEnemyConnected = true;
-                        btController.StartBattle(true);
+                        btController.StartGame(true);
                     }
                     else
                     {
@@ -88,12 +88,11 @@ public class ConnectedThread extends Thread
                     CheckWin();
                     CheckAttack();
                     CheckAttackResult();
-                    TakeGlareClaim();
-                    TakeGlairResult();
-                    GetPVOInfo();
-                    GetPVOResult();
-                    GetReloadInfo();
                 }
+                //btController.ShowToast(bytes);
+                // Read from the InputStream
+                // Send the obtained bytes to the UI Activity
+                // mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
             }
             catch (IOException e)
             {
@@ -195,7 +194,6 @@ public class ConnectedThread extends Thread
             Log.i("CONNECTED.ATK_WEAPON_TYPE", "" + BattleEnemy.weaponType);
         }
     }
-
     public void CheckAttackResult()
     {
         if(recievedData.startsWith(HandlerMSG.ATTACK_RESULT))
@@ -211,55 +209,6 @@ public class ConnectedThread extends Thread
                 return;
             BattleEnemy.attackResultData = new String(tmp[2]);
             Log.i("CONNECTED.ARSLT_DATA", "" + BattleEnemy.attackResultData);
-        }
-    }
-    //Прием данных для бонуса засвета
-    public void TakeGlareClaim()
-    {
-        if(recievedData.startsWith(HandlerMSG.GLARE_MSG))
-        {
-            String[] tmp = recievedData.split("\\|");
-            ForBonusEnemy.socket.x = (int)Float.parseFloat(tmp[1]);
-            ForBonusEnemy.socket.y = (int)Float.parseFloat(tmp[2]);
-            ForBonusEnemy.canISendResult = true;
-        }
-    }
-    //Прием результата бонуса засвета
-    public void TakeGlairResult()
-    {
-        if(recievedData.startsWith(HandlerMSG.GLARE_RESULT_MSG))
-        {
-            int k = 1;
-            String[] tmp = recievedData.split("\\|");
-            for(int i = 0; i < 3; i++)
-            {
-                for(int j = 0; j < 3; j++)
-                {
-                    ForBonusEnemy.glareArr[i][j] = Integer.parseInt(tmp[k]);
-                    k++;
-                }
-            }
-            ForBonusEnemy.canITakeResult = true;
-        }
-    }
-    public void GetPVOInfo()
-    {
-        if(recievedData.startsWith(HandlerMSG.PVO_INFO))
-            ForBonusEnemy.pvoSend = true;
-    }
-    public void GetPVOResult()
-    {
-        if(recievedData.startsWith(HandlerMSG.PVO_RESULT))
-            ForBonusEnemy.pvoGet = true;
-    }
-
-    public void GetReloadInfo()
-    {
-        if(recievedData.startsWith(HandlerMSG.RELOAD_RESULT))
-        {
-            String[] tmp = recievedData.split("\\|");
-            ForBonusEnemy.skill = Integer.parseInt(tmp[1]);
-            ForBonusEnemy.reloadGet = true;
         }
     }
 }

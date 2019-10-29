@@ -13,5 +13,4 @@ public class BattleEnemy
     public static int damage;
     public static byte attackResult; //-1 - нет результата; 0 - попал в ту, которую уже стрелял; 1 - мимо; 2 - попал; 3 - взорвал
     public static String attackResultData;
-    public static boolean isLose;
 }

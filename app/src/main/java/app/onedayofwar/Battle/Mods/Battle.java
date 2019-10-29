@@ -1,32 +1,26 @@
 package app.onedayofwar.Battle.Mods;
 
-
-import android.graphics.RectF;
+import android.graphics.Color;
+import android.graphics.Rect;
 import android.util.Log;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.BattleElements.Field;
-import app.onedayofwar.Battle.Bonus.Bonus;
-import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
-import app.onedayofwar.Battle.Bonus.GlareBonus;
-import app.onedayofwar.Battle.Bonus.PVO;
-import app.onedayofwar.Battle.Bonus.ReloadBonus;
-import app.onedayofwar.Battle.Screens.BattleView;
+import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.Units.Bullet;
-import app.onedayofwar.Battle.Units.Ground.Engineer;
-import app.onedayofwar.Battle.Units.Ground.IFV;
-import app.onedayofwar.Battle.Units.Ground.Robot;
-import app.onedayofwar.Battle.Units.Ground.SONDER;
-import app.onedayofwar.Battle.Units.Ground.Tank;
-import app.onedayofwar.Battle.Units.Ground.Turret;
+import app.onedayofwar.Battle.Units.Engineer;
+import app.onedayofwar.Battle.Units.IFV;
+import app.onedayofwar.Battle.Units.Robot;
+import app.onedayofwar.Battle.Units.SONDER;
+import app.onedayofwar.Battle.Units.Tank;
+import app.onedayofwar.Battle.Units.Turret;
 import app.onedayofwar.Battle.Units.Unit;
+import app.onedayofwar.Battle.System.BattleView;
 import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.Graphics.Graphics;
-import app.onedayofwar.System.Vector2;
+import app.onedayofwar.System.*;
 
 /**
  * Created by Slava on 24.12.2014.
@@ -50,18 +44,11 @@ public abstract class Battle
     protected byte selectedUnitZone;
     //endregion
 
-    public int preShoot;
-    public Bullet bullet;
+
+    Bullet bullet;
     //endregion
 
     protected String testLocalView = "";
-
-    //region Bonuses
-    public Bonus glareBonus;
-    public Bonus pvo;
-    public Bonus reloadBonus;
-    public boolean isEnemyShotPrepeared;
-    //endregion
 
     //region Constructor
     protected Battle(BattleView battleView)
@@ -78,15 +65,6 @@ public abstract class Battle
     abstract public boolean PrepareEnemyShoot();
     abstract public void EnemyShoot();
     abstract public void InstallationFinish();
-    abstract public boolean PrepareToGlare();
-    abstract public boolean EnemyGlare();
-    abstract public void PlayerGlare();
-    abstract public void PVOInfoSend();
-    abstract public void PVOInfoGet();
-    abstract public void PVOSendResult();
-    abstract public void SendEnemyResult();
-    abstract public void GetReloadInfo();
-    abstract public void SendReloadInfo();
     //endregion
 
     //region Initialization
@@ -96,27 +74,15 @@ public abstract class Battle
         BattleEnemy.target = new Vector2();
         BattleEnemy.target.SetFalse();
         BattleEnemy.weaponType = 0;
-        BattleEnemy.isLose = false;
         BattleEnemy.damage = 0;
         BattleEnemy.attackResult = -1;
-        ForBonusEnemy.glareArr = new int[3][3];
-        ForBonusEnemy.socket = new Vector2();
-        ForBonusEnemy.canITakeResult = false;
-        ForBonusEnemy.canISendResult = false;
-        ForBonusEnemy.pvoGet = false;
-        ForBonusEnemy.pvoGet = false;
-        ForBonusEnemy.reloadGet = false;
-        ForBonusEnemy.skill = 0;
         turns = 0;
         army = new ArrayList<>();
 
-        field = new Field(battleView.screenWidth/2, battleView.screenHeight/2, BattlePlayer.fieldSize, true);
-        eField = new Field((int)(405 * Assets.monitorWidthCoeff + Assets.grid.getWidth() * Assets.gridCoeff), battleView.screenHeight/2, BattlePlayer.fieldSize, false); //gameView.screenWidth/2 - Assets.grid.getIconWidth()/2, gameView.screenHeight/2 - Assets.grid.getIconHeight()/2, 15, false);
+        field = new Field(battleView.screenWidth/2 - Assets.gridIso.getWidth()/2, battleView.screenHeight/2 - Assets.gridIso.getHeight()/2, BattlePlayer.fieldSize, true);
+        eField = new Field((int)(405 * Assets.monitorWidthCoeff), battleView.screenHeight/2 - Assets.grid.getHeight()/2, BattlePlayer.fieldSize, false); //gameView.screenWidth/2 - Assets.grid.getWidth()/2, gameView.screenHeight/2 - Assets.grid.getHeight()/2, 15, false);
         eField.Move();
         BattlePlayer.fieldSize = 0;
-        glareBonus = new GlareBonus(true);
-        pvo = new PVO(true);
-        reloadBonus = new ReloadBonus(true);
 
         selectedUnitZone = -1;
 
@@ -153,63 +119,56 @@ public abstract class Battle
                 case 0:
                     if (unitCount[0] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.x + battleView.selectingPanel.width / 2 - Assets.robotIcon.getWidth() / 2, 10);
                         for (int i = 0; i < unitCount[0]; i++)
                             army.add(new Robot(startPos, 0, true));
-
-                        offset = (int)army.get(unitNum[0]).GetIconPosition().bottom;
+                        offset = army.get(unitNum[0]).GetIconPosition().bottom;
                     }
                     break;
                 case 1:
                     if (unitCount[1] != 0)
                     {
-
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.x + battleView.selectingPanel.width / 2 - Assets.robotIcon.getWidth() / 2, offset + 10);
                         for (int i = 0; i < unitCount[1]; i++)
                             army.add(new IFV(startPos, 1, true));
-
-                        offset = (int)army.get(unitNum[1]).GetIconPosition().bottom;
+                        offset = army.get(unitNum[1]).GetIconPosition().bottom;
                     }
                     break;
                 case 2:
                     if (unitCount[2] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10  + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.x + battleView.selectingPanel.width / 2 - Assets.robotIcon.getWidth() / 2, offset + 10);
                         for (int i = 0; i < unitCount[2]; i++)
                             army.add(new Engineer(startPos, 2, true));
-
-                        offset = (int)army.get(unitNum[2]).GetIconPosition().bottom;
+                        offset = army.get(unitNum[2]).GetIconPosition().bottom;
                     }
                     break;
                 case 3:
                     if (unitCount[3] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.x + battleView.selectingPanel.width / 2 - Assets.robotIcon.getWidth() / 2, offset + 10);
                         for (int i = 0; i < unitCount[3]; i++)
                             army.add(new Tank(startPos, 3, true));
-
-                        offset = (int)army.get(unitNum[3]).GetIconPosition().bottom;
+                        offset = army.get(unitNum[3]).GetIconPosition().bottom;
                     }
                     break;
                 case 4:
                     if (unitCount[4] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.x + battleView.selectingPanel.width / 2 - Assets.robotIcon.getWidth() / 2, offset + 10);
                         for (int i = 0; i < unitCount[4]; i++)
                             army.add(new Turret(startPos, 4, true));
-
-                        offset = (int)army.get(unitNum[4]).GetIconPosition().bottom;
+                        offset = army.get(unitNum[4]).GetIconPosition().bottom;
                     }
                     break;
                 case 5:
                     if (unitCount[5] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.x + battleView.selectingPanel.width / 2 - Assets.robotIcon.getWidth() / 2, offset + 10);
                         for (int i = 0; i < unitCount[5]; i++)
                             army.add(new SONDER(startPos, 5, true));
                     }
                     break;
-
             }
         }
 
@@ -226,13 +185,6 @@ public abstract class Battle
     //region Update
     public void Update(float eTime)
     {
-        if(BattleEnemy.isLose && battleView.btController != null)
-        {
-            state = BattleState.Win;
-            GameOver();
-            return;
-        }
-
         if(state != BattleState.Installation)
         {
             field.UpdateAnimation(eTime);
@@ -242,8 +194,8 @@ public abstract class Battle
             }
         }
 
-        /*if(state == BattleState.Installation)
-            AlignArmyPosition(eTime);*/
+        if(state == BattleState.Installation && !battleView.selectingPanel.isStop)
+            AlignArmyPosition(eTime);
 
         //Если шторы закрыты
         if(battleView.IsGatesClose())
@@ -257,7 +209,6 @@ public abstract class Battle
             else if(state == BattleState.AttackPrepare)
             {
                 SwapFields();
-                army.get(selectedUnitZone).Deselect();
                 state = BattleState.Attack;
                 battleView.ShootingPrepare();
                 battleView.MoveGates();
@@ -278,62 +229,29 @@ public abstract class Battle
             {
                 if(PrepareEnemyShoot())
                 {
-                    if(!BattleEnemy.target.IsFalse())
+                    switch (bullet.state)
                     {
-                        switch (bullet.state)
-                        {
-                            case LAUNCH:
-                                bullet.Launch(BattleEnemy.target.x, BattleEnemy.target.y, BattleEnemy.weaponType);
-                                break;
-                            case FLY:
-                                if (!battleView.pvoStart)
-                                    bullet.Update(eTime);
-                                else
-                                {
-                                    if (ForBonusEnemy.pvoSend)
-                                        PVOSendResult();
-                                    else if (ForBonusEnemy.pvoGet)
-                                        PVOInfoGet();
-                                }
-                                break;
-                            case BOOM:
-                                field.explodeAnimation.setPosition((int) (BattleEnemy.target.x), (int) (BattleEnemy.target.y - 25 * Assets.isoGridCoeff));
-                                field.explodeAnimation.setTexture(Assets.explosion, 24, 100);
-                                field.explodeAnimation.Start();
-                                bullet.Reload();
-                                BattleEnemy.target.SetFalse();
-                                EnemyShoot();
-
-                                Log.i("BATTLE", "ENEMY SHOOT");
-                                battleView.AttackPrepare();
-                                state = BattleState.AttackPrepare;
-                                isEnemyShotPrepeared = false;
-                                break;
-                        }
+                        case LAUNCH:
+                            bullet.Launch(BattleEnemy.target.x, BattleEnemy.target.y, BattleEnemy.weaponType);
+                            break;
+                        case FLY:
+                            bullet.Update(eTime);
+                            break;
+                        case BOOM:
+                            field.explodeAnimation.SetPos((int)(BattleEnemy.target.x - field.socketSizeX/2 - 10 * Assets.isoGridCoeff), (int)(BattleEnemy.target.y - field.socketSizeY/2 - Assets.explode.getHeight() + 15 * Assets.isoGridCoeff));
+                            field.explodeAnimation.Start();
+                            bullet.Reload();
+                            BattleEnemy.target.SetFalse();
+                            EnemyShoot();
+                            battleView.AttackPrepare();
+                            state = BattleState.AttackPrepare;
+                            break;
                     }
                 }
             }
             else if(state == BattleState.Shoot)
             {
                 PlayerShoot();
-            }
-            //Готовимся к ответу на запрос по бонусу засвета
-            if(ForBonusEnemy.canISendResult)
-            {
-                EnemyGlare();
-                ForBonusEnemy.canISendResult = false;
-            }
-            //Принимаем и засвечиваем нужную часть
-            if(ForBonusEnemy.canITakeResult)
-            {
-                PlayerGlare();
-                ForBonusEnemy.canITakeResult = false;
-            }
-            //Принимает информацию о том, что нужна перезарядка
-            if(ForBonusEnemy.reloadGet)
-            {
-                GetReloadInfo();
-                ForBonusEnemy.reloadGet = false;
             }
         }
     }
@@ -446,14 +364,13 @@ public abstract class Battle
     public void MoveSelectedUnit()
     {
         //Если касание было не по кнопкам
-        if (!battleView.isButtonPressed && (battleView.touchPos.x < battleView.selectingPanel.matrix[12] - battleView.selectingPanel.width/2 - 5))
+        if (!battleView.isButtonPressed && (battleView.touchPos.x < battleView.selectingPanel.x + battleView.selectingPanel.offsetX - 5))
         {
             //Если юнит выбран
             if (selectedUnitZone > -1)
             {
                 //Вектор касания смещаем на определенную величину, для удобства
                 Vector2 tmp = new Vector2(battleView.touchPos.x - army.get(unitNum[selectedUnitZone]).GetIconPosition().width() - 50 - army.get(unitNum[selectedUnitZone]).offset.x, battleView.touchPos.y - army.get(unitNum[selectedUnitZone]).GetIconPosition().height()/2);
-
                 //Если касанемся в пределах поля
                 if(field.IsVectorInField(tmp))
                 {
@@ -461,7 +378,7 @@ public abstract class Battle
                     field.SelectSocket(tmp, 0);
 
                     //Перемещаем юнит по ячейкам
-                    army.get(unitNum[selectedUnitZone]).SetPosition(field.selectedSocket);
+                    army.get(unitNum[selectedUnitZone]).pos.SetValue(field.selectedSocket);
 
                     //Проверяем помехи
                     army.get(unitNum[selectedUnitZone]).CheckPosition(field);
@@ -477,8 +394,12 @@ public abstract class Battle
     {
         if (state == BattleState.AttackPrepare)
         {
+            //Получаем локальные координаты клетки поля
+            //Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
+            //Получаем инфу клетки поля
             if(field.selectedSocket.IsFalse())
                 return;
+
             byte tmpID = field.GetSelectedSocketInfo();
             //Если в клетке стоит юнит
             if (tmpID > -1)
@@ -487,13 +408,15 @@ public abstract class Battle
                 {
                     if (selectedUnitZone > -1)
                         army.get(selectedUnitZone).Deselect();
+
                     selectedUnitZone = tmpID;
                     army.get(tmpID).Select();
                 }
             }
             else
             {
-                RectF touchRect = new RectF(battleView.touchPos.x - 3, battleView.touchPos.y - 3, battleView.touchPos.x + 3, battleView.touchPos.y + 3);
+                Rect touchRect = new Rect(battleView.touchPos.x - 3, battleView.touchPos.y - 3, battleView.touchPos.x + 3, battleView.touchPos.y + 3);
+
                 for(byte i = 0; i < army.size(); i++)
                 {
                     if (touchRect.intersect(army.get(i).GetBounds()))
@@ -502,6 +425,7 @@ public abstract class Battle
                         {
                             if (selectedUnitZone > -1)
                                 army.get(selectedUnitZone).Deselect();
+
                             selectedUnitZone = i;
                             army.get(i).Select();
                         }
@@ -517,7 +441,7 @@ public abstract class Battle
             if (selectedUnitZone < 0)
             {
                 //Получаем прямоугольник касания
-                RectF touchRect = new RectF(battleView.touchPos.x - 3, battleView.touchPos.y - 3, battleView.touchPos.x + 3, battleView.touchPos.y + 3);
+                Rect touchRect = new Rect(battleView.touchPos.x - 3, battleView.touchPos.y - 3, battleView.touchPos.x + 3, battleView.touchPos.y + 3);
                 //Пробегаем по всем текущим идам разных типов кораблей
                 for (byte i = 0; i < unitNum.length; i++)
                 {
@@ -526,6 +450,7 @@ public abstract class Battle
                     {
                         //Выделенному типу присваиваем ид этой зоны
                         selectedUnitZone = i;
+
                         //Перемещаем в конец, чтоб перекрывал остальные юниты
                         for(byte u = 0; u < drawArmySequence.length; u++)
                         {
@@ -541,16 +466,20 @@ public abstract class Battle
                                 break;
                             }
                         }
+
                         //Задвигаем панель выбора юнитов
                         battleView.selectingPanel.Move();
-                        //Выделяем ячейку на поле
-                        field.selectedSocket.SetValue(field.GetGlobalSocketCoord(field.size / 2, field.size / 2));
                         //Устанавливаем позицию по центру поля
-                        army.get(unitNum[selectedUnitZone]).SetPosition(field.selectedSocket);
+                        army.get(unitNum[selectedUnitZone]).pos.SetValue(field.GetGlobalSocketCoord(new Vector2(field.size / 2, field.size / 2)));
+                        //Выделяем ячейку на поле
+                        field.SelectSocket(new Vector2(army.get(unitNum[selectedUnitZone]).pos.x, army.get(unitNum[selectedUnitZone]).pos.y + 2), 0);
+
                         //Подсвечиваем юнит
                         army.get(unitNum[selectedUnitZone]).Select();
+
                         //Проверяем помехи
                         army.get(unitNum[selectedUnitZone]).CheckPosition(field);
+
                         //Пока текущий ид выделенного типа указывает на установленный юнит
                         while (army.get(unitNum[selectedUnitZone]).isInstalled)
                             //Увеличиваем текущий ид
@@ -563,14 +492,14 @@ public abstract class Battle
                 if (selectedUnitZone < 0)
                 {
                     //Если касание было в пределах поля
-                    if (field.IsVectorInField(battleView.touchPos) && battleView.touchPos.x < battleView.selectingPanel.matrix[12] - battleView.selectingPanel.width/2 - 5)
+                    if (field.IsVectorInField(battleView.touchPos) && battleView.touchPos.x < battleView.selectingPanel.GetPosition().x - 5)
                     {
                         //Выделяем клетку поля
                         field.SelectSocket(battleView.touchPos, 0);
                         //Получаем локальные координаты клетки поля
-                        Vector2 tmp = field.GetLocalSocketCoord(field.selectedSocket);
+                        Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
                         //Получаем инфу клетки поля
-                        byte tmpID = field.GetFieldInfo()[(int)tmp.y][(int)tmp.x];
+                        byte tmpID = field.GetFieldInfo()[tmp.y][tmp.x];
                         //Если в клетке стоит юнит
                         if (tmpID > -1)
                         {
@@ -586,10 +515,11 @@ public abstract class Battle
                             army.get(tmpID).ResetPosition();
                             //Помечаем его как не установленный
                             army.get(tmpID).isInstalled = false;
-                            //Обновляем границы выделения
+
                             army.get(tmpID).UpdateBounds();
-                            //Выравниваем иконку
-                            army.get(tmpID).getIconMatrix()[12] = battleView.selectingPanel.matrix[12];
+
+                            army.get(tmpID).iconPos.SetValue(army.get(tmpID).GetStartPosition());
+
                             //Если его ид меньше текущего ида кораблей определенного типа или установлены все корабли данного типа
                             if (tmpID < unitNum[army.get(tmpID).GetZone()] || unitNum[army.get(tmpID).GetZone()] == -1)
                                 //записываем в текущий ид кораблей определенного типа значение ида юнита
@@ -599,7 +529,6 @@ public abstract class Battle
                         {
                             for(byte i = 0; i < army.size(); i++)
                             {
-                                //Проверяем на касание в границах выделения юнитов
                                 if (touchRect.intersect(army.get(i).GetBounds()))
                                 {
                                     //Если меню выбора закрыто
@@ -614,10 +543,11 @@ public abstract class Battle
                                     army.get(i).ResetPosition();
                                     //Помечаем его как не установленный
                                     army.get(i).isInstalled = false;
-                                    //Обновляем границы выделения
+
                                     army.get(i).UpdateBounds();
-                                    //Выравниваем иконку
-                                    army.get(i).getIconMatrix()[12] = battleView.selectingPanel.matrix[12];
+
+                                    army.get(i).iconPos.SetValue(army.get(i).GetStartPosition());
+
                                     //Если его ид меньше текущего ида кораблей определенного типа или установлены все корабли данного типа
                                     if (i < unitNum[army.get(i).GetZone()] || unitNum[army.get(i).GetZone()] == -1)
                                         //записываем в текущий ид кораблей определенного типа значение ида юнита
@@ -638,24 +568,26 @@ public abstract class Battle
         {
             for (Unit unit : army)
             {
-                if (unit.getMatrix()[12] < 0)
-                    unit.getMatrix()[12] += battleView.screenWidth;
+                if (unit.pos.x < 0)
+                    unit.pos.x += field.width + field.initX + 10;
                 else
-                    unit.getMatrix()[12] -= battleView.screenWidth;
+                    unit.pos.x -= field.width + field.initX + 10;
             }
         }
         else
         {
-            for (int i = 0; i < unitCount.length; i++)
+            if(!battleView.selectingPanel.isStop)
             {
-                if (unitNum[i] != -1)
+                for (int i = 0 ; i < unitCount.length; i++)
                 {
-                    army.get(unitNum[i]).getIconMatrix()[12] = battleView.selectingPanel.matrix[12];
+                    if(unitNum[i] != -1)
+                    {
+                        army.get(unitNum[i]).iconPos.x += (int)(battleView.selectingPanel.velocity.x * eTime);
+                    }
                 }
             }
         }
     }
-
     public void SwapFields()
     {
         field.Move();
@@ -675,8 +607,7 @@ public abstract class Battle
             if (!field.selectedSocket.IsFalse())
             {
                 //Выравниваем позицию юнита по выделеной ячейке
-                army.get(unitNum[selectedUnitZone]).SetPosition(field.selectedSocket);
-
+                army.get(unitNum[selectedUnitZone]).pos.SetValue(field.selectedSocket);
                 //Если юнит не выходит за границы поля
                 if (army.get(unitNum[selectedUnitZone]).SetForm(field.selectedSocket, field, true))
                 {
@@ -712,8 +643,8 @@ public abstract class Battle
                     if (installCount == unitCount[selectedUnitZone])
                         //Помечаем тип как установленный
                         unitNum[selectedUnitZone] = -1;
-                    //else
-                        //army.get(unitNum[selectedUnitZone]).iconMatrix[12] = army.get(unitNum[selectedUnitZone] - 1).iconMatrix[12];
+                    else
+                        army.get(unitNum[selectedUnitZone]).iconPos.x = army.get(unitNum[selectedUnitZone] - 1).iconPos.x;
 
                     updateDrawArmySequence();
 
@@ -727,12 +658,12 @@ public abstract class Battle
     }
     //endregion
 
-    public void DrawUnits(Graphics graphics)
+    public void DrawUnits()
     {
         boolean isExplodeShowed = false;
         for(Unit unit : drawArmySequence)
         {
-            if(unit.getMatrix()[13] > 0)
+            if(!unit.pos.IsNegative(false))
             {
                 if(field.explodeAnimation.IsStart() && !isExplodeShowed)
                 {
@@ -758,10 +689,9 @@ public abstract class Battle
                                         break;
                                     }
                                 }
-
                                 if(!isOnForm)
                                 {
-                                    graphics.DrawAnimation(field.explodeAnimation);
+                                    battleView.graphics.drawSprite(Assets.explode, field.explodeAnimation.GetDstRect(), field.explodeAnimation.GetSrcRect());
                                     isExplodeShowed = true;
                                     break fin;
                                 }
@@ -769,41 +699,41 @@ public abstract class Battle
                         }
                     }
                 }
-                unit.Draw(graphics);
+                unit.Draw(battleView.graphics);
             }
         }
-        if(state != BattleState.Installation && field.getMatrix()[12] >= 0)
+        if(state != BattleState.Installation && field.x >= 0)
         {
-            //battleView.graphics.drawText(testLocalView, 24, 50, 150, army.get(0).strokePaint.getColor());
+            battleView.graphics.drawText(testLocalView, 24, 50, 150, army.get(0).strokePaint.getColor());
         }
-        bullet.Draw(graphics);
+        bullet.Draw(battleView.graphics);
         if(field.explodeAnimation.IsStart() && !isExplodeShowed)
         {
-            graphics.DrawAnimation(field.explodeAnimation);
+            battleView.graphics.drawSprite(Assets.explode, field.explodeAnimation.GetDstRect(), field.explodeAnimation.GetSrcRect());
         }
     }
 
-    public void DrawFields(Graphics graphics)
+    public void DrawFields()
     {
         if(state != BattleState.Installation)
         {
-            if (eField.getMatrix()[12] >= 0)
-                eField.Draw(graphics);
+            if (eField.x >= 0)
+                eField.Draw(battleView.graphics);
             else
-                field.DrawFieldInfo(graphics);
+                field.DrawFieldInfo(battleView.graphics);
         }
         else
         {
-            field.Draw(graphics);
+            field.Draw(battleView.graphics);
         }
     }
 
-    public void DrawUnitsIcons(Graphics graphics)
+    public void DrawUnitsIcons()
     {
         for(int i = 0; i < unitCount.length; i++)
         {
             if(unitNum[i] != -1)
-                army.get(unitNum[i]).DrawIcon(graphics);
+                army.get(unitNum[i]).DrawIcon(battleView.graphics);
         }
     }
 

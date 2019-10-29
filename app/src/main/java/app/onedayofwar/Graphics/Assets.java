@@ -8,86 +8,73 @@ import android.graphics.Typeface;
 public class Assets
 {
     //region Units
-    public static Texture robotImage;
-    public static Texture robotStroke;
-    public static Texture robotIcon;
-    public static Texture ifvImage;
-    public static Texture ifvStroke;
-    public static Texture ifvIcon;
-    public static Texture engineerImage;
-    public static Texture engineerStroke;
-    public static Texture engineerIcon;
-    public static Texture tankImage;
-    public static Texture tankStroke;
-    public static Texture tankIcon;
-    public static Texture turretImage;
-    public static Texture turretStroke;
-    public static Texture turretIcon;
-    public static Texture sonderImage;
-    public static Texture sonderStroke;
-    public static Texture sonderIcon;
-    public static Texture akiraImage;
-    public static Texture battleshipImage;
-    public static Texture bioshipImage;
-    public static Texture birdOfPreyImage;
-    public static Texture defaintImage;
-    public static Texture r2d2Image;
+    public static Sprite robotImageL;
+    public static Sprite robotImageR;
+    public static Sprite robotStroke;
+    public static Sprite robotIcon;
+    public static Sprite ifvImageL;
+    public static Sprite ifvImageR;
+    public static Sprite ifvStroke;
+    public static Sprite ifvIcon;
+    public static Sprite engineerImageL;
+    public static Sprite engineerImageR;
+    public static Sprite engineerStroke;
+    public static Sprite engineerIcon;
+    public static Sprite tankImageL;
+    public static Sprite tankImageR;
+    public static Sprite tankStroke;
+    public static Sprite tankIcon;
+    public static Sprite turretImageL;
+    public static Sprite turretImageR;
+    public static Sprite turretStroke;
+    public static Sprite turretIcon;
+    public static Sprite sonderImageL;
+    public static Sprite sonderImageR;
+    public static Sprite sonderStroke;
+    public static Sprite sonderIcon;
     //endregion
 
     //region Fields
-    public static Texture grid;
-    public static Texture gridIso;
+    public static Sprite grid;
+    public static Sprite gridIso;
 
-    public static Texture signFire;
-    public static Texture signMiss;
-    public static Texture signMissIso;
-    public static Texture signHit;
-    public static Texture signFlag;
-    public static Texture signError;
-    public static Texture signGlare;
+    public static Sprite signFire;
+    public static Sprite signMiss;
+    public static Sprite signMissIso;
+    public static Sprite signHit;
+    public static Sprite signFlag;
     //endregion
 
     //region Buttons
-    public static Texture btnCancel;
-    public static Texture btnInstall;
-    public static Texture btnFinishInstallation;
-    public static Texture btnShoot;
-    public static Texture btnTurn;
-    public static Texture btnPanelClose;
-    public static Texture btnFlag;
-    public static Texture btnStartGame;
-    public static Texture btnSingleGame;
-    public static Texture btnBluetoothGame;
-    public static Texture btnCampaing;
-    public static Texture btnQuickBattle;
-    public static Texture btnBack;
+    public static Sprite btnCancel;
+    public static Sprite btnInstall;
+    public static Sprite btnFinishInstallation;
+    public static Sprite btnShoot;
+    public static Sprite btnTurn;
+    public static Sprite btnPanelClose;
+    public static Sprite btnFlag;
     //endregion
 
-    public static Texture explosion;
-    public static Texture fire;
-    public static Texture airExplosion;
-
-    public static Texture background;
-    public static Texture monitor;
-
-    public static Texture bullet;
-    public static Texture miniRocket;
-
-    public static Texture space;
-    public static Texture planet;
-    public static Texture player;
-    public static Texture btnRegion;
-
-    public static TextFont arialFont;
-    public static Typeface mainFont;
+    public static Sprite explode;
+    public static Sprite fire;
 
     public static double gridCoeff;
     public static double isoGridCoeff;
-    public static double bgHeightCoeff;
-    public static double bgWidthCoeff;
+    public static double screenHeightCoeff;
+    public static double screenWidthCoeff;
+    public static double dpiCoeff;
     public static double monitorHeightCoeff;
     public static double monitorWidthCoeff;
     public static double spaceCoeff;
-    public static float btnCoeff;
-    public static double iconCoeff;
+
+    public static Sprite background;
+    public static Sprite monitor;
+
+    public static Typeface mainFont;
+
+    public static Sprite bullet;
+    public static Sprite miniRocket;
+
+    public static Sprite space;
+    public static Sprite planet;
 }

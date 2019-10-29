@@ -1,7 +1,8 @@
 package app.onedayofwar.UI;
 
-import android.graphics.Color;
-import android.opengl.Matrix;
+import android.graphics.Bitmap;
+import android.graphics.Paint;
+import android.graphics.Rect;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -13,28 +14,29 @@ import app.onedayofwar.System.Vector2;
 public class Panel
 {
     static public enum Type{UP, DOWN, LEFT, RIGHT}
-    public float[] matrix;
-    private int beginX;
-    private int beginY;
+    public int x;
+    public int y;
+    public int offsetX;
+    public int offsetY;
     public Vector2 velocity;
     public int width;
-    public int height;
+    int height;
     public boolean isStop;
     public boolean isClose;
     private Type type;
     private Button closeBtn;
+    private Bitmap image;
+    Rect rect;
+    Paint paint;
 
     //region Constructor
     public Panel(int x, int y, int width, int height, Type type)
     {
-        beginX = x;
-        beginY = y;
+        this.x = x;
+        this.y = y;
         this.width = width;
         this.height = height;
         this.type = type;
-        matrix = new float[16];
-        Matrix.setIdentityM(matrix, 0);
-        Matrix.translateM(matrix, 0, x, y, 0);
        /* if(openType == 3)
             image = BitmapFactory.decodeResource(res,R.drawable.gate_top);
         else if(openType == 2)
@@ -47,16 +49,19 @@ public class Panel
     //region Initialization
     public void Initialize()
     {
+        offsetX = 0;
+        offsetY = 0;
         SetVelocity();
+        rect = new Rect(x, y, x + width, y + height);
 
         if(type == Type.RIGHT)
-        {
-            closeBtn = new Button(Assets.btnPanelClose, (int) (matrix[12] + Assets.btnPanelClose.getWidth() / 2 * Assets.btnCoeff - width / 2), height / 2, false);
-            closeBtn.Scale(Assets.btnCoeff);
-        }
+            closeBtn = new Button(Assets.btnPanelClose, x, height / 2 - Assets.btnPanelClose.getHeight() / 2, false);
 
         isStop = true;
         isClose = true;
+        paint = new Paint();
+        //paint.setARGB(255,31,31,31);
+        paint.setARGB(255,0,0,0);
     }
     //endregion
 
@@ -68,13 +73,13 @@ public class Panel
                 velocity = new Vector2(-15, 0);
                 break;
             case UP:
-                velocity = new Vector2(0, -1000);
+                velocity = new Vector2(0, -70);
                 break;
             case RIGHT:
-                velocity = new Vector2(1000, 0);
+                velocity = new Vector2(50, 0);
                 break;
             case DOWN:
-                velocity = new Vector2(0, 1000);
+                velocity = new Vector2(0, 70);
                 break;
         }
     }
@@ -83,19 +88,18 @@ public class Panel
     {
         if(!isStop)
         {
-            matrix[12] += velocity.x * eTime;
-            matrix[13] += velocity.y * eTime;
-
+            offsetX += (int)(velocity.x * eTime);
+            offsetY += (int)(velocity.y * eTime);
             if (type == Type.RIGHT)
-                closeBtn.getMatrix()[12] += velocity.x * eTime;
+                closeBtn.x += (int)(velocity.x * eTime);
 
             switch (type)
             {
                 case LEFT:
-                    /*if (Math.abs(matrix[12] - beginX) >= width)
+                    if (Math.abs(offsetX) >= width)
                     {
-                         = -width;
-                        Matrix.translateM(closeBtn.matrix, 0, -closeBtn.width, 0, 0);
+                        offsetX = -width;
+                        closeBtn.x -= closeBtn.width;
                         velocity.ChangeSign();
                         closeBtn.Flip();
                         isClose = false;
@@ -108,23 +112,24 @@ public class Panel
                         velocity.ChangeSign();
                         isClose = true;
                         isStop = true;
-                    }*/
+                    }
                 break;
 
                 case RIGHT:
-                    if (matrix[12] - beginX >= width)
+                    if (offsetX >= width)
                     {
-                        matrix[12] = beginX + width;
-                        closeBtn.getMatrix()[12] = beginX + width/2 - closeBtn.width/2;
+                        offsetX = width;
+                        closeBtn.x = x + offsetX -closeBtn.width;
                         velocity.ChangeSign();
                         closeBtn.Flip();
                         isClose = false;
                         isStop = true;
+
                     }
-                    else if (matrix[12] - beginX <= 0)
+                    else if (offsetX <= 0)
                     {
-                        matrix[12] = beginX;
-                        closeBtn.getMatrix()[12] = beginX - width/2 + closeBtn.width/2;
+                        offsetX = 0;
+                        closeBtn.x = x;
                         velocity.ChangeSign();
                         isClose = true;
                         isStop = true;
@@ -132,16 +137,16 @@ public class Panel
                 break;
 
                 case UP:
-                    if (beginY - matrix[13] >= height)
+                    if (Math.abs(offsetY) >= height)
                     {
-                        matrix[13] = beginY - height;
+                        offsetY = -height;
                         velocity.ChangeSign();
                         isStop = true;
                         isClose = false;
                     }
-                    else if (beginY - matrix[13] <= 0)
+                    else if (offsetY >= 0)
                     {
-                        matrix[13] = beginY;
+                        offsetY = 0;
                         velocity.ChangeSign();
                         isStop = true;
                         isClose = true;
@@ -149,16 +154,16 @@ public class Panel
                 break;
 
                 case DOWN:
-                    if (matrix[13] - beginY >= height)
+                    if (offsetY >= height)
                     {
-                        matrix[13] = beginY + height;
+                        offsetY = height;
                         velocity.ChangeSign();
                         isStop = true;
                         isClose = false;
                     }
-                    else if (matrix[13] - beginY <= 0)
+                    else if (offsetY <= 0)
                     {
-                        matrix[13] = beginY;
+                        offsetY = 0;
                         velocity.ChangeSign();
                         isStop = true;
                         isClose = true;
@@ -166,6 +171,7 @@ public class Panel
                 break;
             }
         }
+        rect.set(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height);
     }
 
     public void Move()
@@ -175,19 +181,24 @@ public class Panel
             if (!isClose)
             {
                 closeBtn.Flip();
-                closeBtn.getMatrix()[12] =  beginX + width/2 + closeBtn.width/2;
+                closeBtn.x += closeBtn.width;
             }
         }
         isStop = false;
+    }
+
+    public Vector2 GetPosition()
+    {
+        return new Vector2(x + offsetX, y + offsetY);
     }
 
     public void Draw(Graphics g)
     {
         //if(image == null)
         if(isClose || !isStop)
-            g.DrawRect(matrix[12], matrix[13], width, height, Color.BLACK, true);//g.drawRect(rect.left, rect.top, rect.width(), rect.height(), paint.getColor(), true);
+            g.drawRect(rect.left, rect.top, rect.width(), rect.height(), paint.getColor(), true);
         /*else
-            canvas.drawBitmap(image, new Rect(0,0,image.getIconWidth(), image.getIconHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);*/
+            canvas.drawBitmap(image, new Rect(0,0,image.getWidth(), image.getHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);*/
     }
 
     public void DrawButton(Graphics g)

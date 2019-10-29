@@ -1,20 +1,16 @@
 package app.onedayofwar.Battle.Mods;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
-import app.onedayofwar.Battle.Screens.BattleView;
-import app.onedayofwar.Battle.Units.Ground.Engineer;
-import app.onedayofwar.Battle.Units.Ground.IFV;
-import app.onedayofwar.Battle.Units.Ground.Robot;
-import app.onedayofwar.Battle.Units.Ground.SONDER;
-import app.onedayofwar.Battle.Units.Ground.Tank;
-import app.onedayofwar.Battle.Units.Ground.Turret;
+import app.onedayofwar.Battle.Units.Engineer;
+import app.onedayofwar.Battle.Units.IFV;
+import app.onedayofwar.Battle.Units.Robot;
+import app.onedayofwar.Battle.Units.SONDER;
+import app.onedayofwar.Battle.Units.Tank;
+import app.onedayofwar.Battle.Units.Turret;
 import app.onedayofwar.Battle.Units.Unit;
-import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Battle.System.BattleView;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -49,81 +45,6 @@ public class SingleBattle extends Battle
         battleView.MoveGates();
     }
 
-    @Override
-    public boolean PrepareToGlare()
-    {
-        if(eField.selectedSocket.IsFalse() || eField.GetSelectedSocketInfo() == 0)
-            return false;
-
-        for(int i = 0; i < 3; i++)
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                ForBonusEnemy.glareArr[i][j] = eField.getSquare()[i][j];
-            }
-        }
-        ForBonusEnemy.canITakeResult = true;
-        return true;
-    }
-
-    @Override
-    public boolean EnemyGlare() {return true;}
-
-    @Override
-    public void PlayerGlare()
-    {
-        glareBonus.doYourUglyJob(ForBonusEnemy.glareArr, eField);
-    }
-
-    @Override
-    public void PVOInfoSend()
-    {
-        ForBonusEnemy.pvoGet = true;
-    }
-
-    @Override
-    public void PVOInfoGet()
-    {
-        PrepareEnemyShoot();
-        field.explodeAnimation.setPosition((int) (bullet.getPos().x), (int) (bullet.getPos().y));
-        field.explodeAnimation.setTexture(Assets.airExplosion, 49, 10);
-        field.explodeAnimation.Start();
-        bullet.Reload();
-        preShoot = field.GetSelectedSocketInfo();
-        field.setShot((int) field.GetLocalSocketCoord(BattleEnemy.target).x, (int) field.GetLocalSocketCoord(BattleEnemy.target).y, (byte) preShoot);
-        BattleEnemy.target.SetFalse();
-        battleView.AttackPrepare();
-        state = BattleState.AttackPrepare;
-        battleView.pvoStart = false;
-        isEnemyShotPrepeared = false;
-        ForBonusEnemy.pvoGet = false;
-        ForBonusEnemy.pvoSend = false;
-        battleView.pvoStart = false;
-        CheckEnemyArmy();
-        CheckPlayerArmy();
-    }
-
-    @Override
-    public void PVOSendResult()  {}
-
-    @Override
-    public void SendEnemyResult(){}
-
-    @Override
-    public void GetReloadInfo()
-    {
-        for(int i = 0; i < eArmy.size(); i++)
-        {
-            eArmy.get(i).IncreaseReload(reloadBonus.skill);
-        }
-    }
-
-    @Override
-    public void SendReloadInfo()
-    {
-        ForBonusEnemy.reloadGet = true;
-    }
-
     //region BattleEnemy Loading
     public void LoadEnemy()
     {
@@ -137,34 +58,33 @@ public class SingleBattle extends Battle
     public void InitializeEnemy()
     {
         eArmy = new ArrayList<>();
-        byte[] eUnitCount = battleView.planet == null ? unitCount : battleView.planet.getGroundGuards();
         Vector2 startPos = new Vector2();
-        for(int j = 0; j < eUnitCount.length; j++)
+        for(int j = 0; j < unitCount.length; j++)
         {
             switch(j)
             {
                 case 0:
-                    for(int i = 0; i < eUnitCount[0]; i++)
+                    for(int i = 0; i < unitCount[0]; i++)
                         eArmy.add(new Robot(startPos, 0, false));
                     break;
                 case 1:
-                    for(int i = 0; i < eUnitCount[1]; i++)
+                    for(int i = 0; i < unitCount[1]; i++)
                         eArmy.add(new IFV(startPos, 1, false));
                     break;
                 case 2:
-                    for(int i = 0; i < eUnitCount[2]; i++)
+                    for(int i = 0; i < unitCount[2]; i++)
                         eArmy.add(new Engineer(startPos, 2, false));
                     break;
                 case 3:
-                    for(int i = 0; i < eUnitCount[3]; i++)
+                    for(int i = 0; i < unitCount[3]; i++)
                         eArmy.add(new Tank(startPos, 3, false));
                     break;
                 case 4:
-                    for(int i = 0; i < eUnitCount[4]; i++)
+                    for(int i = 0; i < unitCount[4]; i++)
                         eArmy.add(new Turret(startPos, 4, false));
                     break;
                 case 5:
-                    for(int i = 0; i < eUnitCount[5]; i++)
+                    for(int i = 0; i < unitCount[5]; i++)
                         eArmy.add(new SONDER(startPos, 5, false));
                     break;
             }
@@ -229,7 +149,7 @@ public class SingleBattle extends Battle
                 for(int i = 0; i < eArmy.get(target).GetForm().length; i++)
                 {
                     tmpLocalFormCoord.SetValue(eField.GetLocalSocketCoord(eArmy.get(target).GetForm()[i]));
-                    eField.GetShots()[(int)tmpLocalFormCoord.y][(int)tmpLocalFormCoord.x] = 2;
+                    eField.GetShots()[tmpLocalFormCoord.y][tmpLocalFormCoord.x] = 2;
                 }
             }
             else
@@ -298,7 +218,6 @@ public class SingleBattle extends Battle
 
         eArmy.get(rndUnitID).Reload();
         BattleEnemy.target.SetValue(field.selectedSocket.x, field.selectedSocket.y + field.socketSizeY/2);
-        Log.i("TARGET", ""+BattleEnemy.target.x+"|"+BattleEnemy.target.y);
         BattleEnemy.attacker = rndUnitID;
         isEnemyShotPrepeared = true;
 
@@ -322,7 +241,7 @@ public class SingleBattle extends Battle
                 for(int i = 0; i < army.get(target).GetForm().length; i++)
                 {
                     tmp.SetValue(field.GetLocalSocketCoord(army.get(target).GetForm()[i]));
-                    field.GetShots()[(int)tmp.y][(int)tmp.x] = 2;
+                    field.GetShots()[tmp.y][tmp.x] = 2;
                 }
             }
             else

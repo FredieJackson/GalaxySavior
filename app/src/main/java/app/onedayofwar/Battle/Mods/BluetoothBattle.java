@@ -4,11 +4,9 @@ import android.util.Log;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
 import app.onedayofwar.Battle.BluetoothConnection.HandlerMSG;
-import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
-import app.onedayofwar.Battle.Screens.BattleView;
-import app.onedayofwar.Battle.Units.Unit;
-import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Battle.System.BattleView;
 import app.onedayofwar.System.Vector2;
+import app.onedayofwar.Battle.Units.Unit;
 
 /**
  * Created by Slava on 06.02.2015.
@@ -17,7 +15,6 @@ public class BluetoothBattle extends Battle
 {
     private boolean isEnemyInstallationFinish;
     private boolean isResultSend;
-    private boolean isBonusResultSend;
     public BluetoothBattle(BattleView battleView)
     {
         super(battleView);
@@ -55,87 +52,6 @@ public class BluetoothBattle extends Battle
     }
 
     @Override
-    public boolean PrepareToGlare()
-    {
-        if (eField.selectedSocket.IsFalse() || eField.GetSelectedSocketInfo() == 0)
-            return false;
-
-        Vector2 tmp = new Vector2(eField.GetLocalSocketCoord(eField.selectedSocket));
-
-        Log.i("SELECTED_SOCKET", "x: " + tmp.x + " y: " + tmp.y);
-        battleView.btController.SendData(HandlerMSG.GLARE_MSG + '|' + (int)tmp.x + '|' + (int)tmp.y);
-        return true;
-    }
-
-    @Override
-    public boolean EnemyGlare()
-    {
-        if (ForBonusEnemy.socket.IsFalse())
-            return false;
-
-        if(isBonusResultSend)
-            return true;
-
-        String tmp = "";
-        tmp += HandlerMSG.GLARE_RESULT_MSG;
-        for(int i = 0; i < 3; i++)
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                tmp += "|" + field.getSquare()[i][j];
-            }
-        }
-        battleView.btController.SendData(tmp);
-        isBonusResultSend = true;
-        return true;
-    }
-
-    @Override
-    public void PlayerGlare()
-    {
-        glareBonus.doYourUglyJob(ForBonusEnemy.glareArr, eField);
-        ForBonusEnemy.socket.SetFalse();
-        isBonusResultSend = false;
-    }
-
-    @Override
-    public void PVOInfoSend()
-    {
-        String tmp = "";
-        tmp += HandlerMSG.PVO_INFO;
-        battleView.btController.SendData(tmp);
-    }
-
-    @Override
-    public void PVOInfoGet()
-    {
-        eField.GetShots()[(int)eField.selectedSocket.y][(int)eField.selectedSocket.x] = 101;
-        ForBonusEnemy.pvoGet = false;
-    }
-
-    @Override
-    public void PVOSendResult()
-    {
-        String tmp = "";
-        tmp += HandlerMSG.PVO_RESULT;
-        battleView.btController.SendData(tmp);
-        field.explodeAnimation.setPosition((int) (bullet.getPos().x), (int) (bullet.getPos().y));
-        field.explodeAnimation.setTexture(Assets.airExplosion, 49, 10);
-        field.explodeAnimation.Start();
-        bullet.Reload();
-        preShoot = field.GetSelectedSocketInfo();
-        Vector2 localCoord = field.GetLocalSocketCoord(BattleEnemy.target);
-        field.setShot((int) localCoord.x, (int) localCoord.y, (byte) preShoot);
-        BattleEnemy.target.SetFalse();
-        battleView.AttackPrepare();
-        state = BattleState.AttackPrepare;
-        battleView.pvoStart = false;
-        ForBonusEnemy.pvoSend = false;
-        CheckPlayerArmy();
-    }
-
-
-    @Override
     public void LoadEnemy()
     {
 
@@ -151,7 +67,7 @@ public class BluetoothBattle extends Battle
 
         Log.i("SELECTED_SOCKET", "x: " + tmp.x + " y: " + tmp.y);
 
-        battleView.btController.SendData(HandlerMSG.ATTACK + '|' + (int)tmp.x + '|' + (int)tmp.y + '|' + army.get(selectedUnitZone).GetPower() + '|' + 1);
+        battleView.btController.SendData(HandlerMSG.ATTACK + '|' + tmp.x + '|' + tmp.y + '|' + army.get(selectedUnitZone).GetPower() + '|' + 1);
         eField.GetFieldInfo()[(int)tmp.y][(int)tmp.x] = 0;
         state = BattleState.Shoot;
         return true;
@@ -162,7 +78,6 @@ public class BluetoothBattle extends Battle
     {
         if(BattleEnemy.attackResult != -1)
         {
-            Log.i("PLAYER SHOOT", "ATK RSL " + BattleEnemy.attackResult);
             army.get(selectedUnitZone).Reload();
             army.get(selectedUnitZone).Deselect();
             if(BattleEnemy.attackResult == 3)
@@ -197,14 +112,7 @@ public class BluetoothBattle extends Battle
 
         BattleEnemy.target.SetValue(field.GetGlobalSocketCoord(BattleEnemy.target));
         field.selectedSocket.SetValue(BattleEnemy.target);
-        SendEnemyResult();
-        isResultSend = true;
-        return true;
-    }
 
-    @Override
-    public void SendEnemyResult()
-    {
         byte target = field.GetSelectedSocketInfo();
         int result;
         String resultData = "";
@@ -225,7 +133,7 @@ public class BluetoothBattle extends Battle
                     for (int i = 0; i < army.get(target).GetForm().length; i++)
                     {
                         tmp.SetValue(field.GetLocalSocketCoord(army.get(target).GetForm()[i]));
-                        resultData += "" + (int)tmp.x + '.' + (int)tmp.y + '.';
+                        resultData += "" + tmp.x + '.' + tmp.y + '.';
                     }
                     resultData = resultData.substring(0, resultData.length() - 1);
                 }
@@ -238,26 +146,11 @@ public class BluetoothBattle extends Battle
             {
                 result = 1;
             }
-            if(battleView.pvoStart)
-                result = 101;
         }
         battleView.btController.SendData(HandlerMSG.ATTACK_RESULT + '|' + result + '|' + resultData);
+        isResultSend = true;
         Log.i("ENEMY", "SEND_RESULT");
-    }
-
-    @Override
-    public void GetReloadInfo()
-    {
-        for(int i = 0; i < army.size(); i++)
-        {
-            army.get(i).IncreaseReload(ForBonusEnemy.skill);
-        }
-    }
-
-    @Override
-    public void SendReloadInfo()
-    {
-        battleView.btController.SendData(HandlerMSG.RELOAD_RESULT + "|" + reloadBonus.skill);
+        return true;
     }
 
     @Override
@@ -310,7 +203,6 @@ public class BluetoothBattle extends Battle
             state = BattleState.Lose;
             battleView.btController.SendData(HandlerMSG.LOSE);
             GameOver();
-            return;
         }
         else if(!isGood)
         {

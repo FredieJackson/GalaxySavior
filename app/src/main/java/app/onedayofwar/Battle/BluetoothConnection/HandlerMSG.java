@@ -18,9 +18,4 @@ public class HandlerMSG
     public static final String ATTACK = "ATK";
     public static final String ATTACK_RESULT = "ARSLT";
     public static final String LOSE = "LOSE";
-    public static final String GLARE_MSG = "GLRMSG";
-    public static final String GLARE_RESULT_MSG = "GLRRSLTMSG";
-    public static final String PVO_INFO = "PVO_START";
-    public static final String PVO_RESULT = "RPVO_RSLT";
-    public static final String RELOAD_RESULT = "RELOAD";
 }

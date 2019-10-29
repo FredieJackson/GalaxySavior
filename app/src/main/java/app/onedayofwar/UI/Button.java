@@ -1,12 +1,9 @@
 package app.onedayofwar.UI;
 
-import android.graphics.RectF;
-import android.opengl.Matrix;
+import android.graphics.Rect;
 
-import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Sprite;
-import app.onedayofwar.Graphics.Texture;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -14,51 +11,52 @@ import app.onedayofwar.System.Vector2;
  */
 public class Button
 {
+    public int x;
+    public int y;
     public int width;
     public int height;
-    private RectF rect;
+    private Rect rect;
+    private Sprite image;
     private boolean isClicked;
     private boolean isLocked;
     private boolean isAnimated;
     private boolean isVisible;
-    private Sprite image;
 
-    public Button(Texture texture, float x, float y, boolean isAnimated)
+    public Button(Sprite image, int x, int y, boolean isAnimated)
     {
-        image = new Sprite(texture);
-        image.setPosition(x, y);
+        this.image = image;
+        this.x = x;
+        this.y = y;
         width = image.getWidth();
         height = image.getHeight();
-        rect = new RectF(x - width/2, y - height/2, x + width/2, y + height/2);
+        rect = new Rect(x, y, x + width, y + height);
         isClicked = false;
         isLocked = false;
         isVisible = true;
         this.isAnimated = isAnimated;
     }
 
-    public void Draw(Graphics graphics)
+    public void Draw(Graphics g)
     {
         if(isVisible)
         {
-            graphics.DrawStaticSprite(image);
-            /*if (isClicked && isAnimated)
+            if (isClicked && isAnimated)
                 g.drawSprite(image, rect.left + 5, rect.top + 5, rect.width() - 5, rect.height() - 5, 0, 0, rect.width(), rect.height());
             else
-                g.drawSprite(image, x, y);*/
-
+                g.drawSprite(image, x, y);
         }
     }
 
     public void Flip()
     {
-        image.Scale(-1, 1);
+        image.horizontalFlip();
     }
 
     public void Update(Vector2 touchPos)
     {
         if(!isLocked && isVisible)
         {
-            rect.set(image.matrix[12] - width/2, image.matrix[13] - height/2, image.matrix[12] + width/2, image.matrix[13] + height/2);
+            rect.set(x, y, x + width, y + height);
 
             if (touchPos.x > rect.left - 5 && touchPos.x < rect.right + 5 && touchPos.y > rect.top - 5 && touchPos.y < rect.bottom + 5)
                 isClicked = true;
@@ -81,7 +79,6 @@ public class Button
     {
         isLocked = true;
     }
-
     public void Unlock()
     {
         isLocked = false;
@@ -91,27 +88,26 @@ public class Button
     {
         isVisible = true;
     }
-
     public void SetInvisible()
     {
         isVisible = false;
     }
 
-    public void SetPosition(float x, float y)
+    public void SetPosition(Vector2 pos)
     {
-        image.setPosition(x, y);
+        x = pos.x;
+        y = pos.y;
     }
 
-    public void Scale(float s)
+    public void SetPosition(int x, int y)
     {
-        image.Scale(s);
-        width = image.getWidth();
-        height = image.getHeight();
+        this.x = x;
+        this.y = y;
     }
 
-    public float[] getMatrix()
+    public Vector2 GetPosition()
     {
-        return image.matrix;
+        return new Vector2(x,y);
     }
 
 }
