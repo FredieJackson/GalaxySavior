@@ -1,16 +1,14 @@
 package app.onedayofwar.Graphics;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
-import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
+
+import app.onedayofwar.System.Vector2;
 
 /**
  * Created by Slava on 05.03.2015.
@@ -20,48 +18,62 @@ public class Sprite
     private int width;
     private int height;
 
-    private FloatBuffer vertexBuffer;
+    FloatBuffer vertexBuffer;
+    FloatBuffer uvBuffer;
 
     private final int program;
     private int positionHandle;
-    private int matrixMVPHandle;
+    private int texturePositionHandle;
 
-    private float[] uvs;
-    private FloatBuffer uvBuffer;
+    private float[] buffer;
 
-    private int textureID;
-
-    private final int vertexCount = 8 / COORDS_PER_VERTEX;
-
-    private final int vertexStride = COORDS_PER_VERTEX * 4;
-
-    static final int COORDS_PER_VERTEX = 2;
-
-    private float spriteCoords[];
+    private static final int vertexCount = 8 / 2;
+    private static final int vertexStride = 2 * 4;
 
     private float[] color;
 
-    public Sprite(Bitmap bitmap)
+    private Texture texture;
+
+    public float[] matrix;
+
+    private Vector2 scale;
+
+    public Sprite(Texture texture)
     {
+        buffer = new float[8];
+
+        scale = new Vector2(1, 1);
+
         color = new float[4];
-        height = bitmap.getHeight();
-        width = bitmap.getWidth();
-        spriteCoords = new float[8];
-        spriteCoords[0] = -width/2;
-        spriteCoords[1] = height/2;
-        spriteCoords[2] = -width/2;
-        spriteCoords[3] = -height/2;
-        spriteCoords[4] = width/2;
-        spriteCoords[5] = -height/2;
-        spriteCoords[6] = width/2;
-        spriteCoords[7] = height/2;
+
+        matrix = new float[16];
+        Matrix.setIdentityM(matrix, 0);
+        Matrix.scaleM(matrix, 0, 1, -1, 1);
+
+        height = texture.getHeight();
+        width = texture.getWidth();
+        this.texture = texture;
 
         // initialize vertex byte buffer for shape coordinates
-        ByteBuffer bb = ByteBuffer.allocateDirect(spriteCoords.length * 4);
+        ByteBuffer bb = ByteBuffer.allocateDirect(8 * 4);
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
-        vertexBuffer.put(spriteCoords);
+        vertexBuffer.put(new float[]{
+                -width/2, height/2,
+                -width/2, -height/2,
+                width/2, -height/2,
+                width/2, height/2});
         vertexBuffer.position(0);
+
+        bb = ByteBuffer.allocateDirect(8 * 4);
+        bb.order(ByteOrder.nativeOrder());
+        uvBuffer = bb.asFloatBuffer();
+        uvBuffer.put(new float[]{
+                0.0f, 0.0f,
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                1.0f, 0.0f});
+        uvBuffer.position(0);
 
         // create empty OpenGL ES Program
         program = GLES20.glCreateProgram();
@@ -74,13 +86,61 @@ public class Sprite
 
         // creates OpenGL ES program executables
         GLES20.glLinkProgram(program);
+    }
 
-        LoadTexture(bitmap);
+    public void Move(float x, float y)
+    {
+        matrix[12] += x;
+        matrix[13] += y;
+    }
+
+    public void setPosition(float x, float y)
+    {
+        matrix[12] = x;
+        matrix[13] = y;
+    }
+
+    public void setCoords(float x, float y, int width, int height)
+    {
+        uvBuffer.position(0);
+        buffer[0] = x / texture.getWidth(); buffer[1] = y / texture.getHeight();
+        buffer[2] = x / texture.getWidth(); buffer[3] = y / texture.getHeight() + height * 1f/ texture.getHeight();
+        buffer[4] = x / texture.getWidth() + width * 1f/ texture.getWidth(); buffer[5] = y / texture.getHeight()  + height * 1f/ texture.getHeight();
+        buffer[6] = x / texture.getWidth() + width * 1f/ texture.getWidth(); buffer[7] = y / texture.getHeight();
+        uvBuffer.put(buffer);
+        uvBuffer.position(0);
+
+        vertexBuffer.position(0);
+        buffer[0] = -width/2; buffer[1] = height/2;
+        buffer[2] = -width/2; buffer[3] = -height/2;
+        buffer[4] = width/2; buffer[5] = -height/2;
+        buffer[6] = width/2; buffer[7] = height/2;
+        vertexBuffer.put(buffer);
+        vertexBuffer.position(0);
+
+        this.width = (int)(width * scale.x);
+        this.height = (int)(height * scale.y);
+    }
+
+    public void setTexture(Texture texture)
+    {
+        this.texture = texture;
+        width = texture.getWidth();
+        height = texture.getHeight();
+        vertexBuffer.position(0);
+        buffer[0] = -width/2; buffer[1] = height/2;
+        buffer[2] = -width/2; buffer[3] = -height/2;
+        buffer[4] = width/2; buffer[5] = -height/2;
+        buffer[6] = width/2; buffer[7] = height/2;
+        vertexBuffer.put(buffer);
+        vertexBuffer.position(0);
+        width = (int)(width * scale.x);
+        height = (int)(height * scale.y);
     }
 
     void Draw(float[] mvpMatrix)
     {
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureID);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture.getId());
 
         // Add program to OpenGL ES environment
         GLES20.glUseProgram(program);
@@ -92,29 +152,26 @@ public class Sprite
         GLES20.glEnableVertexAttribArray(positionHandle);
 
         // Prepare the triangle coordinate data
-        GLES20.glVertexAttribPointer(positionHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, vertexStride, vertexBuffer);
+        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, vertexStride, vertexBuffer);
 
         // Get handle to texture coordinates location
-        int mTexCoordLoc = GLES20.glGetAttribLocation(program, "a_texCoord");
+        texturePositionHandle = GLES20.glGetAttribLocation(program, "a_texCoord");
 
         // Enable generic vertex attribute array
-        GLES20.glEnableVertexAttribArray ( mTexCoordLoc );
+        GLES20.glEnableVertexAttribArray (texturePositionHandle);
+
+        // Prepare the texturecoordinates
+        GLES20.glVertexAttribPointer (texturePositionHandle, 2, GLES20.GL_FLOAT, false, 0, uvBuffer);
 
         GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "useColorFilter"), color[3] == 0 ? 0 : 1);
 
         GLES20.glUniform4fv(GLES20.glGetUniformLocation(program, "vColor"), 1, color, 0);
 
-        // Prepare the texturecoordinates
-        GLES20.glVertexAttribPointer ( mTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, uvBuffer);
-
         // Set the sampler texture unit to 0, where we have saved the texture.
         GLES20.glUniform1i (GLES20.glGetUniformLocation (program, "s_texture" ), 0);
 
-        // get handle to shape's transformation matrix
-        matrixMVPHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix");
-
         // Pass the projection and view transformation to the shader
-        GLES20.glUniformMatrix4fv(matrixMVPHandle, 1, false, mvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(program, "uMVPMatrix"), 1, false, mvpMatrix, 0);
 
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
@@ -126,46 +183,22 @@ public class Sprite
         GLES20.glDisableVertexAttribArray(positionHandle);
     }
 
-    private void LoadTexture(Bitmap bmp)
+    public void Scale(float sx, float sy)
     {
-        // Create our UV coordinates.
-        uvs = new float[]
-        {
-                0.0f, 0.0f,
-                0.0f, 1.0f,
-                1.0f, 1.0f,
-                1.0f, 0.0f};
+        Matrix.scaleM(matrix, 0, sx, sy, 1);
+        scale.x *= sx;
+        scale.y *= sy;
+        width = (int)(width * sx);
+        height = (int)(height * sy);
+    }
 
-        // The texture buffer
-        ByteBuffer bb = ByteBuffer.allocateDirect(uvs.length * 4);
-        bb.order(ByteOrder.nativeOrder());
-        uvBuffer = bb.asFloatBuffer();
-        uvBuffer.put(uvs);
-        uvBuffer.position(0);
-
-        // Generate Textures, if more needed, alter these numbers.
-        int[] texturenames = new int[1];
-        GLES20.glGenTextures(1, texturenames, 0);
-
-        textureID = texturenames[0];
-
-        // Bind texture to texturename
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texturenames[0]);
-
-        // Set filtering
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
-        // Set wrapping mode
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-
-        // Load the bitmap into the bound texture.
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
-
-        // We are done using the bitmap so we should recycle it.
-        bmp.recycle();
+    public void Scale(float s)
+    {
+        Matrix.scaleM(matrix, 0, s, s, 1);
+        scale.x *= s;
+        scale.y *= s;
+        width = (int)(width * s);
+        height = (int)(height * s);
     }
 
     public void setColorFilter(int color)

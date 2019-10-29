@@ -2,8 +2,6 @@ package app.onedayofwar.Battle.System;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -14,34 +12,36 @@ import android.view.View.OnTouchListener;
 
 import java.util.ArrayDeque;
 
+import app.onedayofwar.Activities.MainActivity;
 import app.onedayofwar.Battle.Activities.BattleOverActivity;
 import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
+import app.onedayofwar.Battle.Mods.Battle;
+import app.onedayofwar.Battle.Mods.Battle.BattleState;
+import app.onedayofwar.Battle.Mods.BluetoothBattle;
+import app.onedayofwar.Battle.Mods.SingleBattle;
+import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.GLRenderer;
+import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.ScreenView;
+import app.onedayofwar.Graphics.Sprite;
+import app.onedayofwar.Graphics.TextFont;
+import app.onedayofwar.System.GLView;
 import app.onedayofwar.System.Vector2;
+import app.onedayofwar.System.XMLParser;
 import app.onedayofwar.UI.Button;
 import app.onedayofwar.UI.Panel;
-import app.onedayofwar.Battle.Mods.BluetoothBattle;
-import app.onedayofwar.Battle.Mods.Battle.*;
-import app.onedayofwar.Battle.Mods.Battle;
-import app.onedayofwar.Battle.Mods.SingleBattle;
-import app.onedayofwar.Graphics.Graphics;
-import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.UI.Panel.*;
+import app.onedayofwar.UI.Panel.Type;
 
-public class BattleView extends GLSurfaceView
-implements OnTouchListener, ScreenView
+public class BattleView implements ScreenView
 {
     //region Variables
-    public static final int sourceHeight = 720;
-    public static final int sourceWidth = 1024;
-    public static final int sourceDpi = 132;
     public BluetoothController btController;
     public int screenWidth;
     public int screenHeight;
-    private Activity activity;
-    private GLRenderer renderer;
+    private GLView glView;
+    //private Activity activity;
+
 
     public Vector2 touchPos;
     private Battle battle;
@@ -60,36 +60,32 @@ implements OnTouchListener, ScreenView
     public boolean isButtonPressed;
     //endregion
 
+    private Sprite background;
+
     private float[] bgMatrix;
     private ArrayDeque<MotionEvent> motionEvents;
-
-    private boolean test;
 
     char typeOfGame;
     //endregion
 
     //region Constructor
-    public BattleView(Activity activity, char typeOfGame, int width, int height)
+    public BattleView(GLView glView, char typeOfGame, boolean isYourTurn)
     {
-        super(activity.getApplicationContext());
-        this.activity = activity;
-        screenWidth = width;
-        screenHeight = height;
+        this.glView = glView;
+        screenWidth = glView.getScreenWidth();
+        screenHeight = glView.getScreenHeight();
         this.typeOfGame = typeOfGame;
         motionEvents = new ArrayDeque<>();
         bgMatrix = new float[16];
         Matrix.setIdentityM(bgMatrix, 0);
-        Matrix.translateM(bgMatrix, 0, width/2, height/2, 0);
-        setEGLContextClientVersion(2);
-        renderer = new GLRenderer(activity.getResources(), this);
-        setRenderer(renderer);
+        Matrix.translateM(bgMatrix, 0, screenWidth/2, screenHeight/2, 0);
     }
     //endregion
 
-    //region Initialization
-    public void SetAttackSequence(boolean isYourTurn)
+    @Override
+    public void Resume()
     {
-        test = isYourTurn;
+        glView.getActivity().gameState = MainActivity.GameState.BATTLE;
     }
 
     public void LoadBT(BluetoothController controller)
@@ -99,9 +95,9 @@ implements OnTouchListener, ScreenView
 
     public void Initialize(Graphics graphics)
     {
-        setOnTouchListener(this);
-
-        LoadAssets(graphics);
+        background = new Sprite(Assets.background);
+        background.setPosition(screenWidth/2 ,screenHeight /2);
+        background.Scale((float)Assets.bgWidthCoeff, (float)Assets.bgHeightCoeff);
 
         selectingPanel = new Panel(screenWidth - screenWidth/8, screenHeight/2, screenWidth/4, screenHeight, Type.RIGHT);
 
@@ -125,124 +121,14 @@ implements OnTouchListener, ScreenView
                 break;
         }
 
-        battle.isYourTurn = test;
-
         ButtonsInitialize();
         MoveGates();
-    }
-
-    public void LoadAssets(Graphics graphics)
-    {
-        if(BattlePlayer.unitCount[0] != 0)
-        {
-            Assets.robotIcon = graphics.newSprite("unit/icon/robot_icon.png");
-            Assets.robotImage = graphics.newSprite("unit/image/robot.png");
-            Assets.robotStroke = graphics.newSprite("unit/stroke/robot_stroke.png");
-        }
-
-        if(BattlePlayer.unitCount[1] != 0)
-        {
-            Assets.ifvImage = graphics.newSprite("unit/image/ifv.png");
-            Assets.ifvIcon = graphics.newSprite("unit/icon/ifv_icon.png");
-            Assets.ifvStroke = graphics.newSprite("unit/stroke/ifv_stroke.png");
-        }
-
-        if(BattlePlayer.unitCount[2] != 0)
-        {
-            Assets.engineerImage = graphics.newSprite("unit/image/engineer.png");
-            Assets.engineerIcon = graphics.newSprite("unit/icon/rocket_icon.png");
-            Assets.engineerStroke = graphics.newSprite("unit/stroke/engineer_stroke.png");
-        }
-        if(BattlePlayer.unitCount[3] != 0)
-        {
-            Assets.tankImage = graphics.newSprite("unit/image/tank.png");
-            Assets.tankIcon = graphics.newSprite("unit/icon/tank_icon.png");
-            Assets.tankStroke = graphics.newSprite("unit/stroke/tank_stroke.png");
-        }
-        if(BattlePlayer.unitCount[4] != 0)
-        {
-            Assets.turretImage = graphics.newSprite("unit/image/turret.png");
-            Assets.turretIcon = graphics.newSprite("unit/icon/turret_icon.png");
-            Assets.turretStroke = graphics.newSprite("unit/stroke/turret_stroke.png");
-        }
-        if(BattlePlayer.unitCount[5] != 0)
-        {
-            Assets.sonderImage = graphics.newSprite("unit/image/sonder.png");
-            Assets.sonderIcon = graphics.newSprite("unit/icon/sonder_icon.png");
-            Assets.sonderStroke = graphics.newSprite("unit/stroke/sonder_stroke.png");
-        }
-
-        switch(BattlePlayer.fieldSize)
-        {
-            //Коэффициент масштабирования поля и юнитов. 0.2f - отступ в долях единицы от верха экрана до верхней точки поля.
-            //То есть находим высоту поля для данного экрана, чтобы сверху и снизу было расстояние до края экрана равное определенному количеству процентов высоты экрана.
-            //Полученная высота поля должна быть кратна 15, то есть кол-ву клеток поля. А высота и ширина клетки поля должны быть кратны 2. Используем дабл для высокой точности вычислений.
-            //Как тебе такое только в голову пришло))
-            case 0:
-                    Log.i("INIT", "FIELD SIZE = 0");
-                    activity.finish();
-                    return;
-            case 5:
-                Assets.grid = graphics.newSprite("field/grid/normal_green_5x5.png");
-                Assets.gridIso = graphics.newSprite("field/grid/iso_5x5.png");
-                Assets.gridCoeff = (int)((screenHeight * (1 - 2 * 0.2f)) / 30) * 30 / (double)Assets.gridIso.getHeight();
-                Assets.isoGridCoeff = (int)((screenHeight * (1 - 2 * 0.4f)) / 30) * 30 / (double)Assets.gridIso.getHeight();
-                break;
-            case 15:
-                Assets.grid = graphics.newSprite("field/grid/normal_green.png");
-                Assets.gridIso = graphics.newSprite("field/grid/iso.png");
-                Assets.gridCoeff = (int)((screenHeight * (1 - 2 * 0.2f)) / 30) * 30 / (double)Assets.gridIso.getHeight();
-                Assets.isoGridCoeff = Assets.gridCoeff;
-                break;
-        }
-
-
-        Assets.signFire = graphics.newSprite("field/mark/fire.png");
-        Assets.signMiss = graphics.newSprite("field/mark/miss_green.png");
-        Assets.signMissIso = graphics.newSprite("field/mark/miss_iso.png");
-        Assets.signHit = graphics.newSprite("field/mark/hit_green.png");
-        Assets.signFlag = graphics.newSprite("field/mark/flag.png");
-
-        Assets.btnCancel = graphics.newSprite("button/cancel.png");
-        Assets.btnInstall = graphics.newSprite("button/install.png");
-        Assets.btnFinishInstallation = graphics.newSprite("button/installation_finish.png");
-        Assets.btnShoot = graphics.newSprite("button/shoot.png");
-        Assets.btnTurn = graphics.newSprite("button/turn.png");
-        Assets.btnPanelClose = graphics.newSprite("button/panel_close.png");
-        Assets.btnFlag = graphics.newSprite("button/flag.png");
-
-        Assets.background = graphics.newSprite("desert.jpg");
-        Assets.monitor = graphics.newSprite("monitor.png");
-
-        Assets.bullet = graphics.newSprite("unit/bullet/bullet.png");
-        Assets.miniRocket = graphics.newSprite("unit/bullet/miniRocket.png");
-
-        Assets.explode = graphics.newAnimation("animation/explode.png", 24, 100, 0, false);
-        //Assets.fire = graphics.newSprite("animation/fire2.png");
-
-        scaleImages();
-    }
-
-    private void scaleImages()
-    {
-        Assets.iconCoeff = ((screenHeight - 70) / 6d) / Assets.robotIcon.getHeight();
-
-        Assets.btnCoeff = screenHeight * 0.17f / Assets.btnCancel.getHeight();
-
-        Assets.dpiCoeff =  (int)getResources().getDisplayMetrics().xdpi / (double)sourceDpi;
-
-        Assets.monitorHeightCoeff = (double)screenHeight / 1080;
-        Assets.monitorWidthCoeff = (double)screenWidth / 1920;
-        Assets.bgHeightCoeff = screenHeight *1f/ Assets.background.getHeight();
-        Assets.bgWidthCoeff = screenWidth *1f/ Assets.background.getWidth();
     }
     //endregion
 
     //region Update
     public void Update(float eTime)
     {
-        SyncTouch();
-
         if(battle.state == BattleState.Installation && !selectingPanel.isStop)
         {
             selectingPanel.Update(eTime);
@@ -303,23 +189,8 @@ implements OnTouchListener, ScreenView
     //endregion
 
     //region onTouch
-    /**
-     * Обрабатывает касания
-     * @param view
-     * @param event
-     * @return
-     */
-    public boolean onTouch(View view, MotionEvent event)
+    public void OnTouch(MotionEvent event)
     {
-        motionEvents.add(event);
-        return true;
-    }
-
-    public void SyncTouch()
-    {
-        if(motionEvents.isEmpty())
-            return;
-        MotionEvent event = motionEvents.poll();
         //Обновляем позицию касания
         touchPos.SetValue((int)event.getX(),(int)event.getY());
 
@@ -482,17 +353,22 @@ implements OnTouchListener, ScreenView
     private void ButtonsInitialize()
     {
         installationFinishBtn = new Button(Assets.btnFinishInstallation, (int)(50 * Assets.monitorWidthCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), (int)(50 * Assets.monitorHeightCoeff + Assets.btnFinishInstallation.getWidth()/2 * Assets.btnCoeff), false);
+        installationFinishBtn.Scale(Assets.btnCoeff);
         cancelBtn = new Button(Assets.btnCancel, (int)(50 * Assets.monitorWidthCoeff + Assets.btnCancel.getWidth()/2 * Assets.btnCoeff), (int)((50 + 30) * Assets.monitorHeightCoeff  + Assets.btnCancel.getHeight() * Assets.btnCoeff + Assets.btnCancel.getHeight()/2 * Assets.btnCoeff), false);
+        cancelBtn.Scale(Assets.btnCoeff);
         turnBtn = new Button(Assets.btnTurn, (int)(50 * Assets.monitorWidthCoeff + Assets.btnTurn.getWidth()/2 * Assets.btnCoeff), (int)(screenHeight - 2 * Assets.btnCancel.getHeight() * Assets.btnCoeff - (50 + 30) * Assets.monitorHeightCoeff + Assets.btnCancel.getHeight()/2 * Assets.btnCoeff), false);
+        turnBtn.Scale(Assets.btnCoeff);
         installBtn = new Button(Assets.btnInstall, (int)(50 * Assets.monitorWidthCoeff + Assets.btnInstall.getWidth()/2 * Assets.btnCoeff), (int)(screenHeight - Assets.btnCancel.getHeight() * Assets.btnCoeff - 50 * Assets.monitorHeightCoeff + Assets.btnInstall.getWidth()/2 * Assets.btnCoeff), false);
+        installBtn.Scale(Assets.btnCoeff);
 
         shootBtn = new Button(Assets.btnShoot, (int)(170 * Assets.monitorWidthCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), (int)(390 * Assets.monitorHeightCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), false);
+        shootBtn.Scale(Assets.btnCoeff);
         shootBtn.SetInvisible();
         shootBtn.Lock();
         flagBtn = new Button(Assets.btnFlag, (int)(170 * Assets.monitorWidthCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), (int)(170 * Assets.monitorHeightCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), false);
+        flagBtn.Scale(Assets.btnCoeff);
         flagBtn.SetInvisible();
         flagBtn.Lock();
-
     }
     //endregion
 
@@ -505,14 +381,15 @@ implements OnTouchListener, ScreenView
         }
         else
         {
-            graphics.DrawSprite(Assets.background, bgMatrix);
+            graphics.DrawSprite(background);
         }
 
         battle.DrawFields(graphics);
 
         ButtonsDraw(graphics);
 
-        battle.DrawUnits(graphics);
+        if(battle.state != BattleState.Attack && battle.state != BattleState.Shoot)
+            battle.DrawUnits(graphics);
 
         if (battle.state == BattleState.Installation)
         {
@@ -528,22 +405,16 @@ implements OnTouchListener, ScreenView
             gateUp.Draw(graphics);
             gateDown.Draw(graphics);
         }
-
-        //graphics.drawText("state: " + battle.state, 20, 50,300, paint.getColor());
-        /*graphics.drawText("height: " + screenHeight, 20, 50,350, paint.getColor());
-        graphics.drawText("dpi: " + Assets.dpiCoeff, 20, 50,400, paint.getColor());
-        graphics.drawText("btn X: " + shootBtn.x, 20, 50,450, paint.getColor());
-        graphics.drawText("btn Y: " + shootBtn.y, 20, 50,500, paint.getColor());*/
     }
     //endregion
 
     //region Test
     public void GameOver(BattleState state, int reward)
     {
-        Intent intent = new Intent(activity, BattleOverActivity.class);
+        /*Intent intent = new Intent(activity, BattleOverActivity.class);
         intent.putExtra("result", state == BattleState.Win);
         intent.putExtra("reward", reward);
-        activity.startActivityForResult(intent, 2);
+        activity.startActivityForResult(intent, 2);*/
     }
 
     public void GameOver()

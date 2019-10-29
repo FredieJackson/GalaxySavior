@@ -14,7 +14,7 @@
     <statePointEntry>
       <state      
         class = "com.android.tools.idea.editors.navigation.model.ActivityState"      
-        className = "app.onedayofwar.Battle.Activities.BattleActivity"/>
+        className = "app.onedayofwar.Activities.BluetoothActivity"/>
       <point      
         x = "550"      
         y = "150"/>

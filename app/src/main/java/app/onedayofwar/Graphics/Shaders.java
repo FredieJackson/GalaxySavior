@@ -39,7 +39,7 @@ public class Shaders
                     "if(useColorFilter == 1){" +
                     "gl_FragColor = vColor * texture2D( s_texture, v_texCoord);" +
                     "}if(useColorFilter == 0){" +
-                    " gl_FragColor = texture2D( s_texture, v_texCoord);}" +
+                    " gl_FragColor = texture2D(s_texture, v_texCoord);}" +
                     "}";
 
     public static final String vertexAnimation =

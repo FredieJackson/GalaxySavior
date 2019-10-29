@@ -1,9 +1,11 @@
-package app.onedayofwar.Battle.Units;
+package app.onedayofwar.Battle.Units.Ground;
 
 import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
+import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -19,13 +21,19 @@ public class SONDER extends Unit
 
     public SONDER(Vector2 position, int zoneID, boolean isVisible)
     {
-        super(isVisible, position);
+        super(isVisible);
 
         if(isVisible)
         {
-            image = Assets.sonderImage;
-            icon = Assets.sonderIcon;
-            stroke = Assets.sonderStroke;
+            image = new Sprite(Assets.sonderImage);
+            image.Scale((float)Assets.isoGridCoeff);
+
+            icon = new Sprite(Assets.sonderIcon);
+            icon.setPosition(position.x, position.y);
+            icon.Scale((float)Assets.iconCoeff);
+
+            stroke = new Sprite(Assets.sonderStroke);
+            stroke.Scale((float)Assets.isoGridCoeff);
         }
         this.zoneID = (byte)zoneID;
         Initialize();
@@ -43,7 +51,7 @@ public class SONDER extends Unit
         InitializeFormArray();
 
         accuracy = 100;
-        power = 20000;
+        power = 2000;
         hitPoints = 3000;
         armor = 500;
         reloadTime = 10;
@@ -84,14 +92,14 @@ public class SONDER extends Unit
                     {
                         tmp.SetValue(startSocket.x - sizes.x / 2 * (i - j), startSocket.y + sizes.y / 2 * (i + j));
 
-                        if (-Math.abs(0.5 * (tmp.x - field.matrix[12])) + field.height/2 + field.matrix[13] - 3 < tmp.y)
+                        if (-Math.abs(0.5 * (tmp.x - field.getMatrix()[12])) + field.height/2 + field.getMatrix()[13] - 3 < tmp.y)
                             return false;
                     }
                     else
                     {
                         tmp.SetValue(startSocket.x + sizes.x * j, startSocket.y + sizes.y *i);
 
-                        if (tmp.y >= field.matrix[13] + field.height/2 || tmp.x >= field.matrix[12] + field.width/2)
+                        if (tmp.y >= field.getMatrix()[13] + field.height/2 || tmp.x >= field.getMatrix()[12] + field.width/2)
                             return false;
                     }
 
@@ -143,7 +151,8 @@ public class SONDER extends Unit
     @Override
     protected void TurnImage()
     {
-        Matrix.scaleM(matrix, 0, -1, 1, 1);
+        image.Scale(-1, 1);
+        stroke.Scale(-1, 1);
     }
 
     @Override

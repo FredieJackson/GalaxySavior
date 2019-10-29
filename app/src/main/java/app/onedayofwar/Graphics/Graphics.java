@@ -1,8 +1,11 @@
 package app.onedayofwar.Graphics;
 
+
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 
 import java.io.IOException;
@@ -13,11 +16,11 @@ import java.io.InputStream;
  */
 public class Graphics
 {
-    private GLRenderer renderer;
-    private AssetManager assets;
-    private Rectangle rectangle;
-    private Line line;
-    private float[] mvpMatrix;
+    GLRenderer renderer;
+    AssetManager assets;
+    Rectangle rectangle;
+    Line line;
+    float[] mvpMatrix;
 
     public Graphics(GLRenderer renderer, AssetManager assets)
     {
@@ -28,17 +31,7 @@ public class Graphics
         line  = new Line();
     }
 
-    public Animation newAnimation(String fileName, int frames, int speed, int start, boolean isLooped)
-    {
-        return new Animation(LoadBitmap(fileName), frames, speed, start, isLooped);
-    }
-
-    public Sprite newSprite(String fileName)
-    {
-        return new Sprite(LoadBitmap(fileName));
-    }
-
-    private Bitmap LoadBitmap(String fileName)
+    public Texture LoadTexture(String fileName)
     {
         InputStream in = null;
         Bitmap bitmap = null;
@@ -66,7 +59,29 @@ public class Graphics
                 }
             }
         }
-        return bitmap;
+
+        int[] texturenames = new int[1];
+        GLES20.glGenTextures(1, texturenames, 0);
+
+        // Bind texture to texturename
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texturenames[0]);
+
+        // Set filtering
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+
+        // Set wrapping mode
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+        // Load the bitmap into the bound texture.
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+        // We are done using the bitmap so we should recycle it.
+        bitmap.recycle();
+
+        return new Texture(texturenames[0], bitmap.getWidth(), bitmap.getHeight());
     }
 
     public void DrawRect(float x, float y, int width, int height, int color, boolean isFilled)
@@ -82,15 +97,34 @@ public class Graphics
         line.Draw(renderer.vpMatrix);
     }
 
-    public void DrawSprite(Sprite sprite, float[] mMatrix)
+    public void DrawSprite(Sprite sprite)
     {
-        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, mMatrix, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, sprite.matrix, 0);
         sprite.Draw(mvpMatrix);
     }
 
-    public void DrawAnimation(Animation animation, float[] mMatrix)
+    public void DrawAnimation(Animation animation)
     {
-        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, mMatrix, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, animation.matrix, 0);
         animation.Draw(mvpMatrix);
     }
+
+    public void DrawParallaxSprite(Sprite sprite)
+    {
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.vpMatrix, 0, sprite.matrix, 0);
+        mvpMatrix[12] /= 2; mvpMatrix[13] /= 2;
+        sprite.Draw(mvpMatrix);
+    }
+
+    public void DrawStaticSprite(Sprite sprite)
+    {
+        Matrix.multiplyMM(mvpMatrix, 0, renderer.projectionMatrix, 0, sprite.matrix, 0);
+        sprite.Draw(mvpMatrix);
+    }
+
+    public void DrawText(String text, TextFont font, float x, float y, int color, int size)
+    {
+        font.DrawText(text, this, x, y, color, size);
+    }
+
 }

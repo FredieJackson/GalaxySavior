@@ -1,13 +1,11 @@
 package app.onedayofwar.Campaign.Space;
 
-import android.graphics.Matrix;
 import android.util.Log;
 
 import java.util.ArrayList;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
-import app.onedayofwar.System.Matrix3;
 import app.onedayofwar.System.Vector2;
 import app.onedayofwar.System.XMLParser;
 
@@ -32,9 +30,9 @@ public class PlanetController
         planets.add(new Planet(oil, nanoSteel, syncoCrystals, spaceGuards, groundGuards, buildings, size));
     }
 
-    public void AddPlanet(int num)
+    public void AddPlanet()
     {
-        planets.add(new Planet(num));
+        planets.add(new Planet());
     }
 
     /*public void LoadPlanets(XMLParser xmlParser)
@@ -43,7 +41,7 @@ public class PlanetController
         Log.i("LOAD", planets.size() + " PLANETS LOADED");
         for(int i = 0; i < planets.size(); i++)
         {
-            planets.get(i).loadToMap(Assets.planet, (int)(Math.random() * (Assets.space.getWidth() - Assets.planet.getWidth())), (int)(Math.random() * (Assets.space.getHeight() - Assets.planet.getHeight())));
+            planets.get(i).loadToMap(Assets.planet, (int)(Math.random() * (Assets.space.getIconWidth() - Assets.planet.getIconWidth())), (int)(Math.random() * (Assets.space.getIconHeight() - Assets.planet.getIconHeight())));
             planets.get(i).setRadius(100f);
         }
     }*/
@@ -51,9 +49,9 @@ public class PlanetController
     public void LoadPlanets(XMLParser xmlParser)
     {
         //xmlParser.LoadAllPlanets(this);
-        for(int i = 0 ; i < 30; i++)
+        for(int i = 0 ; i < 50; i++)
         {
-            AddPlanet(i);
+            AddPlanet();
         }
 
         int rowHeight = space.getHeight() / planets.size();
@@ -79,7 +77,7 @@ public class PlanetController
                 {
                     if (i - j >= 0)
                     {
-                        tmpPos.SetValue(planets.get(i - j).matrix[12], planets.get(i - j).matrix[13]);
+                        tmpPos.SetValue(planets.get(i - j).getMatrix()[12], planets.get(i - j).getMatrix()[13]);
                         tmpR = planets.get(i - j).getRadius();
 
                         d = (int)Math.sqrt(Math.pow((planetR + planetPos.y) - (tmpPos.y + tmpR), 2) + Math.pow((planetR + planetPos.x) - (tmpPos.x + tmpR), 2));
@@ -114,19 +112,15 @@ public class PlanetController
 
     public void SelectPlanet(Vector2 touchPos)
     {
-        //planets.get(0).ConquerPlanet();
-
-        /*Log.i("SELECTION", tmp.x + " ; " + tmp.y);
-        selectedPlanet = -1;
         for(int i = 0; i < planets.size(); i++)
         {
-            if(planets.get(i).Select(tmp))
+            if(planets.get(i).Select(touchPos))
             {
                 selectedPlanet = i;
                 Log.i("SELECTION", "PLANET " + i + " SELECTED");
                 break;
             }
-        }*/
+        }
     }
 
     public void DrawPlanets(Graphics g)
@@ -160,4 +154,8 @@ public class PlanetController
         if(isConquered)
             planets.get(selectedPlanet).ConquerPlanet();
     }
+
+    public Planet getPlanet(int num){return planets.get(num);} //Новое
+
+    public void doSelectedPlanetFalse(){selectedPlanet = -1;} //Новое
 }

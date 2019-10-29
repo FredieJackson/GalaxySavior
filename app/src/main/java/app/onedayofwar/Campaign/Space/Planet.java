@@ -1,10 +1,13 @@
 package app.onedayofwar.Campaign.Space;
 
+import android.graphics.Color;
+import android.graphics.RectF;
 import android.opengl.Matrix;
-import android.util.Log;
 
+import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Sprite;
+import app.onedayofwar.Graphics.Texture;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -12,19 +15,18 @@ import app.onedayofwar.System.Vector2;
  */
 public class Planet
 {
-    private int oil;
-    private int nanoSteel;
+    public int oil;
+    public int nanoSteel;
     private int syncoCrystals;
     private byte[] spaceGuards;
-    private byte[] groundGuards;
+    private byte[] groundGuards = {1,1,1,1,1,1};
     private byte[] buildings;
     private byte size;
     private int radius;
-    public float[] matrix;
     private Sprite image;
     private boolean isPlanetConquered;
-
-    int num = 0;
+    private RectF touch;
+    private RectF planet;
 
     public Planet(int oil, int nanoSteel, int syncoCrystals, byte[] spaceGuards, byte[] groundGuards, byte[] buildings, byte size)
     {
@@ -35,28 +37,26 @@ public class Planet
         this.groundGuards = groundGuards.clone();
         this.buildings = buildings.clone();
         this.size = size;
-        matrix  = new float[16];
-        Matrix.setIdentityM(matrix, 0);
         isPlanetConquered = false;
+        planet = new RectF();
+        touch = new RectF();
     }
 
-    public Planet(int num)
+    public Planet()
     {
-        this.num = num;
-        matrix  = new float[16];
-        Matrix.setIdentityM(matrix, 0);
         isPlanetConquered = false;
+        planet = new RectF();
+        touch = new RectF();
     }
 
-    public void loadToMap(Sprite image, Vector2 position)
+    public void loadToMap(Texture texture, Vector2 position)
     {
-        this.image = image;
+        image = new Sprite(texture);
 
         //matrix.Rotate((float)Math.random()*361, 0, 0);
 
-        Matrix.translateM(matrix, 0, position.x, position.y, 0);
-
-        Matrix.scaleM(matrix, 0, radius * 2f / image.getHeight(), -radius * 2f / image.getHeight(), 1);
+        image.setPosition(position.x, position.y);
+        image.Scale(radius * 2f / image.getHeight());
     }
 
     public byte[] getGroundGuards()
@@ -71,11 +71,9 @@ public class Planet
 
     public boolean Select(Vector2 touchPos)
     {
-        //mPos[0] = position.x; mPos[1] = position.y;
-        //m.mapPoints(mPos);
-        //matrix.set(m);
-        //return !isPlanetConquered && (touchPos.x > mPos[0] && touchPos.x < mPos[0] + image.getWidth()) && (touchPos.y > mPos[1] && touchPos.y < mPos[1] + image.getHeight());
-        return false;
+        touch.set(touchPos.x-2,touchPos.y-2,touchPos.x+2,touchPos.y+2);
+        planet.set(getMatrix()[12] - radius, getMatrix()[13] - radius, getMatrix()[12]+radius, getMatrix()[13]+radius);
+        return touch.intersect(planet);
     }
 
     //int motionEvents = 0;
@@ -84,12 +82,9 @@ public class Planet
     {
         if(!isPlanetConquered)
         {
-            g.DrawSprite(image, matrix);
-
-            //g.drawText("0", 50, (int)tmp.Get(12) + radius, (int)tmp.Get(13) + radius, Color.RED);
-            //g.drawRect(tmp.GetX(), tmp.GetY(), 2*radius, 2*radius, Color.YELLOW, false);
+            g.DrawSprite(image);
         }
-
+        g.DrawRect(touch.centerX(), touch.centerY(), 4, 4, Color.RED, false);
 
         //motionEvents++;
     }
@@ -121,5 +116,15 @@ public class Planet
     public int getRadius()
     {
         return radius;
+    }
+
+    public float[] getMatrix()
+    {
+        return image.matrix;
+    }
+
+    public void NextTurn()
+    {
+
     }
 }

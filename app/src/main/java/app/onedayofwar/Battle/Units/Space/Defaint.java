@@ -1,27 +1,42 @@
-package app.onedayofwar.Battle.Units;
+package app.onedayofwar.Battle.Units.Space;
 
 import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
+import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 /**
- * Танк
- * Размер 3х2
+ * Created by Никита on 23.03.2015.
  */
-public class Tank extends Unit{
 
-    public Tank(Vector2 position, int zoneID, boolean isVisible)
+/* Корабль Дефеинт
+Форма
+    ХХ
+    ХХ
+    ХХ
+Количество на поле 1шт.
+ */
+public class Defaint extends Unit {
+    public Defaint(Vector2 position, int zoneID, boolean isVisible)
     {
-        super(isVisible, position);
+        super(isVisible);
 
         if(isVisible)
         {
-            image = Assets.tankImage;
-            icon = Assets.tankIcon;
-            stroke = Assets.tankStroke;
+            image = new Sprite(Assets.defaintImage);
+            image.Scale((float)Assets.isoGridCoeff);
+
+            icon = new Sprite(Assets.sonderIcon);
+            icon.setPosition(position.x, position.y);
+            icon.Scale((float)Assets.iconCoeff);
+
+            stroke = new Sprite(Assets.sonderStroke);
+            stroke.Scale((float)Assets.isoGridCoeff);
         }
+
         this.zoneID = (byte)zoneID;
         Initialize();
     }
@@ -29,7 +44,6 @@ public class Tank extends Unit{
     //region Initialization
     private void Initialize()
     {
-        //для прямоугольника -78
         if(isVisible)
         {
             ResetPosition();
@@ -39,10 +53,10 @@ public class Tank extends Unit{
         InitializeFormArray();
 
         accuracy = 100;
-        power = 15000;
-        hitPoints = 2000;
-        armor = 1000;
-        reloadTime = 5;
+        power = 7500;
+        hitPoints = 1000;
+        armor = 500;
+        reloadTime = 4;
     }
     //endregion
 
@@ -52,15 +66,12 @@ public class Tank extends Unit{
         Vector2 tmp = new Vector2();
         Vector2[] tmpForm = new Vector2[form.length];
         Vector2 sizes = field.GetSocketsSizes();
-
-        for(int i = 0 ; i < form.length; i++)
-            tmpForm[i] = new Vector2();
-
-        Vector2 tmpLocal;
-
         byte num = 0;
         byte toJ = 2;
         byte toI = 3;
+        for(int i = 0 ; i < form.length; i++)
+            tmpForm[i] = new Vector2();
+        Vector2 tmpLocal;
 
         if(isRight)
         {
@@ -77,14 +88,14 @@ public class Tank extends Unit{
                 {
                     tmp.SetValue(startSocket.x - sizes.x / 2 * (i - j), startSocket.y + sizes.y / 2 * (i + j));
 
-                    if (-Math.abs(0.5 * (tmp.x - field.matrix[12])) + field.height/2 + field.matrix[13] - 3 < tmp.y)
+                    if (-Math.abs(0.5 * (tmp.x - field.getMatrix()[12])) + field.height/2 + field.getMatrix()[13] - 3 < tmp.y)
                         return false;
                 }
                 else
                 {
                     tmp.SetValue(startSocket.x + sizes.x * j, startSocket.y + sizes.y *i);
 
-                    if (tmp.y >= field.matrix[13] + field.height/2 || tmp.x >= field.matrix[12] + field.width/2)
+                    if (tmp.y >= field.getMatrix()[13] + field.height/2 || tmp.x >= field.getMatrix()[12] + field.width/2)
                         return false;
                 }
 
@@ -99,15 +110,14 @@ public class Tank extends Unit{
             }
         }
 
-        if(isInstallUnit)
-        {
-            for (int i = 0; i < form.length; i++)
-                form[i].SetValue(tmpForm[i]);
-           // if(isVisible && isRight) stroke.horizontalFlip();
+
+            if (isInstallUnit)
+                for (byte j = 0; j < form.length; j++)
+                    form[j].SetValue(tmpForm[j]);
+
+            return true;
         }
 
-        return true;
-    }
 
     @Override
     public byte GetZone()
@@ -118,26 +128,24 @@ public class Tank extends Unit{
     @Override
     protected void ResetOffset()
     {
-        //для прямоугольника -78
-        offset.SetValue((int)(18 * Assets.isoGridCoeff), (int)(-30 * Assets.isoGridCoeff));
-        strokeOffset.SetValue((int)(-5 * Assets.isoGridCoeff),(int)( -4 * Assets.isoGridCoeff));
+        offset.SetValue((int)(30 * Assets.isoGridCoeff), (int)(-24 * Assets.isoGridCoeff));
+        strokeOffset.SetValue((int)(-4 * Assets.isoGridCoeff),(int)(-4 * Assets.isoGridCoeff));
     }
 
     @Override
     protected void ChangeOffset()
     {
         if(isRight)
-            //для прямоугольника -52
-            offset.SetValue((int)(-10 * Assets.isoGridCoeff), (int)(-30 * Assets.isoGridCoeff));
+            offset.SetValue((int)(-27 * Assets.isoGridCoeff),(int)(-22 * Assets.isoGridCoeff));
         else
-            //для прямоугольника -78
             ResetOffset();
     }
 
     @Override
     protected void TurnImage()
     {
-        Matrix.scaleM(matrix, 0, -1, 1, 1);
+        image.Scale(-1, 1);
+        stroke.Scale(-1, 1);
     }
 
     @Override

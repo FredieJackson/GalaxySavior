@@ -1,27 +1,36 @@
-package app.onedayofwar.Battle.Units;
+package app.onedayofwar.Battle.Units.Space;
 
 import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
+import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 /**
- * Машина инжинеров
- * Размер 3х1
+ * Created by Никита on 23.03.2015.
  */
 
-public class Engineer extends Unit {
-
-    public Engineer(Vector2 position, int zoneID, boolean isVisible)
+/*Корабль без экипажа
+Форма ХХХ
+ */
+public class Bioship extends Unit {
+    public Bioship(Vector2 position, int zoneID, boolean isVisible)
     {
-        super(isVisible, position);
+        super(isVisible);
 
         if(isVisible)
         {
-            image = Assets.engineerImage;
-            icon = Assets.engineerIcon;
-            stroke = Assets.engineerStroke;
+            image = new Sprite(Assets.bioshipImage);
+            image.Scale((float)Assets.isoGridCoeff);
+
+            icon = new Sprite(Assets.sonderIcon);
+            icon.setPosition(position.x, position.y);
+            icon.Scale((float)Assets.iconCoeff);
+
+            stroke = new Sprite(Assets.sonderStroke);
+            stroke.Scale((float)Assets.isoGridCoeff);
         }
 
         this.zoneID = (byte)zoneID;
@@ -68,7 +77,7 @@ public class Engineer extends Unit {
                 else
                     tmp.SetValue(startSocket.x - sizes.x * i / 2, startSocket.y + sizes.y * i / 2);
 
-                if (-Math.abs(0.5 * (tmp.x- field.matrix[12])) + field.height/2 + field.matrix[13] - 3 < tmp.y)
+                if (-Math.abs(0.5 * (tmp.x- field.getMatrix()[12])) + field.height/2 + field.getMatrix()[13] - 3 < tmp.y)
                     return false;
             }
             else
@@ -78,7 +87,7 @@ public class Engineer extends Unit {
                 else
                     tmp.SetValue(startSocket.x, startSocket.y + sizes.y * i);
 
-                if (tmp.y >= field.matrix[13] + field.height/2 || tmp.x >= field.matrix[12] + field.width/2)
+                if (tmp.y >= field.getMatrix()[13] + field.height/2 || tmp.x >= field.getMatrix()[12] + field.width/2)
                     return false;
             }
 
@@ -125,7 +134,8 @@ public class Engineer extends Unit {
     @Override
     protected void TurnImage()
     {
-        Matrix.scaleM(matrix, 0, -1, 1, 1);
+        image.Scale(-1, 1);
+        stroke.Scale(-1, 1);
     }
 
     @Override

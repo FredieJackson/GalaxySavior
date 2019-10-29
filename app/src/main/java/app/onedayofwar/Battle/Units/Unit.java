@@ -1,13 +1,14 @@
 package app.onedayofwar.Battle.Units;
 
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
-import app.onedayofwar.Graphics.*;
+import app.onedayofwar.Graphics.Animation;
+import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Graphics;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 abstract public class Unit
@@ -34,21 +35,18 @@ abstract public class Unit
     protected int armor;
     public int reload;
 
-    Vector2[] form;
+    protected Vector2[] form;
     boolean[] damagedForm;
     byte damagedZones;
     boolean isDead;
     protected boolean isVisible;
     protected RectF bounds;
 
-    public float[] matrix;
-    public float[] iconMatrix;
-
-    //private Animation fire;
+    private Animation fire;
     //endregion
 
     //region Constructor
-    public Unit(boolean isVisible, Vector2 position)
+    public Unit(boolean isVisible)
     {
         this.isVisible = isVisible;
         isInstalled = false;
@@ -57,21 +55,14 @@ abstract public class Unit
         isSelected = false;
         if(isVisible)
         {
-            matrix = new float[16];
-            Matrix.setIdentityM(matrix, 0);
-            Matrix.scaleM(matrix, 0, (float)Assets.isoGridCoeff, -(float)Assets.isoGridCoeff, 1);
-
-            iconMatrix = new float[16];
-            Matrix.setIdentityM(iconMatrix, 0);
-            Matrix.translateM(iconMatrix, 0, position.x, position.y, 0);
-            Matrix.scaleM(iconMatrix, 0, (float)Assets.iconCoeff, -(float)Assets.iconCoeff, 1);
-
             strokeOffset = new Vector2();
             offset = new Vector2();
 
             bounds = new RectF();
-            //fire = new Animation(16, 50, Assets.fire.getWidth(), Assets.fire.getHeight(), true, 4);
+            fire = new Animation(Assets.fire, 16, 100, 4, true);
+            fire.Scale((float)Assets.isoGridCoeff);
         }
+
         damagedZones = 0;
         reload = 0;
     }
@@ -90,35 +81,37 @@ abstract public class Unit
     public void Draw(Graphics graphics)
     {
         DrawStroke(graphics);
+        //g.drawSprite(image, pos.x + offset.x, pos.y + offset.y);
 
-        matrix[12] -= offset.x;
-        matrix[13] -= offset.y;
-        graphics.DrawSprite(image, matrix);
-        matrix[12] += offset.x;
-        matrix[13] += offset.y;
+        image.matrix[12] -= offset.x;
+        image.matrix[13] -= offset.y;
+        graphics.DrawSprite(image);
+        image.matrix[12] += offset.x;
+        image.matrix[13] += offset.y;
 
         DrawDamagedZones(graphics);
         if (reload > 0 && !isDead)
             DrawReload(graphics);
 
         //g.drawRect(bounds.left, bounds.top, bounds.width(), bounds.height(), Color.GREEN, false);
-        //g.drawRect(pos.x + offset.x, pos.y + offset.y, image.getWidth(), image.getHeight(), Color.RED, false);
+        //g.drawRect(pos.x + offset.x, pos.y + offset.y, image.getIconWidth(), image.getIconHeight(), Color.RED, false);
     }
 
     public void DrawReload(Graphics graphics)
     {
-        //g.drawText("" + reload, 24, pos.x + offset.x + image.getWidth()/2, pos.y + offset.y + image.getHeight()/2, strokePaint.getColor());
+        graphics.DrawText("" + reload, Assets.arialFont, image.matrix[12], image.matrix[13], Color.YELLOW, 50);
+        //g.drawText("" + reload, 24, pos.x + offset.x + image.getIconWidth()/2, pos.y + offset.y + image.getIconHeight()/2, strokePaint.getColor());
     }
 
     public void DrawStroke(Graphics graphics)
     {
         if(isSelected)
         {
-             matrix[12] -= offset.x;
-             matrix[13] -= offset.y;
-             graphics.DrawSprite(stroke, matrix);
-             matrix[12] += offset.x;
-             matrix[13] += offset.y;
+             stroke.matrix[12] -= offset.x;
+             stroke.matrix[13] -= offset.y;
+             graphics.DrawSprite(stroke);
+             stroke.matrix[12] += offset.x;
+             stroke.matrix[13] += offset.y;
             //g.drawSprite(stroke, pos.x + offset.x + strokeOffset.x, pos.y + offset.y + strokeOffset.y, strokePaint.getColor());
         }
     }
@@ -129,7 +122,8 @@ abstract public class Unit
         {
             //g.drawSprite(icon, iconPos.x, iconPos.y);
         }*/
-        graphics.DrawSprite(icon, iconMatrix);
+        graphics.DrawSprite(icon);
+
     }
 
     public void DrawDamagedZones(Graphics graphics)
@@ -138,8 +132,8 @@ abstract public class Unit
         {
             if(damagedForm[i])
             {
-                //fire.SetPos(form[i].x - (int) (20 * Assets.isoGridCoeff), form[i].y - (int) (30 * Assets.isoGridCoeff));
-                //g.drawSprite(Assets.fire, fire.GetDstRect(), fire.GetSrcRect());
+                fire.setPosition(form[i].x, form[i].y - (int)(10 * Assets.isoGridCoeff));
+                graphics.DrawAnimation(fire);
             }
         }
 
@@ -148,18 +142,28 @@ abstract public class Unit
 
     public void UpdateAnimation(float eTime)
     {
-        //if(damagedZones != 0)
-            //fire.Update(eTime);
+        if(damagedZones != 0)
+            fire.Update(eTime);
     }
 
-    public float getWidth()
+    public float getIconWidth()
     {
-        return Math.abs(matrix[0])*image.getWidth();
+        return icon.getWidth();
     }
 
-    public float getHeight()
+    public float getIconHeight()
     {
-        return Math.abs(matrix[5])*image.getHeight();
+        return icon.getHeight();
+    }
+
+    public float[] getMatrix()
+    {
+        return image.matrix;
+    }
+
+    public float[] getIconMatrix()
+    {
+        return icon.matrix;
     }
 
     public void ResetPosition()
@@ -167,8 +171,8 @@ abstract public class Unit
         ResetOffset();
         strokeSetYellow();
         isSelected = false;
-        matrix[12] = 0;
-        matrix[13] = -getHeight();
+        image.setPosition(0, -image.getHeight());
+        stroke.setPosition(0, -stroke.getHeight());
 
         if(isRight)
         {
@@ -177,9 +181,19 @@ abstract public class Unit
         }
     }
 
+    public void SetIconPos(Vector2 pos)
+    {
+        icon.setPosition(pos.x, pos.y);
+    }
+
     public RectF GetIconPosition()
     {
-        return new RectF(iconMatrix[12] - Math.abs(iconMatrix[0])*icon.getWidth()/2, iconMatrix[13] - Math.abs(iconMatrix[5])*icon.getHeight()/2, iconMatrix[12] + Math.abs(iconMatrix[0])*icon.getWidth()/2, iconMatrix[13] +  Math.abs(iconMatrix[5])*icon.getHeight()/2);
+        return new RectF(getIconMatrix()[12] - getIconWidth()/2, getIconMatrix()[13] - getIconHeight()/2, getIconMatrix()[12] + getIconWidth()/2, getIconMatrix()[13] + getIconHeight()/2);
+    }
+
+    public Vector2 GetStartPosition()
+    {
+        return new Vector2((int)(getMatrix()[12] - getIconWidth()/2),(int)(getMatrix()[13] + getIconHeight()/2));
     }
 
     public RectF GetBounds()
@@ -189,7 +203,7 @@ abstract public class Unit
 
     public void UpdateBounds()
     {
-        bounds.set(matrix[12] - offset.x - (int)(getWidth() * 0.4), matrix[13] - offset.y - (int)(getHeight() * 0.4), matrix[12] - offset.x + (int)(getWidth() * 0.4), matrix[13] - offset.y + (int)(getHeight() * 0.4));
+        bounds.set(getMatrix()[12] - image.getWidth()/2 + (int)(image.getWidth() * 0.1) - offset.x, getMatrix()[13] - image.getHeight()/2 + (int)(image.getHeight() * 0.1) - offset.y, getMatrix()[12] + image.getWidth()/2 - (int)(image.getWidth() * 0.1) - offset.x , getMatrix()[13]  + image.getHeight()/2 - offset.y - (int)(image.getHeight()*0.1));
     }
 
     protected void InitializeFormArray()
@@ -240,8 +254,8 @@ abstract public class Unit
 
     public void SetPosition(Vector2 position)
     {
-        matrix[12] = position.x;
-        matrix[13] = position.y;
+        image.setPosition(position.x, position.y);
+        stroke.setPosition(position.x, position.y);
     }
 
     public void Select()
@@ -258,11 +272,6 @@ abstract public class Unit
     {
         if(reload > 0)
             reload--;
-        else
-        {
-            if(isVisible)
-                image.removeColorFilter();
-        }
     }
 
     public boolean IsReloading()
@@ -273,15 +282,13 @@ abstract public class Unit
     public void Reload()
     {
         reload = reloadTime + 1;
-        if(isVisible)
-            image.setColorFilter(Color.MAGENTA);
     }
 
     public boolean SetDamage(int damage)
     {
         damagedZones++;
-        //if(isVisible)
-        //    fire.Start();
+        if(isVisible)
+            fire.Start();
         if(armor >= damage)
             armor -= damage;
         else
@@ -291,17 +298,18 @@ abstract public class Unit
         }
         if(hitPoints <= 0)
         {
-            isDead = true;
             if(isVisible)
-                image.setColorFilter(Color.RED);
+            image.setColorFilter(Color.RED);
+            isDead = true;
             return true;
         }
         else if(damagedZones == form.length)
         {
             if(isVisible)
-                image.setColorFilter(Color.RED);
+            image.setColorFilter(Color.RED);
             isDead = true;
         }
+
         /*for(int i = 0; i < form.length; i++)
         {
             if(form[i].Equals(damagedZone))
@@ -348,8 +356,6 @@ abstract public class Unit
     public void ResetReload()
     {
         reload = 0;
-        if(isVisible)
-            image.removeColorFilter();
         power = power / 2;
     }
 }

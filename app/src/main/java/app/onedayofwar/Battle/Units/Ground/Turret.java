@@ -1,9 +1,11 @@
-package app.onedayofwar.Battle.Units;
+package app.onedayofwar.Battle.Units.Ground;
 
 import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
+import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -18,13 +20,19 @@ public class Turret extends Unit {
 
     public Turret(Vector2 position, int zoneID, boolean isVisible)
     {
-        super(isVisible, position);
+        super(isVisible);
 
         if(isVisible)
         {
-            image = Assets.turretImage;
-            icon = Assets.turretIcon;
-            stroke = Assets.turretStroke;
+            image = new Sprite(Assets.turretImage);
+            image.Scale((float)Assets.isoGridCoeff);
+
+            icon = new Sprite(Assets.turretIcon);
+            icon.setPosition(position.x, position.y);
+            icon.Scale((float)Assets.iconCoeff);
+
+            stroke = new Sprite(Assets.turretStroke);
+            stroke.Scale((float)Assets.isoGridCoeff);
         }
         this.zoneID = (byte)zoneID;
         Initialize();
@@ -70,14 +78,14 @@ public class Turret extends Unit {
             {
                 tmp.SetValue(startPos.x - sizes.x * i/2 , startPos.y + sizes.y * i/2);
 
-                if(0.5 * (tmp.x - field.matrix[12]) + field.height/2 + field.matrix[13] - 3 < tmp.y)
+                if(0.5 * (tmp.x - field.getMatrix()[12]) + field.height/2 + field.getMatrix()[13] - 3 < tmp.y)
                     return false;
             }
             else
             {
                 tmp.SetValue(startPos.x, startPos.y + sizes.y * i);
 
-                if (tmp.y >= field.matrix[13] + field.height/2)
+                if (tmp.y >= field.getMatrix()[13] + field.height/2)
                     return false;
             }
             tmpLocal = field.GetLocalSocketCoord(tmp);
@@ -96,14 +104,14 @@ public class Turret extends Unit {
             {
                 tmp.SetValue(startPos.x + sizes.x * (i - 3), startPos.y + sizes.y * (i - 3));
 
-                if (-0.5 * (tmp.x - field.matrix[12]) + field.height/2 + field.matrix[13] - 3 < tmp.y || -0.5 * (tmp.x - field.matrix[12]) + field.matrix[13] - field.height/2 - 3 > tmp.y)
+                if (-0.5 * (tmp.x - field.getMatrix()[12]) + field.height/2 + field.getMatrix()[13] - 3 < tmp.y || -0.5 * (tmp.x - field.getMatrix()[12]) + field.getMatrix()[13] - field.height/2 - 3 > tmp.y)
                     return false;
             }
             else
             {
                 tmp.SetValue(startPos.x + sizes.x * 2 * (i - 3), startPos.y + sizes.y);
 
-                if (tmp.x < field.matrix[12]  - field.width/2 || tmp.x >= field.matrix[12] + field.width/2)
+                if (tmp.x < field.getMatrix()[12]  - field.width/2 || tmp.x >= field.getMatrix()[12] + field.width/2)
                     return false;
             }
             tmpLocal = field.GetLocalSocketCoord(tmp);
@@ -147,7 +155,8 @@ public class Turret extends Unit {
     @Override
     protected void TurnImage()
     {
-        Matrix.scaleM(matrix, 0, -1, 1, 1);
+        image.Scale(-1, 1);
+        stroke.Scale(-1, 1);
     }
 
     @Override

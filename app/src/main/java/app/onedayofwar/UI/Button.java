@@ -1,13 +1,12 @@
 package app.onedayofwar.UI;
 
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.Graphics.Sprite;
+import app.onedayofwar.Graphics.Texture;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -18,22 +17,18 @@ public class Button
     public int width;
     public int height;
     private RectF rect;
-    private Sprite image;
     private boolean isClicked;
     private boolean isLocked;
     private boolean isAnimated;
     private boolean isVisible;
-    public float[] matrix;
+    private Sprite image;
 
-    public Button(Sprite image, int x, int y, boolean isAnimated)
+    public Button(Texture texture, float x, float y, boolean isAnimated)
     {
-        this.image = image;
-        matrix = new float[16];
-        Matrix.setIdentityM(matrix, 0);
-        Matrix.translateM(matrix, 0, x, y, 0);
-        Matrix.scaleM(matrix, 0, (float)Assets.btnCoeff, -(float)Assets.btnCoeff, 1);
-        width = (int)(image.getWidth() * Assets.btnCoeff);
-        height = (int)(image.getHeight() * Assets.btnCoeff);
+        image = new Sprite(texture);
+        image.setPosition(x, y);
+        width = image.getWidth();
+        height = image.getHeight();
         rect = new RectF(x - width/2, y - height/2, x + width/2, y + height/2);
         isClicked = false;
         isLocked = false;
@@ -45,7 +40,7 @@ public class Button
     {
         if(isVisible)
         {
-            graphics.DrawSprite(image, matrix);
+            graphics.DrawStaticSprite(image);
             /*if (isClicked && isAnimated)
                 g.drawSprite(image, rect.left + 5, rect.top + 5, rect.width() - 5, rect.height() - 5, 0, 0, rect.width(), rect.height());
             else
@@ -56,14 +51,14 @@ public class Button
 
     public void Flip()
     {
-        Matrix.scaleM(matrix, 0, -1, 1, 1);
+        image.Scale(-1, 1);
     }
 
     public void Update(Vector2 touchPos)
     {
         if(!isLocked && isVisible)
         {
-            rect.set(matrix[12] - width/2, matrix[13] - height/2, matrix[12] + width/2, matrix[13] + height/2);
+            rect.set(image.matrix[12] - width/2, image.matrix[13] - height/2, image.matrix[12] + width/2, image.matrix[13] + height/2);
 
             if (touchPos.x > rect.left - 5 && touchPos.x < rect.right + 5 && touchPos.y > rect.top - 5 && touchPos.y < rect.bottom + 5)
                 isClicked = true;
@@ -104,8 +99,19 @@ public class Button
 
     public void SetPosition(float x, float y)
     {
-        matrix[12] = x;
-        matrix[13] = y;
+        image.setPosition(x, y);
+    }
+
+    public void Scale(float s)
+    {
+        image.Scale(s);
+        width = image.getWidth();
+        height = image.getHeight();
+    }
+
+    public float[] getMatrix()
+    {
+        return image.matrix;
     }
 
 }

@@ -18,7 +18,6 @@ public class Bullet
     private float velocity;
     private float velocityY;
     private byte type;
-    private float[] matrix;
     private float curveAngle;
     private float lastAngle;
     public enum State { FLY, LAUNCH, BOOM}
@@ -28,36 +27,35 @@ public class Bullet
     {
         state = State.LAUNCH;
         destination = new Vector2();
-        image = Assets.bullet;
+        image = new Sprite(Assets.bullet);
+        image.Scale((float)Assets.isoGridCoeff);
         velocity = 300;
-        matrix = new float[16];
-        Matrix.setIdentityM(matrix, 0);
     }
 
     public void Draw(Graphics graphics)
     {
         if(state == State.FLY)
         {
-            graphics.DrawSprite(image, matrix);
+            graphics.DrawSprite(image);
         }
     }
 
     public void Update(float eTime)
     {
-        if(matrix[13] + image.getHeight() >= destination.y)
+        if(image.matrix[13] + image.getHeight() >= destination.y)
         {
             state = State.BOOM;
             destination.SetZero();
             lastAngle = 0;
             curveAngle = 0;
-            Matrix.setIdentityM(matrix, 0);
+            Matrix.setIdentityM(image.matrix, 0);
+            Matrix.scaleM(image.matrix, 0, 1, -1, 1);
             return;
         }
-        velocityY = destination.y / destination.x / destination.x * matrix[12] * matrix[12] - matrix[13];
-        curveAngle = (float)(Math.atan(2d * destination.y * matrix[12] / destination.x / destination.x) * 180 / Math.PI);
-        matrix[12] += velocity * eTime;
-        matrix[13] += velocityY;
-        Matrix.rotateM(matrix, 0, curveAngle - lastAngle, 0, 0, 1);
+        velocityY = destination.y / destination.x / destination.x * image.matrix[12] * image.matrix[12] - image.matrix[13];
+        curveAngle = (float)(Math.atan(2d * destination.y * image.matrix[12] / destination.x / destination.x) * 180 / Math.PI);
+        image.Move(velocity * eTime, velocityY);
+        Matrix.rotateM(image.matrix, 0, -curveAngle + lastAngle, 0, 0, 1);
         lastAngle = curveAngle;
     }
 
@@ -69,10 +67,10 @@ public class Bullet
         switch(type)
         {
             case 0:
-                image = Assets.bullet;
+                image.setTexture(Assets.bullet);
                 break;
             case 1:
-                image = Assets.miniRocket;
+                image.setTexture(Assets.miniRocket);
                 break;
         }
     }

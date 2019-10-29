@@ -1,28 +1,36 @@
-package app.onedayofwar.Battle.Units;
+package app.onedayofwar.Battle.Units.Ground;
 
 import android.opengl.Matrix;
 
 import app.onedayofwar.Battle.BattleElements.Field;
+import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 /**
- * Боевая машина пехоты
- * Размер 2х1
+ * Экзо-скелет
+ * Размер 1х1
  */
+public class Robot extends Unit {
 
-public class IFV extends Unit{
-
-    public IFV(Vector2 position, int zoneID, boolean isVisible)
+    public Robot(Vector2 position, int zoneID, boolean isVisible)
     {
-        super(isVisible, position);
+        super(isVisible);
 
-        if(isVisible)
+        if (isVisible)
         {
-            image = Assets.ifvImage;
-            icon = Assets.ifvIcon;
-            stroke = Assets.ifvStroke;
+            image = new Sprite(Assets.robotImage);
+            image.Scale((float)Assets.isoGridCoeff);
+
+            icon = new Sprite(Assets.robotIcon);
+            icon.setPosition(position.x, position.y);
+            icon.Scale((float)Assets.iconCoeff);
+
+            stroke = new Sprite(Assets.robotStroke);
+            stroke.Scale((float)Assets.isoGridCoeff);
         }
+
         this.zoneID = (byte)zoneID;
         Initialize();
     }
@@ -35,14 +43,14 @@ public class IFV extends Unit{
             ResetPosition();
         }
 
-        form = new Vector2[2];
+        form = new Vector2[1];
         InitializeFormArray();
 
         accuracy = 100;
-        power = 5000;
+        power = 2500;
         hitPoints = 500;
-        armor = 500;
-        reloadTime = 3;
+        armor = 0;
+        reloadTime = 1;
     }
     //endregion
 
@@ -61,25 +69,10 @@ public class IFV extends Unit{
         for(int i = 0; i < form.length; i++)
         {
             if(field.IsIso())
-            {
-                if (isRight)
-                    tmp.SetValue(startSocket.x + sizes.x * i / 2, startSocket.y + sizes.y * i / 2);
-                else
-                    tmp.SetValue(startSocket.x - sizes.x * i / 2, startSocket.y + sizes.y * i / 2);
-
-                if (-Math.abs(0.5 * (tmp.x - field.matrix[12])) + field.height/2 + field.matrix[13] - 3 < tmp.y)
-                    return false;
-            }
+                tmp.SetValue(startSocket.x - sizes.x * i/2 , startSocket.y + sizes.y * i/2);
             else
-            {
-                if (isRight)
-                    tmp.SetValue(startSocket.x + sizes.x * i, startSocket.y);
-                else
-                    tmp.SetValue(startSocket.x, startSocket.y + sizes.y * i);
+                tmp.SetValue(startSocket.x, startSocket.y);
 
-                if (tmp.y >= field.matrix[13] + field.height/2 || tmp.x >= field.matrix[12] + field.width/2)
-                    return false;
-            }
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
             if(field.GetFieldInfo()[(int)tmpLocal.y][(int)tmpLocal.x] != -1)
@@ -107,23 +100,20 @@ public class IFV extends Unit{
     @Override
     protected void ResetOffset()
     {
-        offset.SetValue((int)(15 * Assets.isoGridCoeff),(int)( -5 * Assets.isoGridCoeff));
+        offset.SetValue((int)(3 * Assets.isoGridCoeff),(int)(0 * Assets.isoGridCoeff));
         strokeOffset.SetValue((int)(-5 * Assets.isoGridCoeff),(int)( -5 * Assets.isoGridCoeff));
-    }
-
-    @Override
-    protected void ChangeOffset()
-    {
-        if(isRight)
-            offset.SetValue((int)(-18 * Assets.isoGridCoeff),(int)( -3 * Assets.isoGridCoeff));
-        else
-            ResetOffset();
     }
 
     @Override
     protected void TurnImage()
     {
-        Matrix.scaleM(matrix, 0, -1, 1, 1);
+        image.Scale(-1, 1);
+        stroke.Scale(-1, 1);
+    }
+
+    @Override
+    protected void ChangeOffset()
+    {
     }
 
     @Override
@@ -131,4 +121,5 @@ public class IFV extends Unit{
     {
 
     }
+
 }

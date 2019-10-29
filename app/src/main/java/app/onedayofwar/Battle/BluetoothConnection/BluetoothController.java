@@ -20,7 +20,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import app.onedayofwar.Battle.Activities.BattleActivity;
+import app.onedayofwar.Activities.BluetoothActivity;
 import app.onedayofwar.R;
 
 /**
@@ -40,7 +40,7 @@ public class BluetoothController
     private ArrayList<BluetoothDevice> devices;
     private ArrayAdapter<String> btArrayAdapter;
     private int selectedDevice;
-    private BattleActivity activity;
+    private BluetoothActivity activity;
     private final Handler handler;
 
     private ServerThread serverThread;
@@ -50,7 +50,7 @@ public class BluetoothController
 
     public boolean isEnemyConnected;
 
-    public BluetoothController(final BattleActivity activity)
+    public BluetoothController(final BluetoothActivity activity)
     {
         this.activity = activity;
 
@@ -121,7 +121,7 @@ public class BluetoothController
 
                     case HandlerMSG.GAME_OVER:
                         Stop();
-                        activity.GameOver();
+                        //activity.GameOver();
                         break;
                 }
             }

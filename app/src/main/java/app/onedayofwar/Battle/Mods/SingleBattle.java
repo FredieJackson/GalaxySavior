@@ -3,12 +3,12 @@ package app.onedayofwar.Battle.Mods;
 import java.util.ArrayList;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.Units.Engineer;
-import app.onedayofwar.Battle.Units.IFV;
-import app.onedayofwar.Battle.Units.Robot;
-import app.onedayofwar.Battle.Units.SONDER;
-import app.onedayofwar.Battle.Units.Tank;
-import app.onedayofwar.Battle.Units.Turret;
+import app.onedayofwar.Battle.Units.Ground.Engineer;
+import app.onedayofwar.Battle.Units.Ground.IFV;
+import app.onedayofwar.Battle.Units.Ground.Robot;
+import app.onedayofwar.Battle.Units.Ground.SONDER;
+import app.onedayofwar.Battle.Units.Ground.Tank;
+import app.onedayofwar.Battle.Units.Ground.Turret;
 import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Battle.System.BattleView;
 import app.onedayofwar.System.Vector2;

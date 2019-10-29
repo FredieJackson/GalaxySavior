@@ -2,26 +2,31 @@ package app.onedayofwar.Battle.Mods;
 
 
 import android.graphics.RectF;
-import android.util.Log;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
 
 import app.onedayofwar.Battle.BattleElements.BattleEnemy;
-import app.onedayofwar.Battle.BattleElements.Field;
 import app.onedayofwar.Battle.BattleElements.BattlePlayer;
-import app.onedayofwar.Battle.Units.Bullet;
-import app.onedayofwar.Battle.Units.Engineer;
-import app.onedayofwar.Battle.Units.IFV;
-import app.onedayofwar.Battle.Units.Robot;
-import app.onedayofwar.Battle.Units.SONDER;
-import app.onedayofwar.Battle.Units.Tank;
-import app.onedayofwar.Battle.Units.Turret;
-import app.onedayofwar.Battle.Units.Unit;
+import app.onedayofwar.Battle.BattleElements.Field;
 import app.onedayofwar.Battle.System.BattleView;
+import app.onedayofwar.Battle.Units.Ground.Engineer;
+import app.onedayofwar.Battle.Units.Ground.IFV;
+import app.onedayofwar.Battle.Units.Ground.Robot;
+import app.onedayofwar.Battle.Units.Ground.SONDER;
+import app.onedayofwar.Battle.Units.Ground.Tank;
+import app.onedayofwar.Battle.Units.Ground.Turret;
+import app.onedayofwar.Battle.Units.Space.Akira;
+import app.onedayofwar.Battle.Units.Space.Battleship;
+import app.onedayofwar.Battle.Units.Space.Bioship;
+import app.onedayofwar.Battle.Units.Space.BirdOfPrey;
+import app.onedayofwar.Battle.Units.Bullet;
+import app.onedayofwar.Battle.Units.Space.Defaint;
+import app.onedayofwar.Battle.Units.Space.R2D2;
+import app.onedayofwar.Battle.Units.Unit;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
-import app.onedayofwar.System.*;
+import app.onedayofwar.System.Vector2;
 
 /**
  * Created by Slava on 24.12.2014.
@@ -81,7 +86,7 @@ public abstract class Battle
         army = new ArrayList<>();
 
         field = new Field(battleView.screenWidth/2, battleView.screenHeight/2, BattlePlayer.fieldSize, true);
-        eField = new Field((int)(405 * Assets.monitorWidthCoeff + Assets.grid.getWidth() * Assets.gridCoeff), battleView.screenHeight/2, BattlePlayer.fieldSize, false); //gameView.screenWidth/2 - Assets.grid.getWidth()/2, gameView.screenHeight/2 - Assets.grid.getHeight()/2, 15, false);
+        eField = new Field((int)(405 * Assets.monitorWidthCoeff + Assets.grid.getWidth() * Assets.gridCoeff), battleView.screenHeight/2, BattlePlayer.fieldSize, false); //gameView.screenWidth/2 - Assets.grid.getIconWidth()/2, gameView.screenHeight/2 - Assets.grid.getIconHeight()/2, 15, false);
         eField.Move();
         BattlePlayer.fieldSize = 0;
 
@@ -120,7 +125,7 @@ public abstract class Battle
                 case 0:
                     if (unitCount[0] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], 10 + (int)(Assets.iconCoeff * Assets.robotIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.matrix[12], 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
                         for (int i = 0; i < unitCount[0]; i++)
                             army.add(new Robot(startPos, 0, true));
 
@@ -131,7 +136,7 @@ public abstract class Battle
                     if (unitCount[1] != 0)
                     {
 
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.ifvIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
                         for (int i = 0; i < unitCount[1]; i++)
                             army.add(new IFV(startPos, 1, true));
 
@@ -141,7 +146,7 @@ public abstract class Battle
                 case 2:
                     if (unitCount[2] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10  + (int)(Assets.iconCoeff * Assets.engineerIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10  + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
                         for (int i = 0; i < unitCount[2]; i++)
                             army.add(new Engineer(startPos, 2, true));
 
@@ -151,7 +156,7 @@ public abstract class Battle
                 case 3:
                     if (unitCount[3] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.tankIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
                         for (int i = 0; i < unitCount[3]; i++)
                             army.add(new Tank(startPos, 3, true));
 
@@ -161,7 +166,7 @@ public abstract class Battle
                 case 4:
                     if (unitCount[4] != 0)
                     {
-                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.turretIcon.getHeight()/2));
+                        startPos.SetValue(battleView.selectingPanel.matrix[12], offset + 10 + (int)(Assets.iconCoeff * Assets.sonderIcon.getHeight()/2));
                         for (int i = 0; i < unitCount[4]; i++)
                             army.add(new Turret(startPos, 4, true));
 
@@ -176,6 +181,7 @@ public abstract class Battle
                             army.add(new SONDER(startPos, 5, true));
                     }
                     break;
+
             }
         }
 
@@ -216,6 +222,7 @@ public abstract class Battle
             else if(state == BattleState.AttackPrepare)
             {
                 SwapFields();
+                army.get(selectedUnitZone).Deselect();
                 state = BattleState.Attack;
                 battleView.ShootingPrepare();
                 battleView.MoveGates();
@@ -245,7 +252,8 @@ public abstract class Battle
                             bullet.Update(eTime);
                             break;
                         case BOOM:
-                            Assets.explode.Start();
+                            field.explodeAnimation.setPosition((int)(BattleEnemy.target.x), (int)(BattleEnemy.target.y - 25 * Assets.isoGridCoeff));
+                            field.explodeAnimation.Start();
                             bullet.Reload();
                             BattleEnemy.target.SetFalse();
                             EnemyShoot();
@@ -376,7 +384,7 @@ public abstract class Battle
             if (selectedUnitZone > -1)
             {
                 //Вектор касания смещаем на определенную величину, для удобства
-                Vector2 tmp = new Vector2(battleView.touchPos.x - 50, battleView.touchPos.y);
+                Vector2 tmp = new Vector2(battleView.touchPos.x - army.get(unitNum[selectedUnitZone]).GetIconPosition().width() - 50 - army.get(unitNum[selectedUnitZone]).offset.x, battleView.touchPos.y - army.get(unitNum[selectedUnitZone]).GetIconPosition().height()/2);
 
                 //Если касанемся в пределах поля
                 if(field.IsVectorInField(tmp))
@@ -577,10 +585,10 @@ public abstract class Battle
         {
             for (Unit unit : army)
             {
-                if (unit.matrix[12] < 0)
-                    unit.matrix[12] += battleView.screenWidth;
+                if (unit.getMatrix()[12] < 0)
+                    unit.getMatrix()[12] += battleView.screenWidth;
                 else
-                    unit.matrix[12] -= battleView.screenWidth;
+                    unit.getMatrix()[12] -= battleView.screenWidth;
             }
         }
         else
@@ -589,11 +597,12 @@ public abstract class Battle
             {
                 if (unitNum[i] != -1)
                 {
-                    army.get(unitNum[i]).iconMatrix[12] = battleView.selectingPanel.matrix[12];
+                    army.get(unitNum[i]).getIconMatrix()[12] = battleView.selectingPanel.matrix[12];
                 }
             }
         }
     }
+
     public void SwapFields()
     {
         field.Move();
@@ -667,12 +676,12 @@ public abstract class Battle
 
     public void DrawUnits(Graphics graphics)
     {
-        //boolean isExplodeShowed = false;
+        boolean isExplodeShowed = false;
         for(Unit unit : drawArmySequence)
         {
-            if(unit.matrix[13] > 0)
+            if(unit.getMatrix()[13] > 0)
             {
-                /*if(field.explodeAnimation.IsStart() && !isExplodeShowed)
+                if(field.explodeAnimation.IsStart() && !isExplodeShowed)
                 {
                     Vector2 tmp = new Vector2();
                     fin:for(int i = 0; i < unit.GetForm().length; i++)
@@ -699,33 +708,33 @@ public abstract class Battle
 
                                 if(!isOnForm)
                                 {
-                                    //battleView.graphics.drawSprite(Assets.explode, field.explodeAnimation.GetDstRect(), field.explodeAnimation.GetSrcRect());
-                                    //isExplodeShowed = true;
+                                    graphics.DrawAnimation(field.explodeAnimation);
+                                    isExplodeShowed = true;
                                     break fin;
                                 }
                             }
                         }
                     }
-                }*/
+                }
                 unit.Draw(graphics);
             }
         }
-        if(state != BattleState.Installation && field.matrix[12] >= 0)
+        if(state != BattleState.Installation && field.getMatrix()[12] >= 0)
         {
             //battleView.graphics.drawText(testLocalView, 24, 50, 150, army.get(0).strokePaint.getColor());
         }
         bullet.Draw(graphics);
-        /*if(field.explodeAnimation.IsStart() && !isExplodeShowed)
+        if(field.explodeAnimation.IsStart() && !isExplodeShowed)
         {
-            //battleView.graphics.drawSprite(Assets.explode, field.explodeAnimation.GetDstRect(), field.explodeAnimation.GetSrcRect());
-        }*/
+            graphics.DrawAnimation(field.explodeAnimation);
+        }
     }
 
     public void DrawFields(Graphics graphics)
     {
         if(state != BattleState.Installation)
         {
-            if (eField.matrix[12] >= 0)
+            if (eField.getMatrix()[12] >= 0)
                 eField.Draw(graphics);
             else
                 field.DrawFieldInfo(graphics);

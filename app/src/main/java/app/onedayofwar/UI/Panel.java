@@ -1,11 +1,7 @@
 package app.onedayofwar.UI;
 
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
@@ -27,7 +23,6 @@ public class Panel
     public boolean isClose;
     private Type type;
     private Button closeBtn;
-    private Bitmap image;
 
     //region Constructor
     public Panel(int x, int y, int width, int height, Type type)
@@ -55,7 +50,10 @@ public class Panel
         SetVelocity();
 
         if(type == Type.RIGHT)
-            closeBtn = new Button(Assets.btnPanelClose, (int)(matrix[12] + Assets.btnPanelClose.getWidth()/2 * Assets.btnCoeff - width/2), height/2, false);
+        {
+            closeBtn = new Button(Assets.btnPanelClose, (int) (matrix[12] + Assets.btnPanelClose.getWidth() / 2 * Assets.btnCoeff - width / 2), height / 2, false);
+            closeBtn.Scale(Assets.btnCoeff);
+        }
 
         isStop = true;
         isClose = true;
@@ -89,7 +87,7 @@ public class Panel
             matrix[13] += velocity.y * eTime;
 
             if (type == Type.RIGHT)
-                closeBtn.matrix[12] += velocity.x * eTime;
+                closeBtn.getMatrix()[12] += velocity.x * eTime;
 
             switch (type)
             {
@@ -117,7 +115,7 @@ public class Panel
                     if (matrix[12] - beginX >= width)
                     {
                         matrix[12] = beginX + width;
-                        closeBtn.matrix[12] = beginX + width/2 - closeBtn.width/2;
+                        closeBtn.getMatrix()[12] = beginX + width/2 - closeBtn.width/2;
                         velocity.ChangeSign();
                         closeBtn.Flip();
                         isClose = false;
@@ -126,7 +124,7 @@ public class Panel
                     else if (matrix[12] - beginX <= 0)
                     {
                         matrix[12] = beginX;
-                        closeBtn.matrix[12] = beginX - width/2 + closeBtn.width/2;
+                        closeBtn.getMatrix()[12] = beginX - width/2 + closeBtn.width/2;
                         velocity.ChangeSign();
                         isClose = true;
                         isStop = true;
@@ -177,7 +175,7 @@ public class Panel
             if (!isClose)
             {
                 closeBtn.Flip();
-                closeBtn.matrix[12] =  beginX + width/2 + closeBtn.width/2;
+                closeBtn.getMatrix()[12] =  beginX + width/2 + closeBtn.width/2;
             }
         }
         isStop = false;
@@ -189,7 +187,7 @@ public class Panel
         if(isClose || !isStop)
             g.DrawRect(matrix[12], matrix[13], width, height, Color.BLACK, true);//g.drawRect(rect.left, rect.top, rect.width(), rect.height(), paint.getColor(), true);
         /*else
-            canvas.drawBitmap(image, new Rect(0,0,image.getWidth(), image.getHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);*/
+            canvas.drawBitmap(image, new Rect(0,0,image.getIconWidth(), image.getIconHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);*/
     }
 
     public void DrawButton(Graphics g)

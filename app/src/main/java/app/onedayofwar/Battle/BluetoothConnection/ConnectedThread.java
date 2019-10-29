@@ -194,6 +194,7 @@ public class ConnectedThread extends Thread
             Log.i("CONNECTED.ATK_WEAPON_TYPE", "" + BattleEnemy.weaponType);
         }
     }
+
     public void CheckAttackResult()
     {
         if(recievedData.startsWith(HandlerMSG.ATTACK_RESULT))

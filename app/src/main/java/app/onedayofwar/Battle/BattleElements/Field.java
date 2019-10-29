@@ -1,19 +1,19 @@
 package app.onedayofwar.Battle.BattleElements;
 
 import android.graphics.Color;
-import android.graphics.Path;
-import android.opengl.Matrix;
 
+import app.onedayofwar.Battle.Units.Unit;
+import app.onedayofwar.Graphics.Animation;
 import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.Graphics.Graphics;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
-import app.onedayofwar.Battle.Units.Unit;
 
 public class Field
 {
     //region Variables
-    public float[] matrix;
-    public float[] signMatrix;
+    private Sprite sprite;
+    private Sprite signSprite;
 
     public int width;
     public int height;
@@ -21,15 +21,16 @@ public class Field
     public int socketSizeY;
     public int size;
     public Vector2 selectedSocket;
-    private Vector2 globalSocketCoord;
-    private Vector2 localSocketCoord;
-    private float[] explodeMatrix;
+    public Vector2 globalSocketCoord;
+    public Vector2 localSocketCoord;
+
+    public Animation explodeAnimation;
 
     byte[][] fieldInfo;
     byte[][] shots;
 
     private boolean isIso;
-
+    private int color;
 
     //endregion
 
@@ -39,12 +40,12 @@ public class Field
         this.size = size;
         this.isIso = isIso;
 
-        matrix = new float[16];
-        Matrix.setIdentityM(matrix, 0);
-        Matrix.translateM(matrix, 0, x, y, 0);
+        sprite = new Sprite(isIso ? Assets.gridIso : Assets.grid);
+        sprite.Move(x, y);
+        sprite.Scale(isIso ? (float)Assets.isoGridCoeff : (float)Assets.gridCoeff);
 
-        signMatrix = new float[16];
-        Matrix.setIdentityM(signMatrix, 0);
+        signSprite = new Sprite(Assets.signMiss);
+        signSprite.Scale(isIso ? (float)Assets.isoGridCoeff : (float)Assets.gridCoeff);
 
         Initialize();
     }
@@ -53,24 +54,8 @@ public class Field
     //region Initialization
     private void Initialize()
     {
-        //Если изометрия
-        if(isIso)
-        {
-            Matrix.scaleM(signMatrix, 0, (float)Assets.isoGridCoeff, -(float)Assets.isoGridCoeff, 1);
-            Matrix.scaleM(matrix, 0, (float)Assets.isoGridCoeff, -(float)Assets.isoGridCoeff, 1);
-            width = (int)(Assets.gridIso.getWidth() * matrix[0]);
-            height = (int)(Assets.gridIso.getHeight() * -matrix[5]);
-            explodeMatrix = new float[16];
-            Matrix.setIdentityM(explodeMatrix, 0);
-            Matrix.scaleM(explodeMatrix, 0, (float)Assets.isoGridCoeff, -(float)Assets.isoGridCoeff, 1);
-        }
-        else
-        {
-            Matrix.scaleM(signMatrix, 0, (float)Assets.gridCoeff, -(float)Assets.gridCoeff, 1);
-            Matrix.scaleM(matrix, 0, (float)Assets.gridCoeff, -(float)Assets.gridCoeff, 1);
-            width = (int)(Assets.grid.getWidth() * matrix[0]);
-            height = (int)(Assets.grid.getHeight() * -matrix[5]);
-        }
+        width = sprite.getWidth();
+        height = sprite.getHeight();
 
         socketSizeX = width / size;
         socketSizeY = height / size;
@@ -85,14 +70,20 @@ public class Field
         globalSocketCoord = new Vector2();
         localSocketCoord = new Vector2();
 
-        //explodeAnimation = new Animation(24, 30, Assets.explode.getWidth(), Assets.explode.getHeight(), false, 0);
+        color = Color.RED;
+
+        if(isIso)
+        {
+            explodeAnimation = new Animation(Assets.explode, 24, 100, 0, false);
+            explodeAnimation.Scale((float)Assets.isoGridCoeff);
+        }
     }
     //endregion
 
     //region
     public void UpdateAnimation(float eTime)
     {
-        //explodeAnimation.Update(eTime);
+        explodeAnimation.Update(eTime);
     }
     //endregion
 
@@ -103,14 +94,10 @@ public class Field
      */
     public void Draw(Graphics g)
     {
-        if(isIso)
+        g.DrawSprite(sprite);
+        DrawFieldInfo(g);
+        if(!isIso)
         {
-            g.DrawSprite(Assets.gridIso, matrix);
-        }
-        else
-        {
-            g.DrawSprite(Assets.grid, matrix);
-            DrawFieldInfo(g);
             DrawSelectedSocket(g);
         }
     }
@@ -123,6 +110,11 @@ public class Field
     public int getWidth()
     {
         return width;
+    }
+
+    public float[] getMatrix()
+    {
+        return sprite.matrix;
     }
 
     /**
@@ -138,10 +130,10 @@ public class Field
 
     public void Move()
     {
-        if(matrix[12] < 0)
-            matrix[12] += 3*getWidth();
+        if(getMatrix()[12] < 0)
+            getMatrix()[12] += 3*getWidth();
         else
-            matrix[12] -= 3*getWidth();
+            getMatrix()[12] -= 3*getWidth();
         selectedSocket.SetFalse();
     }
     //endregion
@@ -381,19 +373,21 @@ public class Field
                     }
                     g.drawText("" + fieldInfo[i][j], 15, globalSocketCoord.x + 5, globalSocketCoord.y + 25, testTextPaint.getColor());*/
 
-                    signMatrix[12] = globalSocketCoord.x + socketSizeX/2;
-                    signMatrix[13] = globalSocketCoord.y + socketSizeY/2;
+                    signSprite.setPosition(globalSocketCoord.x + socketSizeX/2, globalSocketCoord.y + socketSizeY/2);
 
                     switch (shots[i][j])
                     {
                         case 1:
-                            g.DrawSprite(Assets.signMiss, signMatrix);
+                            signSprite.setTexture(Assets.signMiss);
+                            g.DrawSprite(signSprite);
                             break;
                         case 2:
-                            g.DrawSprite(Assets.signHit, signMatrix);
+                            signSprite.setTexture(Assets.signHit);
+                            g.DrawSprite(signSprite);
                             break;
                         case 3:
-                            g.DrawSprite(Assets.signFlag, signMatrix);
+                            signSprite.setTexture(Assets.signFlag);
+                            g.DrawSprite(signSprite);
                             break;
                     }
                 }
@@ -411,9 +405,9 @@ public class Field
                     {
                         localSocketCoord.SetValue(j,i);
                         globalSocketCoord.SetValue(GetGlobalSocketCoord(localSocketCoord));
-                        signMatrix[12] = globalSocketCoord.x;
-                        signMatrix[13] = (int)(globalSocketCoord.y + 2 * Assets.isoGridCoeff + socketSizeY/2);
-                        g.DrawSprite(Assets.signMissIso, signMatrix);
+                        signSprite.setPosition(globalSocketCoord.x, (int)(globalSocketCoord.y + 2 * Assets.isoGridCoeff + socketSizeY/2));
+                        signSprite.setTexture(Assets.signMissIso);
+                        g.DrawSprite(signSprite);
                     }
                 }
             }
@@ -446,7 +440,7 @@ public class Field
         //если не изометрия
         if(!isIso)
         {
-            localSocketCoord.SetValue((int)(socketGlobalCoord.x - matrix[12] + width/2) / socketSizeX, (int)(socketGlobalCoord.y - matrix[13] + height/2) / socketSizeY);
+            localSocketCoord.SetValue((int)(socketGlobalCoord.x - getMatrix()[12] + width/2) / socketSizeX, (int)(socketGlobalCoord.y - getMatrix()[13] + height/2) / socketSizeY);
             return localSocketCoord;
         }
         else
@@ -455,13 +449,13 @@ public class Field
             for (int i = 0; i < size; i++)
             {
                 //проверяем через функцию прямой с положительным коэффициэнтом совпадает ли у функции и у ячейки
-                if (socketGlobalCoord.y == (0.5 * (socketGlobalCoord.x - matrix[12]) + i * socketSizeY + matrix[13] - height/2))
+                if (socketGlobalCoord.y == (0.5 * (socketGlobalCoord.x - getMatrix()[12]) + i * socketSizeY + getMatrix()[13] - height/2))
                 {
                     localSocketCoord.y = i;
                 }
 
                 //проверяем через функцию прямой с отрицательным коэффициэнтом совпадает ли у функции и у ячейки
-                if (socketGlobalCoord.y == (-0.5 * (socketGlobalCoord.x - matrix[12]) + i * socketSizeY + matrix[13] - height/2))
+                if (socketGlobalCoord.y == (-0.5 * (socketGlobalCoord.x - getMatrix()[12]) + i * socketSizeY + getMatrix()[13] - height/2))
                 {
                     localSocketCoord.x = i;
                 }
@@ -484,11 +478,11 @@ public class Field
         //если не изометрия
         if(!isIso)
         {
-            globalSocketCoord.SetValue(matrix[12] - width/2 + socketLocalCoord.x * socketSizeX, matrix[13] - height/2 + socketLocalCoord.y * socketSizeY);
+            globalSocketCoord.SetValue(getMatrix()[12] - width/2 + socketLocalCoord.x * socketSizeX, getMatrix()[13] - height/2 + socketLocalCoord.y * socketSizeY);
         }
         else
         {
-            globalSocketCoord.SetValue(matrix[12] + socketSizeX / 2 * (socketLocalCoord.x - socketLocalCoord.y), matrix[13] - height/2 + socketSizeY / 2 * (socketLocalCoord.y + socketLocalCoord.x));
+            globalSocketCoord.SetValue(getMatrix()[12] + socketSizeX / 2 * (socketLocalCoord.x - socketLocalCoord.y), getMatrix()[13] - height/2 + socketSizeY / 2 * (socketLocalCoord.y + socketLocalCoord.x));
         }
         return globalSocketCoord;
     }
@@ -497,11 +491,11 @@ public class Field
         //если не изометрия
         if(!isIso)
         {
-            globalSocketCoord.SetValue(matrix[12] - width/2 + localX * socketSizeX, matrix[13] - height/2 + localY * socketSizeY);
+            globalSocketCoord.SetValue(getMatrix()[12] - width/2 + localX * socketSizeX, getMatrix()[13] - height/2 + localY * socketSizeY);
         }
         else
         {
-            globalSocketCoord.SetValue(matrix[12] + socketSizeX / 2 * (localX - localY), matrix[13] - height/2 + socketSizeY / 2 * (localY + localX));
+            globalSocketCoord.SetValue(getMatrix()[12] + socketSizeX / 2 * (localX - localY), getMatrix()[13] - height/2 + socketSizeY / 2 * (localY + localX));
         }
         return globalSocketCoord;
     }
@@ -530,8 +524,8 @@ public class Field
             //если не изометрия
             if (!isIso)
             {
-                selectedSocket.x = matrix[12] - width/2 + ((int)(touchPos.x - matrix[12] + width/2) / socketSizeX) * socketSizeX;
-                selectedSocket.y = matrix[13] - height/2 + ((int)(touchPos.y - matrix[13] + height/2) / socketSizeY) * socketSizeY;
+                selectedSocket.x = getMatrix()[12] - width/2 + ((int)(touchPos.x - getMatrix()[12] + width/2) / socketSizeX) * socketSizeX;
+                selectedSocket.y = getMatrix()[13] - height/2 + ((int)(touchPos.y - getMatrix()[13] + height/2) / socketSizeY) * socketSizeY;
             }
             else
             {
@@ -540,10 +534,10 @@ public class Field
                     for (int j = 0; j < size; j++)
                     {
                         //проверяем касание по функции ромба для каждой ячейки
-                        if (socketSizeY * Math.abs(touchPos.x + (i - j) * socketSizeX/2 - matrix[12]) + socketSizeX * (touchPos.y - matrix[13] + height/2 - (i + j) * socketSizeY/2) <= socketSizeY * socketSizeX)
+                        if (socketSizeY * Math.abs(touchPos.x + (i - j) * socketSizeX/2 - getMatrix()[12]) + socketSizeX * (touchPos.y - getMatrix()[13] + height/2 - (i + j) * socketSizeY/2) <= socketSizeY * socketSizeX)
                         {
-                            selectedSocket.x = matrix[12] - width/2 - i * socketSizeX/2 + width/2 + j * socketSizeX/2;
-                            selectedSocket.y = matrix[13] - height/2 + i * socketSizeY/2 + j * socketSizeY/2;
+                            selectedSocket.x = getMatrix()[12] - width/2 - i * socketSizeX/2 + width/2 + j * socketSizeX/2;
+                            selectedSocket.y = getMatrix()[13] - height/2 + i * socketSizeY/2 + j * socketSizeY/2;
                             break end;
                         }
                     }
@@ -563,9 +557,9 @@ public class Field
     public boolean IsVectorInField(Vector2 vector)
     {
         if (isIso)
-            return Math.abs(0.5 * (vector.x - matrix[12])) + matrix[13] - height / 2 <= vector.y && -Math.abs(0.5 * (vector.x - matrix[12])) + matrix[13] + height / 2 >= vector.y;
+            return Math.abs(0.5 * (vector.x - getMatrix()[12])) + getMatrix()[13] - height / 2 <= vector.y && -Math.abs(0.5 * (vector.x - getMatrix()[12])) + getMatrix()[13] + height / 2 >= vector.y;
         else
-            return vector.x > matrix[12] - width / 2 && vector.x < matrix[12] + width / 2 && vector.y > matrix[13] - height / 2 && vector.y < matrix[13] + height / 2;
+            return vector.x > getMatrix()[12] - width / 2 && vector.x < getMatrix()[12] + width / 2 && vector.y > getMatrix()[13] - height / 2 && vector.y < getMatrix()[13] + height / 2;
     }
 
     /**
