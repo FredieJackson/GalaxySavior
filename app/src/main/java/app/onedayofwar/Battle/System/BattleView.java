@@ -1,50 +1,51 @@
 package app.onedayofwar.Battle.System;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Paint;
+import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.View.OnTouchListener;
 
-import app.onedayofwar.Battle.Activities.BattleOverActivity;
+import app.onedayofwar.Activities.BluetoothActivity;
+import app.onedayofwar.Activities.MainActivity;
+import app.onedayofwar.Battle.BattleElements.BattleEnemy;
 import app.onedayofwar.Battle.BattleElements.BattlePlayer;
 import app.onedayofwar.Battle.BluetoothConnection.BluetoothController;
+import app.onedayofwar.Battle.Bonus.ForBonusEnemy;
+import app.onedayofwar.Battle.Mods.Battle;
+import app.onedayofwar.Battle.Mods.Battle.BattleState;
+import app.onedayofwar.Battle.Mods.BluetoothBattle;
+import app.onedayofwar.Battle.Mods.SingleBattle;
+import app.onedayofwar.Campaign.Space.Planet;
+import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Graphics;
+import app.onedayofwar.Graphics.ScreenView;
+import app.onedayofwar.Graphics.Sprite;
+import app.onedayofwar.System.GLView;
 import app.onedayofwar.System.Vector2;
 import app.onedayofwar.UI.Button;
 import app.onedayofwar.UI.Panel;
-import app.onedayofwar.Battle.Mods.BluetoothBattle;
-import app.onedayofwar.Battle.Mods.Battle.*;
-import app.onedayofwar.Battle.Mods.Battle;
-import app.onedayofwar.Battle.Mods.SingleBattle;
-import app.onedayofwar.Graphics.Graphics;
-import app.onedayofwar.Graphics.Assets;
-import app.onedayofwar.UI.Panel.*;
+import app.onedayofwar.UI.Panel.Type;
 
-public class BattleView extends SurfaceView
-implements OnTouchListener, SurfaceHolder.Callback
+public class BattleView implements ScreenView
 {
     //region Variables
-    public static final int sourceHeight = 720;
-    public static final int sourceWidth = 1024;
-    public static final int sourceDpi = 132;
     public BluetoothController btController;
-    public Graphics graphics;
     public int screenWidth;
     public int screenHeight;
-    private Activity activity;
-    private BattleThread gameLoopThread;
+    private GLView glView;
+    //private Activity activity;
+
+
     public Vector2 touchPos;
-    public Paint paint;
+    public Vector2 bonusInfoPos;
     private Battle battle;
 
     public Panel selectingPanel;
     public Panel gateUp;
     public Panel gateDown;
+    public Panel bonusPanel;
+    public Panel infoBonusPanel;
 
     //region Buttons Variables
     private Button cancelBtn;
@@ -53,90 +54,85 @@ implements OnTouchListener, SurfaceHolder.Callback
     private Button installationFinishBtn;
     private Button shootBtn;
     private Button flagBtn;
+    private Button glareBtn;
+    private Button sugBonusBtn;
+    private Button pvoBtn;
+    private Button reloadBtn;
+    private Button cancelBonusBtn;
+    private Button infoBonusBtn;
     public boolean isButtonPressed;
     //endregion
 
+    //region Bonus boolean
+    private boolean glare;
+    private boolean pvo;
+    private boolean reloadBonus;
+    //endregion
+
+    private Sprite background;
+    public boolean pvoStart;
+    private String textBonuses;
+
+    private float[] bgMatrix;
+
     char typeOfGame;
+    private boolean isYourTurn;
+    public Planet planet;
+    private boolean isGround;
+
     //endregion
 
     //region Constructor
-    public BattleView(Activity activity, char typeOfGame, int width, int height)
+    public BattleView(GLView glView, Planet planet, char typeOfGame, boolean isYourTurn)
     {
-        super(activity.getApplicationContext());
-        this.activity = activity;
-        screenWidth = width;
-        screenHeight = height;
+        this.glView = glView;
+        this.isYourTurn = isYourTurn;
         this.typeOfGame = typeOfGame;
+        this.planet = planet;
+        screenWidth = glView.getScreenWidth();
+        screenHeight = glView.getScreenHeight();
+        btController = BluetoothActivity.btController;
+        bgMatrix = new float[16];
+        Matrix.setIdentityM(bgMatrix, 0);
+        Matrix.translateM(bgMatrix, 0, screenWidth/2, screenHeight/2, 0);
+        Log.i("BATTLE", "" + isYourTurn);
     }
     //endregion
 
-    //region Surface Methods
-    /** Уничтожение области рисования*/
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder)
+    public void Resume()
     {
-        boolean retry = true;
-        gameLoopThread.setRunning(false);
-        while (retry)
-        {
-            try
-            {
-                gameLoopThread.join();
-                retry = false;
-            }
-            catch (InterruptedException e)
-            {
-
-            }
-        }
-    }
-    /** Создание области рисования*/
-    @Override
-    public void surfaceCreated(SurfaceHolder holder)
-    {
-        gameLoopThread = new BattleThread(this);
-        gameLoopThread.setRunning(true);
-        gameLoopThread.start();
-    }
-    /** Изменение области рисования*/
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
-    {
-
-    }
-    //endregion
-
-    //region Initialization
-    public void SetAttackSequence(boolean isYourTurn)
-    {
-        battle.isYourTurn = isYourTurn;
+        glView.getActivity().gameState = MainActivity.GameState.BATTLE;
     }
 
-    public void LoadBT(BluetoothController controller)
+    public void Initialize(Graphics graphics)
     {
-        btController = controller;
-    }
+        glView.setCamera(0, 0);
 
-    public void Initialize()
-    {
-        getHolder().addCallback(this);
-        setOnTouchListener(this);
+        isGround = BattlePlayer.isGround;
 
-        graphics = new Graphics(activity.getAssets(), screenWidth, screenHeight);
-        LoadAssets();
+        if(isGround)
+            background = new Sprite(Assets.groundBackground);
+        else
+            background = new Sprite(Assets.spaceBackground);
+        Log.i("BATTLE", "INITIALIZE");
+        background.setPosition(screenWidth/2 ,screenHeight /2);
+        background.Scale((float)Assets.bgWidthCoeff, (float)Assets.bgHeightCoeff);
 
-        selectingPanel = new Panel(screenWidth - screenWidth/4, 0, screenWidth/4, screenHeight, Type.RIGHT);
+        selectingPanel = new Panel(screenWidth - screenWidth/8, screenHeight/2, screenWidth/4, screenHeight, Type.RIGHT);
 
-        gateUp = new Panel(0, 0, screenWidth, screenHeight/2, Type.UP);
-        gateDown = new Panel(0, screenHeight/2, screenWidth, screenHeight/2, Type.DOWN);
+        gateUp = new Panel(screenWidth/2, screenHeight/4, screenWidth, screenHeight/2, Type.UP);
+        gateDown = new Panel(screenWidth/2, screenHeight - screenHeight/4, screenWidth, screenHeight/2, Type.DOWN);
+
+        bonusPanel = new Panel(7*screenWidth/8,screenHeight/2,screenWidth/4,screenHeight,Type.RIGHT);
+        infoBonusPanel = new Panel(screenWidth/2, screenHeight/8, screenWidth, screenHeight/4, Type.UP);
+
+
+        Matrix.scaleM(bgMatrix, 0, (float)Assets.bgWidthCoeff, -(float)Assets.bgHeightCoeff, 1);
 
         touchPos = new Vector2();
 
         isButtonPressed = false;
-
-        paint = new Paint();
-        paint.setARGB(255,250,240,20);
-        paint.setTextSize(40f);
 
         switch(typeOfGame)
         {
@@ -148,202 +144,31 @@ implements OnTouchListener, SurfaceHolder.Callback
                 battle = new BluetoothBattle(this);
                 break;
         }
+        battle.isYourTurn = isYourTurn;
 
+        pvo = false;
+        glare = false;
+        reloadBonus = false;
+        pvoStart = false;
+        bonusInfoPos = new Vector2();
+        textBonuses = "";
+        bonusPanel.Move();
+        infoBonusPanel.Move();
         ButtonsInitialize();
         MoveGates();
-    }
-
-    private void LoadAssets()
-    {
-        Assets.robotIcon = graphics.newSprite("unit/icon/robot_icon.png", Graphics.SpriteFormat.RGB565);
-        if(BattlePlayer.unitCount[0] != 0)
-        {
-            Assets.robotImageL = graphics.newSprite("unit/image/robot.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.robotImageR = graphics.newSprite("unit/image/robot.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.robotImageR.horizontalFlip();
-            Assets.robotStroke = graphics.newSprite("unit/stroke/robot_stroke.png", Graphics.SpriteFormat.ARGB4444);
-        }
-        if(BattlePlayer.unitCount[1] != 0)
-        {
-            Assets.ifvImageL = graphics.newSprite("unit/image/ifv.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.ifvImageR = graphics.newSprite("unit/image/ifv.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.ifvImageR.horizontalFlip();
-            Assets.ifvIcon = graphics.newSprite("unit/icon/ifv_icon.png", Graphics.SpriteFormat.RGB565);
-            Assets.ifvStroke = graphics.newSprite("unit/stroke/ifv_stroke.png", Graphics.SpriteFormat.ARGB4444);
-        }
-        if(BattlePlayer.unitCount[2] != 0)
-        {
-            Assets.engineerImageL = graphics.newSprite("unit/image/engineer.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.engineerImageR = graphics.newSprite("unit/image/engineer.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.engineerImageR.horizontalFlip();
-            Assets.engineerIcon = graphics.newSprite("unit/icon/rocket_icon.png", Graphics.SpriteFormat.RGB565);
-            Assets.engineerStroke = graphics.newSprite("unit/stroke/engineer_stroke.png", Graphics.SpriteFormat.ARGB4444);
-        }
-        if(BattlePlayer.unitCount[3] != 0)
-        {
-            Assets.tankImageL = graphics.newSprite("unit/image/tank.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.tankImageR = graphics.newSprite("unit/image/tank.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.tankImageR.horizontalFlip();
-            Assets.tankIcon = graphics.newSprite("unit/icon/tank_icon.png", Graphics.SpriteFormat.RGB565);
-            Assets.tankStroke = graphics.newSprite("unit/stroke/tank_stroke.png", Graphics.SpriteFormat.ARGB4444);
-        }
-        if(BattlePlayer.unitCount[4] != 0)
-        {
-            Assets.turretImageL = graphics.newSprite("unit/image/turret.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.turretImageR = graphics.newSprite("unit/image/turret.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.turretImageR.horizontalFlip();
-            Assets.turretIcon = graphics.newSprite("unit/icon/turret_icon.png", Graphics.SpriteFormat.RGB565);
-            Assets.turretStroke = graphics.newSprite("unit/stroke/turret_stroke.png", Graphics.SpriteFormat.ARGB4444);
-        }
-        if(BattlePlayer.unitCount[5] != 0)
-        {
-            Assets.sonderImageL = graphics.newSprite("unit/image/sonder.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.sonderImageR = graphics.newSprite("unit/image/sonder.png", Graphics.SpriteFormat.ARGB4444);
-            Assets.sonderImageR.horizontalFlip();
-            Assets.sonderIcon = graphics.newSprite("unit/icon/sonder_icon.png", Graphics.SpriteFormat.RGB565);
-            Assets.sonderStroke = graphics.newSprite("unit/stroke/sonder_stroke.png", Graphics.SpriteFormat.ARGB4444);
-        }
-
-        switch(BattlePlayer.fieldSize)
-        {
-            //Коэффициент масштабирования поля и юнитов. 0.2f - отступ в долях единицы от верха экрана до верхней точки поля.
-            //То есть находим высоту поля для данного экрана, чтобы сверху и снизу было расстояние до края экрана равное определенному количеству процентов высоты экрана.
-            //Полученная высота поля должна быть кратна 15, то есть кол-ву клеток поля. А высота и ширина клетки поля должны быть кратны 2. Используем дабл для высокой точности вычислений.
-            //Как тебе такое только в голову пришло))
-            case 0:
-                    Log.i("INIT", "FIELD SIZE = 0");
-                    activity.finish();
-                    return;
-            case 5:
-                Assets.grid = graphics.newSprite("field/grid/normal_green_5x5.png", Graphics.SpriteFormat.ARGB4444);
-                Assets.gridIso = graphics.newSprite("field/grid/iso_5x5.png", Graphics.SpriteFormat.ARGB4444);
-                Assets.gridCoeff = (int)((screenHeight * (1 - 2 * 0.2f)) / 30) * 30 / (double)Assets.gridIso.getHeight();
-                Assets.isoGridCoeff = (int)((screenHeight * (1 - 2 * 0.4f)) / 30) * 30 / (double)Assets.gridIso.getHeight();
-                break;
-            case 15:
-                Assets.grid = graphics.newSprite("field/grid/normal_green.png", Graphics.SpriteFormat.ARGB4444);
-                Assets.gridIso = graphics.newSprite("field/grid/iso.png", Graphics.SpriteFormat.ARGB4444);
-                Assets.gridCoeff = (int)((screenHeight * (1 - 2 * 0.2f)) / 30) * 30 / (double)Assets.gridIso.getHeight();
-                Assets.isoGridCoeff = Assets.gridCoeff;
-                break;
-        }
-
-
-        Assets.signFire = graphics.newSprite("field/mark/fire.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.signMiss = graphics.newSprite("field/mark/miss_green.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.signMissIso = graphics.newSprite("field/mark/miss_iso.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.signHit = graphics.newSprite("field/mark/hit_green.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.signFlag = graphics.newSprite("field/mark/flag.png", Graphics.SpriteFormat.ARGB4444);
-
-        Assets.btnCancel = graphics.newSprite("button/cancel.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.btnInstall = graphics.newSprite("button/install.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.btnFinishInstallation = graphics.newSprite("button/installation_finish.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.btnShoot = graphics.newSprite("button/shoot.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.btnTurn = graphics.newSprite("button/turn.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.btnPanelClose = graphics.newSprite("button/panel_close.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.btnFlag = graphics.newSprite("button/flag.png", Graphics.SpriteFormat.ARGB4444);
-
-        Assets.background = graphics.newSprite("town-c.jpg", Graphics.SpriteFormat.RGB565);
-        Assets.monitor = graphics.newSprite("monitor.png", Graphics.SpriteFormat.ARGB4444);
-
-        Assets.bullet = graphics.newSprite("unit/bullet/bullet.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.miniRocket = graphics.newSprite("unit/bullet/miniRocket.png", Graphics.SpriteFormat.ARGB4444);
-
-        Assets.explode = graphics.newSprite("animation/explode.png", Graphics.SpriteFormat.ARGB4444);
-        Assets.fire = graphics.newSprite("animation/fire2.png", Graphics.SpriteFormat.ARGB4444);
-
-        scaleImages();
-    }
-
-    private void scaleImages()
-    {
-        double iconCoeff = ((screenHeight - 70) / 6d) / Assets.robotIcon.getHeight();
-        double btnCoeff = screenHeight * 0.17f / Assets.btnCancel.getHeight();
-
-        Assets.dpiCoeff =  (int)getResources().getDisplayMetrics().xdpi / (double)sourceDpi;
-        Assets.monitorHeightCoeff = (double)screenHeight / 1080;
-        Assets.monitorWidthCoeff = (double)screenWidth / 1920;
-        Assets.screenHeightCoeff = screenHeight / sourceHeight;
-        Assets.screenWidthCoeff = screenWidth / sourceWidth;
-
-        Assets.robotIcon.changeSize(iconCoeff);
-
-        if(BattlePlayer.unitCount[0] != 0)
-        {
-            Assets.robotImageL.changeSize(Assets.isoGridCoeff);
-            Assets.robotImageR.changeSize(Assets.isoGridCoeff);
-            Assets.robotStroke.changeSize(Assets.isoGridCoeff);
-        }
-        if(BattlePlayer.unitCount[1] != 0)
-        {
-            Assets.ifvImageL.changeSize(Assets.isoGridCoeff);
-            Assets.ifvImageR.changeSize(Assets.isoGridCoeff);
-            Assets.ifvIcon.changeSize(iconCoeff);
-            Assets.ifvStroke.changeSize(Assets.isoGridCoeff);
-        }
-        if(BattlePlayer.unitCount[2] != 0)
-        {
-            Assets.engineerImageL.changeSize(Assets.isoGridCoeff);
-            Assets.engineerImageR.changeSize(Assets.isoGridCoeff);
-            Assets.engineerIcon.changeSize(iconCoeff);
-            Assets.engineerStroke.changeSize(Assets.isoGridCoeff);
-        }
-        if(BattlePlayer.unitCount[3] != 0)
-        {
-            Assets.tankImageL.changeSize(Assets.isoGridCoeff);
-            Assets.tankImageR.changeSize(Assets.isoGridCoeff);
-            Assets.tankIcon.changeSize(iconCoeff);
-            Assets.tankStroke.changeSize(Assets.isoGridCoeff);
-        }
-        if(BattlePlayer.unitCount[4] != 0)
-        {
-            Assets.turretImageL.changeSize(Assets.isoGridCoeff);
-            Assets.turretImageR.changeSize(Assets.isoGridCoeff);
-            Assets.turretIcon.changeSize(iconCoeff);
-            Assets.turretStroke.changeSize(Assets.isoGridCoeff);
-        }
-        if(BattlePlayer.unitCount[5] != 0)
-        {
-            Assets.sonderImageL.changeSize(Assets.isoGridCoeff);
-            Assets.sonderImageR.changeSize(Assets.isoGridCoeff);
-            Assets.sonderIcon.changeSize(iconCoeff);
-            Assets.sonderStroke.changeSize(Assets.isoGridCoeff);
-        }
-
-        Assets.grid.changeSize(Assets.gridCoeff);
-        Assets.gridIso.changeSize(Assets.isoGridCoeff);
-
-        Assets.signFire.changeSize(Assets.isoGridCoeff);
-        Assets.signMiss.changeSize(Assets.gridCoeff);
-        Assets.signMissIso.changeSize(Assets.isoGridCoeff);
-        Assets.signHit.changeSize(Assets.gridCoeff);
-        Assets.signFlag.changeSize(Assets.gridCoeff);
-
-        Assets.btnCancel.changeSize(btnCoeff);//(int)(btnCoeff * Assets.btnSourceSize),(int)(Assets.btnSourceSize * btnCoeff));
-        Assets.btnInstall.changeSize(btnCoeff);//(int)(btnCoeff * Assets.btnSourceSize),(int)(Assets.btnSourceSize * btnCoeff));
-        Assets.btnFinishInstallation.changeSize(btnCoeff);//(int)(btnCoeff * Assets.btnSourceSize),(int)(Assets.btnSourceSize * btnCoeff));
-        Assets.btnShoot.changeSize(btnCoeff);//(int)(btnCoeff * Assets.btnSourceSize),(int)(Assets.btnSourceSize * btnCoeff));
-        Assets.btnFlag.changeSize(btnCoeff);
-        Assets.btnTurn.changeSize(btnCoeff);//(int)(btnCoeff * Assets.btnSourceSize),(int)(Assets.btnSourceSize * btnCoeff));
-        Assets.btnPanelClose.changeSize(btnCoeff);//btnCoeff);
-
-        Assets.background.changeSize(screenWidth, screenHeight);
-        Assets.monitor.changeSize(screenWidth, screenHeight);
-
-        Assets.bullet.changeSize(Assets.isoGridCoeff);
-        Assets.miniRocket.changeSize(Assets.isoGridCoeff);
-
-        Assets.explode.changeSize(Assets.isoGridCoeff);
-        Assets.fire.changeSize(Assets.isoGridCoeff);
     }
     //endregion
 
     //region Update
     public void Update(float eTime)
     {
+        if(ForBonusEnemy.pvoGet || ForBonusEnemy.pvoSend)
+            pvoStart = battle.pvo.doYourFuckingJob(touchPos, battle.bullet);
+
         if(battle.state == BattleState.Installation && !selectingPanel.isStop)
         {
             selectingPanel.Update(eTime);
+            battle.AlignArmyPosition(eTime);
         }
 
         battle.Update(eTime);
@@ -352,6 +177,15 @@ implements OnTouchListener, SurfaceHolder.Callback
         {
             gateUp.Update(eTime);
             gateDown.Update(eTime);
+        }
+        if(battle.state == BattleState.Attack)
+        {
+            bonusPanel.Update(eTime);
+            infoBonusPanel.Update(eTime);
+            bonusInfoPos.SetValue(0, infoBonusPanel.matrix[13] - screenHeight/8);
+            glareBtn.getMatrix()[12] = bonusPanel.matrix[12];
+            pvoBtn.getMatrix()[12] = bonusPanel.matrix[12];
+            reloadBtn.getMatrix()[12] = bonusPanel.matrix[12];
         }
     }
 
@@ -379,6 +213,20 @@ implements OnTouchListener, SurfaceHolder.Callback
         flagBtn.Unlock();
         installBtn.Lock();
         installBtn.SetInvisible();
+        pvoBtn.Unlock();
+        pvoBtn.SetVisible();
+        glareBtn.Unlock();
+        glareBtn.SetVisible();
+        reloadBtn.Unlock();
+        reloadBtn.SetVisible();
+        installBtn.Lock();
+        installBtn.SetInvisible();
+        sugBonusBtn.Lock();
+        sugBonusBtn.SetInvisible();
+        cancelBonusBtn.Lock();
+        cancelBonusBtn.SetInvisible();
+        infoBonusBtn.Lock();
+        infoBonusBtn.SetInvisible();
     }
 
     public void DefendingPrepare()
@@ -389,6 +237,28 @@ implements OnTouchListener, SurfaceHolder.Callback
         flagBtn.Lock();
         installBtn.Lock();
         installBtn.SetInvisible();
+        pvoBtn.Lock();
+        pvoBtn.SetInvisible();
+        glareBtn.Lock();
+        glareBtn.SetInvisible();
+        reloadBtn.Lock();
+        reloadBtn.SetInvisible();
+        installBtn.Lock();
+        installBtn.SetInvisible();
+    }
+
+    public void BonusPrepare()
+    {
+        sugBonusBtn.SetVisible();
+        sugBonusBtn.Unlock();
+        cancelBonusBtn.Unlock();
+        cancelBonusBtn.SetVisible();
+        infoBonusBtn.Unlock();
+        infoBonusBtn.SetVisible();
+        shootBtn.SetInvisible();
+        shootBtn.Lock();
+        flagBtn.Lock();
+        flagBtn.SetInvisible();
     }
 
     public void AttackPrepare()
@@ -400,13 +270,7 @@ implements OnTouchListener, SurfaceHolder.Callback
     //endregion
 
     //region onTouch
-    /**
-     * Обрабатывает касания
-     * @param view
-     * @param event
-     * @return
-     */
-    public boolean onTouch(View view, MotionEvent event)
+    public void OnTouch(MotionEvent event)
     {
         //Обновляем позицию касания
         touchPos.SetValue((int)event.getX(),(int)event.getY());
@@ -426,7 +290,6 @@ implements OnTouchListener, SurfaceHolder.Callback
             ButtonsReset();
         }
         battle.OnTouch(event);
-        return true;
     }
     //endregion
 
@@ -439,6 +302,10 @@ implements OnTouchListener, SurfaceHolder.Callback
         //Если нажата кнопка установки юнита
         if (installBtn.IsClicked())
         {
+            /*if(battle.IsUnitSelected())
+            {
+                battle.GetSelectedUnit().offset.y -= 1;
+            }*/
             if(battle.state == BattleState.Installation)
             {
                 battle.InstallUnit();
@@ -455,6 +322,10 @@ implements OnTouchListener, SurfaceHolder.Callback
         //Если нажата кнопка поворота юнита
         else if (turnBtn.IsClicked())
         {
+            /*if(battle.IsUnitSelected())
+            {
+                battle.GetSelectedUnit().offset.y += 1;
+            }*/
             battle.TurnUnit();
             isButtonPressed = true;
         }
@@ -462,20 +333,28 @@ implements OnTouchListener, SurfaceHolder.Callback
         //Если нажата кнопка отмены выбора юнита
         else if (cancelBtn.IsClicked())
         {
+            /*if(battle.IsUnitSelected())
+            {
+                battle.GetSelectedUnit().offset.x -= 1;
+            }*/
             if(battle.CancelSelection() && !selectingPanel.isClose)
-                selectingPanel.Move();
+               selectingPanel.Move();
             isButtonPressed = true;
         }
 
         //Если нажата кнопка завершения установки
         else if (installationFinishBtn.IsClicked())
         {
+            /*if(battle.IsUnitSelected())
+            {
+                battle.GetSelectedUnit().offset.x += 1;
+            }*/
             if (battle.state == BattleState.Installation)
             {
                 if (battle.CheckInstallationFinish())
                 {
                     MoveGates();
-                    installBtn.SetPosition((int)(screenWidth - Assets.btnInstall.getWidth() - 100 * Assets.monitorWidthCoeff), (int)(100 * Assets.monitorHeightCoeff));
+                    installBtn.SetPosition((int)(screenWidth - Assets.btnOK.getWidth() - 100 * Assets.monitorWidthCoeff), (int)(100 * Assets.monitorHeightCoeff));
                     cancelBtn.Lock();
                     turnBtn.Lock();
                     selectingPanel.CloseBtnLock();
@@ -500,6 +379,95 @@ implements OnTouchListener, SurfaceHolder.Callback
         {
             battle.eField.SetFlag();
         }
+
+        else if(bonusPanel.IsCloseBtnPressed() && bonusPanel.isStop)
+        {
+            bonusPanel.Move();
+            isButtonPressed = true;
+        }
+
+        else if(glareBtn.IsClicked())
+        {
+            if(battle.glareBonus.IsReloaded())
+            {
+                BonusPrepare();
+                glare = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось " + battle.glareBonus.currentReload;
+            }
+        }
+        else if(pvoBtn.IsClicked())
+        {
+            if(battle.pvo.IsReloaded())
+            {
+                BonusPrepare();
+                pvo = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось " + battle.pvo.currentReload;
+            }
+        }
+        else if(reloadBtn.IsClicked())
+        {
+            if(battle.reloadBonus.IsReloaded())
+            {
+                BonusPrepare();
+                reloadBonus = true;
+            }
+            else
+            {
+                infoBonusPanel.Move();
+                textBonuses = "До отключения перезарядки осталось "+battle.reloadBonus.currentReload;
+            }
+        }
+        else if(sugBonusBtn.IsClicked())
+        {
+            if(glare)
+            {
+                ForBonusEnemy.socket.SetValue(battle.eField.GetLocalSocketCoord(battle.eField.selectedSocket));
+                battle.PrepareToGlare();
+                glare = false;
+                ShootingPrepare();
+            }
+            else if(pvo)
+            {
+                battle.PVOInfoSend();
+                pvo = false;
+                ShootingPrepare();
+            }
+            else if(reloadBonus)
+            {
+                battle.SendReloadInfo();
+                reloadBonus = false;
+                ShootingPrepare();
+            }
+            if(infoBonusPanel.isClose)
+                infoBonusPanel.Move();
+        }
+        else if(cancelBonusBtn.IsClicked())
+        {
+            if(infoBonusPanel.isClose)
+                infoBonusPanel.Move();
+            ShootingPrepare();
+            pvo = false;
+            glare = false;
+            reloadBonus = false;
+        }
+        else if(infoBonusBtn.IsClicked())
+        {
+            infoBonusPanel.Move();
+            if(glare)
+                textBonuses = battle.glareBonus.info;
+            else if(pvo)
+                textBonuses = battle.pvo.info;
+            else if(reloadBonus)
+                textBonuses = battle.reloadBonus.info;
+        }
     }
 
     /**
@@ -508,9 +476,16 @@ implements OnTouchListener, SurfaceHolder.Callback
     private void ButtonsUpdate()
     {
         selectingPanel.UpdateCloseBtn(touchPos);
+        bonusPanel.UpdateCloseBtn(touchPos);
         installationFinishBtn.Update(touchPos);
         shootBtn.Update(touchPos);
         flagBtn.Update(touchPos);
+        glareBtn.Update(touchPos);
+        pvoBtn.Update(touchPos);
+        reloadBtn.Update(touchPos);
+        sugBonusBtn.Update(touchPos);
+        cancelBonusBtn.Update(touchPos);
+        infoBonusBtn.Update(touchPos);
 
         if(battle.state == BattleState.Installation)
         {
@@ -539,13 +514,20 @@ implements OnTouchListener, SurfaceHolder.Callback
         selectingPanel.ResetCloseBtn();
         shootBtn.Reset();
         flagBtn.Reset();
+        bonusPanel.ResetCloseBtn();
+        glareBtn.Reset();
+        reloadBtn.Reset();
+        pvoBtn.Reset();
+        sugBonusBtn.Reset();
+        cancelBonusBtn.Reset();
+        infoBonusBtn.Reset();
     }
 
     /**
      * Отрисовывает кнопки
      * @param
      */
-    private void ButtonsDraw()
+    private void ButtonsDraw(Graphics graphics)
     {
         if(battle.state == BattleState.Installation)
         {
@@ -562,6 +544,12 @@ implements OnTouchListener, SurfaceHolder.Callback
             installBtn.Draw(graphics);
             shootBtn.Draw(graphics);
             flagBtn.Draw(graphics);
+            glareBtn.Draw(graphics);
+            pvoBtn.Draw(graphics);
+            reloadBtn.Draw(graphics);
+            sugBonusBtn.Draw(graphics);
+            cancelBonusBtn.Draw(graphics);
+            infoBonusBtn.Draw(graphics);
         }
     }
 
@@ -570,50 +558,83 @@ implements OnTouchListener, SurfaceHolder.Callback
      */
     private void ButtonsInitialize()
     {
-        installationFinishBtn = new Button(Assets.btnFinishInstallation, (int)(50 * Assets.monitorWidthCoeff), (int)(50 * Assets.monitorHeightCoeff), false);
-        cancelBtn = new Button(Assets.btnCancel, (int)(50 * Assets.monitorWidthCoeff), (int)((50 + 30) * Assets.monitorHeightCoeff  + Assets.btnCancel.getHeight()), false);
-        turnBtn = new Button(Assets.btnTurn, (int)(50 * Assets.monitorWidthCoeff), (int)(screenHeight - 2 * Assets.btnCancel.getHeight() - (50 + 30) * Assets.monitorHeightCoeff), false);
-        installBtn = new Button(Assets.btnInstall, (int)(50 * Assets.monitorWidthCoeff), (int)(screenHeight - Assets.btnCancel.getHeight() - 50 * Assets.monitorHeightCoeff), false);
+        installationFinishBtn = new Button(Assets.btnAttack, (int)(50 * Assets.monitorWidthCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), (int)(50 * Assets.monitorHeightCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), false);
+        installationFinishBtn.Scale(Assets.btnCoeff);
+        cancelBtn = new Button(Assets.btnCancel, (int)(50 * Assets.monitorWidthCoeff + Assets.btnCancel.getWidth()/2 * Assets.btnCoeff), (int)((50 + 30) * Assets.monitorHeightCoeff  + Assets.btnCancel.getHeight() * Assets.btnCoeff + Assets.btnCancel.getHeight()/2 * Assets.btnCoeff), false);
+        cancelBtn.Scale(Assets.btnCoeff);
+        turnBtn = new Button(Assets.btnTurn, (int)(50 * Assets.monitorWidthCoeff + Assets.btnTurn.getWidth()/2 * Assets.btnCoeff), (int)(screenHeight - 2 * Assets.btnCancel.getHeight() * Assets.btnCoeff - (50 + 30) * Assets.monitorHeightCoeff + Assets.btnCancel.getHeight()/2 * Assets.btnCoeff), false);
+        turnBtn.Scale(Assets.btnCoeff);
+        installBtn = new Button(Assets.btnOK, (int)(50 * Assets.monitorWidthCoeff + Assets.btnOK.getWidth()/2 * Assets.btnCoeff), (int)(screenHeight - Assets.btnCancel.getHeight() * Assets.btnCoeff - 50 * Assets.monitorHeightCoeff + Assets.btnOK.getWidth()/2 * Assets.btnCoeff), false);
+        installBtn.Scale(Assets.btnCoeff);
 
-        shootBtn = new Button(Assets.btnShoot, (int)(170 * Assets.monitorWidthCoeff), (int)(390 * Assets.monitorHeightCoeff), false);
+        shootBtn = new Button(Assets.btnShoot, (int)(170 * Assets.monitorWidthCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), (int)(390 * Assets.monitorHeightCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), false);
+        shootBtn.Scale(Assets.btnCoeff);
         shootBtn.SetInvisible();
         shootBtn.Lock();
-        flagBtn = new Button(Assets.btnFlag, (int)(170 * Assets.monitorWidthCoeff), (int)(170 * Assets.monitorHeightCoeff), false);
+        flagBtn = new Button(Assets.btnFlag, (int)(170 * Assets.monitorWidthCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), (int)(170 * Assets.monitorHeightCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), false);
+        flagBtn.Scale(Assets.btnCoeff);
         flagBtn.SetInvisible();
         flagBtn.Lock();
-
+        sugBonusBtn = new Button(Assets.btnOK, (int)(170 * Assets.monitorWidthCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), (int)(390 * Assets.monitorHeightCoeff + Assets.btnShoot.getWidth()/2 * Assets.btnCoeff), false);
+        sugBonusBtn.Lock();
+        sugBonusBtn.Scale(Assets.btnCoeff);
+        sugBonusBtn.SetInvisible();
+        reloadBtn = new Button(Assets.btnReload, (int)(1000 * Assets.monitorWidthCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), (int)(450 * Assets.monitorHeightCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), false);
+        pvoBtn = new Button(Assets.btnPVO, (int)(1000 * Assets.monitorWidthCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), (int)(250 * Assets.monitorHeightCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), false);
+        glareBtn = new Button(Assets.btnGlare, (int)(1000 * Assets.monitorWidthCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), (int)(50 * Assets.monitorHeightCoeff + Assets.btnAttack.getWidth()/2 * Assets.btnCoeff), false);
+        cancelBonusBtn = new Button(Assets.btnCancel, (int)(170 * Assets.monitorWidthCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), (int)(170 * Assets.monitorHeightCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), false);
+        cancelBonusBtn.Lock();
+        cancelBonusBtn.SetInvisible();
+        infoBonusBtn = new Button(Assets.btnInfo, (int)(170 * Assets.monitorWidthCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), (int)(600 * Assets.monitorHeightCoeff + Assets.btnFlag.getWidth()/2 * Assets.btnCoeff), false);
+        infoBonusBtn.Lock();
+        infoBonusBtn.SetInvisible();
+        pvoBtn.Lock();
+        pvoBtn.SetInvisible();
+        glareBtn.Lock();
+        glareBtn.SetInvisible();
+        reloadBtn.Lock();
+        reloadBtn.SetInvisible();
+        cancelBonusBtn.Scale(Assets.btnCoeff);
+        glareBtn.Scale(Assets.btnCoeff);
+        pvoBtn.Scale(Assets.btnCoeff);
+        reloadBtn.Scale(Assets.btnCoeff);
+        infoBonusBtn.Scale(Assets.btnCoeff);
     }
     //endregion
 
     //region Draw
-    public void Draw()
+    public void Draw(Graphics graphics)
     {
-        //graphics.clear(Color.argb(255, 0, 140, 240));
-        //canvas.drawColor(Color.argb(255, 0, 140, 240));
         if (battle.state == BattleState.Attack || battle.state == BattleState.Shoot)
         {
-            graphics.clear(Color.rgb(0, 0, 0));
-            graphics.drawSprite(Assets.monitor);
+            //Assets.monitor.Draw(graphics);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         }
         else
         {
-            if (battle.state == BattleState.Installation)
-                graphics.drawSprite(Assets.background, 0,0, screenWidth - (screenWidth - selectingPanel.x - selectingPanel.offsetX), screenHeight, 0, 0, screenWidth - (screenWidth - selectingPanel.x - selectingPanel.offsetX), screenHeight);
-            else
-                graphics.drawSprite(Assets.background);
+            graphics.DrawSprite(background);
         }
-        battle.DrawFields();
 
-        ButtonsDraw();
+        battle.DrawFields(graphics);
 
-        battle.DrawUnits();
+        if(battle.state == BattleState.Attack || battle.state == BattleState.Shoot)
+        {
+            if (bonusPanel.isClose || !bonusPanel.isStop)
+                bonusPanel.Draw(graphics);
+            bonusPanel.DrawButton(graphics);
+        }
+
+            ButtonsDraw(graphics);
+
+        if(battle.state != BattleState.Attack && battle.state != BattleState.Shoot)
+            battle.DrawUnits(graphics);
 
         if (battle.state == BattleState.Installation)
         {
             if (selectingPanel.isClose || !selectingPanel.isStop)
             {
                 selectingPanel.Draw(graphics);
-                battle.DrawUnitsIcons();
+                battle.DrawUnitsIcons(graphics);
             }
             selectingPanel.DrawButton(graphics);
         }
@@ -623,28 +644,47 @@ implements OnTouchListener, SurfaceHolder.Callback
             gateDown.Draw(graphics);
         }
 
-        graphics.drawText("state: " + battle.state, 20, 50,300, paint.getColor());
-        /*graphics.drawText("height: " + screenHeight, 20, 50,350, paint.getColor());
-        graphics.drawText("dpi: " + Assets.dpiCoeff, 20, 50,400, paint.getColor());
-        graphics.drawText("btn X: " + shootBtn.x, 20, 50,450, paint.getColor());
-        graphics.drawText("btn Y: " + shootBtn.y, 20, 50,500, paint.getColor());*/
+        if(battle.state == BattleState.Attack)
+        {
+            if (infoBonusPanel.isClose || !infoBonusPanel.isStop)
+                infoBonusPanel.Draw(graphics);
+            graphics.DrawText(textBonuses, Assets.gsFont, bonusInfoPos.x, bonusInfoPos.y, screenWidth, Assets.gsColor, 40, false);
+        }
     }
     //endregion
 
     //region Test
     public void GameOver(BattleState state, int reward)
     {
-        gameLoopThread.setRunning(false);
-        Intent intent = new Intent(activity, BattleOverActivity.class);
-        intent.putExtra("result", state == BattleState.Win);
-        intent.putExtra("reward", reward);
-        activity.startActivityForResult(intent, 2);
-    }
+        if(planet != null && state == BattleState.Win)
+        {
+            if((!isGround && !BattleEnemy.haveGround) || isGround)
+            {
+                for(int i = 0; i < planet.getSpaceGuards().length; i++)
+                    planet.getSpaceGuards()[i] = 0;
+                for(int i = 0; i < planet.getGroundGuards().length; i++)
+                    planet.getGroundGuards()[i] = 0;
+                planet.ConquerPlanet();
+                glView.goBack();
+            }
+            else if(!isGround && BattleEnemy.haveGround)
+            {
+                for (int i = 0; i < planet.getSpaceGuards().length; i++)
+                    planet.getSpaceGuards()[i] = 0;
+                glView.goBack();
+            }
+        }
+        else if(planet != null && state == BattleState.Lose)
+        {
 
-    public void GameOver()
-    {
-        battle.state = BattleState.Win;
-        battle.GameOver();
+            glView.goBack();
+            glView.goBack();
+        }
+        if(planet == null)
+        {
+            glView.changeScreen(new GameOverView(glView, state, reward, planet != null));
+            glView.getActivity().gameState = MainActivity.GameState.BRESULT;
+        }
     }
     //endregion
 }
