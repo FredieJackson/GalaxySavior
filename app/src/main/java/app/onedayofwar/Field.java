@@ -1,12 +1,11 @@
 package app.onedayofwar;
 
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.System.Vector2;
 import app.onedayofwar.Units.Unit;
 
@@ -25,11 +24,8 @@ public class Field
     public int size;
     public Vector2 selectedSocket;
 
-    private Resources resources;
     byte[][] fieldInfo;
     byte[][] shots;
-    private Bitmap image;
-    private Bitmap[] infoSigns;
     private Path selectedSocketForm;
     public Paint selectedSocketPaint;
     private boolean isIso;
@@ -38,11 +34,12 @@ public class Field
     //endregion
 
     //region Constructor
-    public Field(Resources resources, int x, int y, int size, boolean isIso)
+    public Field(int x, int y, int size, boolean isIso)
     {
         initX = x;
         initY = y;
-        this.resources = resources;
+
+        //this.resources = resources;
         this.size = size;
         this.isIso = isIso;
 
@@ -55,28 +52,32 @@ public class Field
     {
         x = initX;
         y = initY;
+
         //Если изометрия
         if(isIso)
-            image = BitmapFactory.decodeResource(resources, R.drawable.grid_iso);
+        {
+            width = Assets.gridIso.getWidth();
+            height = Assets.gridIso.getHeight();
+        }
         else
-            image = BitmapFactory.decodeResource(resources, R.drawable.grid);
-
-        width = image.getWidth();
-        height = image.getHeight();
+        {
+            width = Assets.grid.getWidth();
+            height = Assets.grid.getHeight();
+        }
 
         socketSizeX = width / size;
         socketSizeY = height / size;
 
         fieldInfo = new byte[size][size];
         shots = new byte[size][size];
-        infoSigns = new Bitmap[3];
         InitFieldInfo();
 
         //region SelectedSocket Paint and Path
         selectedSocket = new Vector2(-1,-1);
         selectedSocketForm = new Path();
         selectedSocketPaint = new Paint();
-        selectedSocketPaint.setARGB(255,250,240,20);
+        //selectedSocketPaint.setARGB(250,240,20);
+        selectedSocketPaint.setARGB(255,0,255,0);
         selectedSocketPaint.setAntiAlias(true);
         selectedSocketPaint.setStrokeWidth(3);
         selectedSocketPaint.setStyle(Paint.Style.STROKE);
@@ -90,26 +91,29 @@ public class Field
     //region Draw
     /**
      * производит отрисовку поля
-     * @param canvas
+     * @param
      */
-    public void Draw(Canvas canvas)
+    public void Draw(Graphics g)
     {
-        canvas.drawBitmap(image, x, y, null);
-        //
-        if(!isIso)
+        if(isIso)
         {
-            DrawFieldInfo(canvas);
-            DrawSelectedSocket(canvas);
+            g.drawSprite(Assets.gridIso, x, y);
+        }
+        else
+        {
+            g.drawSprite(Assets.grid, x, y);
+            DrawFieldInfo(g);
+            DrawSelectedSocket(g);
         }
     }
     /**
      * Отрисовывает выделенную ячейку
-     * @param canvas
+     * @param
      */
-    private void DrawSelectedSocket(Canvas canvas)
+    private void DrawSelectedSocket(Graphics g)
     {
         if (!selectedSocket.IsFalse())
-            canvas.drawPath(selectedSocketForm, selectedSocketPaint);
+            g.drawPath(selectedSocketForm, selectedSocketPaint.getColor());
     }
     //endregion
 
@@ -138,10 +142,6 @@ public class Field
                 shots[i][j] = 0;
             }
         }
-
-        infoSigns[0] = BitmapFactory.decodeResource(resources, R.drawable.sign_miss);
-        infoSigns[1] = BitmapFactory.decodeResource(resources, R.drawable.sign_hit);
-        infoSigns[2] = BitmapFactory.decodeResource(resources, R.drawable.sign_fire);
 
     }
 
@@ -320,9 +320,9 @@ public class Field
 
     /**
      * Отрисовка информации о поле
-     * @param canvas
+     * @param
      */
-    public void DrawFieldInfo(Canvas canvas)
+    public void DrawFieldInfo(Graphics g)
     {
         Vector2 tmp = new Vector2();
         if(!isIso)
@@ -344,10 +344,10 @@ public class Field
                     switch (shots[i][j])
                     {
                         case 1:
-                            canvas.drawBitmap(infoSigns[0], tmp.x, tmp.y, null);
+                            g.drawSprite(Assets.signMiss, tmp.x, tmp.y);
                             break;
                         case 2:
-                            canvas.drawBitmap(infoSigns[1], tmp.x, tmp.y, null);
+                            g.drawSprite(Assets.signHit, tmp.x, tmp.y);
                             break;
                     }
                 }
@@ -361,15 +361,15 @@ public class Field
             {
                 for (int j = 0; j < size; j++)
                 {
-                    if(shots[i][j] == 2)
+                    /*if(shots[i][j] == 2)
                     {
                         tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
-                        canvas.drawBitmap(infoSigns[2], tmp.x - 13, tmp.y - 20, null);
+                        g.drawSprite(Assets.signFire, tmp.x - 13, tmp.y - 20);
                     }
-                    else if(shots[i][j] == 1)
+                    else */if(shots[i][j] == 1)
                     {
                         tmp.SetValue(GetGlobalSocketCoord(new Vector2(j, i)));
-                        canvas.drawBitmap(infoSigns[0], tmp.x - 20, tmp.y - 5, null);
+                        g.drawSprite(Assets.signMissIso, tmp.x - (int)(20 * Assets.gridCoeff), (int)(tmp.y + 2 * Assets.gridCoeff));
                     }
                 }
             }
@@ -481,10 +481,10 @@ public class Field
                     for (int j = 0; j < size; j++)
                     {
                         //проверяем касание по функции ромба для каждой ячейки
-                        if (socketSizeY * Math.abs(touchPos.x + (i - j) * socketSizeX / 2 - x - width / 2) + socketSizeX * (touchPos.y - y - (i + j) * socketSizeY / 2) <= socketSizeY * socketSizeX)
+                        if (socketSizeY * Math.abs(touchPos.x + (i - j) * socketSizeX/2 - x - width/2) + socketSizeX * (touchPos.y - y - (i + j) * socketSizeY/2) <= socketSizeY * socketSizeX)
                         {
-                            selectedSocket.x = x - i * socketSizeX / 2 + width / 2 + j * socketSizeX / 2;
-                            selectedSocket.y = y + i * socketSizeY / 2 + j * socketSizeY / 2;
+                            selectedSocket.x = x - i * socketSizeX/2 + width/2 + j * socketSizeX/2;
+                            selectedSocket.y = y + i * socketSizeY/2 + j * socketSizeY/2;
                             break end;
                         }
                     }

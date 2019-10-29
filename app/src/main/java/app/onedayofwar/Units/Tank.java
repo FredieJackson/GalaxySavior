@@ -1,11 +1,7 @@
 package app.onedayofwar.Units;
 
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
-import android.graphics.Rect;
-
 import app.onedayofwar.Field;
-import app.onedayofwar.R;
+import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -14,15 +10,15 @@ import app.onedayofwar.System.Vector2;
  */
 public class Tank extends Unit{
 
-    public Tank(Resources resources, Vector2 position, int zoneID, boolean isVisible)
+    public Tank(Vector2 position, int zoneID, boolean isVisible)
     {
         super(isVisible);
 
         if(isVisible)
         {
-            image = BitmapFactory.decodeResource(resources, R.drawable.unit_tank);
-            stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_tank_stroke);
-            icon = BitmapFactory.decodeResource(resources, R.drawable.unit_tank_icon);
+            image = Assets.tankImageL;
+            icon = Assets.tankIcon;
+            stroke = Assets.tankStroke;
             iconPos = new Vector2(position.x, position.y);
         }
         this.zoneID = (byte)zoneID;
@@ -94,7 +90,8 @@ public class Tank extends Unit{
 
                 tmpLocal = field.GetLocalSocketCoord(tmp);
 
-                if (field.GetFieldInfo()[(int) tmpLocal.y][(int) tmpLocal.x] != -1)
+                if (field.GetFieldInfo()[tmpLocal.y][
+                        tmpLocal.x] != -1)
                     return false;
 
                 tmpForm[num].SetValue(tmp);
@@ -107,6 +104,7 @@ public class Tank extends Unit{
         {
             for (int i = 0; i < form.length; i++)
                 form[i].SetValue(tmpForm[i]);
+            if(isVisible && isRight) stroke.horizontalFlip();
         }
 
         return true;
@@ -122,8 +120,8 @@ public class Tank extends Unit{
     protected void ResetOffset()
     {
         //для прямоугольника -78
-        offset.SetValue(-69, 0);
-        strokeOffset.SetValue(-5, -4);
+        offset.SetValue((int)(-69 * Assets.gridCoeff), 0);
+        strokeOffset.SetValue((int)(-5 * Assets.gridCoeff),(int)( -4 * Assets.gridCoeff));
     }
 
     @Override
@@ -131,10 +129,17 @@ public class Tank extends Unit{
     {
         if(isRight)
             //для прямоугольника -52
-            offset.SetValue(-42, 0);
+            offset.SetValue((int)(-42 * Assets.gridCoeff), 0);
         else
             //для прямоугольника -78
             ResetOffset();
+    }
+
+    @Override
+    protected void TurnImage()
+    {
+        image = isRight ? Assets.tankImageR : Assets.tankImageL;
+        stroke.horizontalFlip();
     }
 
     @Override

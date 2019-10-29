@@ -1,11 +1,7 @@
 package app.onedayofwar.Units;
 
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
-import android.graphics.Rect;
-
 import app.onedayofwar.Field;
-import app.onedayofwar.R;
+import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -18,15 +14,15 @@ import app.onedayofwar.System.Vector2;
  */
 public class Turret extends Unit {
 
-    public Turret(Resources resources, Vector2 position, int zoneID, boolean isVisible)
+    public Turret(Vector2 position, int zoneID, boolean isVisible)
     {
         super(isVisible);
 
         if(isVisible)
         {
-            image = BitmapFactory.decodeResource(resources, R.drawable.unit_turret);
-            stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_turret_stroke);
-            icon = BitmapFactory.decodeResource(resources, R.drawable.unit_turret_icon);
+            image = Assets.turretImageL;
+            icon = Assets.turretIcon;
+            stroke = Assets.turretStroke;
             iconPos = new Vector2(position.x, position.y);
         }
         this.zoneID = (byte)zoneID;
@@ -86,7 +82,7 @@ public class Turret extends Unit {
             }
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
-            if(field.GetFieldInfo()[(int)tmpLocal.y][(int)tmpLocal.x] != -1)
+            if(field.GetFieldInfo()[tmpLocal.y][tmpLocal.x] != -1)
                 return false;
 
             tmpForm[i].SetValue(tmp);
@@ -112,7 +108,7 @@ public class Turret extends Unit {
             }
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
-            if(field.GetFieldInfo()[(int)tmpLocal.y][(int)tmpLocal.x] != -1)
+            if(field.GetFieldInfo()[tmpLocal.y][tmpLocal.x] != -1)
                 return false;
 
             tmpForm[i].SetValue(tmp);
@@ -122,6 +118,7 @@ public class Turret extends Unit {
         {
             for (int i = 0; i < form.length; i++)
                 form[i].SetValue(tmpForm[i]);
+            if(isVisible && isRight) stroke.horizontalFlip();
         }
 
         return true;
@@ -138,17 +135,24 @@ public class Turret extends Unit {
     protected void ResetOffset()
     {
         // test (-76,0)
-        offset.SetValue (-86, -7);
-        strokeOffset.SetValue(-4, -4);
+        offset.SetValue ((int)(-86 * Assets.gridCoeff), (int)(-7 * Assets.gridCoeff));
+        strokeOffset.SetValue((int)(-4 * Assets.gridCoeff),(int)( -4 * Assets.gridCoeff));
     }
 
     @Override
     protected void ChangeOffset()
     {
         if(isRight)
-            offset.SetValue(-86,-7);
+            offset.SetValue((int)(-86 * Assets.gridCoeff),(int)(-7 * Assets.gridCoeff));
         else
             ResetOffset();
+    }
+
+    @Override
+    protected void TurnImage()
+    {
+        image = isRight ? Assets.turretImageR : Assets.turretImageL;
+        stroke.horizontalFlip();
     }
 
     @Override

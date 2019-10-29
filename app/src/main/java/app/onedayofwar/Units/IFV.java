@@ -1,11 +1,7 @@
 package app.onedayofwar.Units;
 
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
-import android.graphics.Rect;
-
 import app.onedayofwar.Field;
-import app.onedayofwar.R;
+import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.Vector2;
 
 /**
@@ -15,15 +11,15 @@ import app.onedayofwar.System.Vector2;
 
 public class IFV extends Unit{
 
-    public IFV(Resources resources, Vector2 position, int zoneID, boolean isVisible)
+    public IFV(Vector2 position, int zoneID, boolean isVisible)
     {
         super(isVisible);
 
         if(isVisible)
         {
-            image = BitmapFactory.decodeResource(resources, R.drawable.unit_ifv);
-            stroke = BitmapFactory.decodeResource(resources, R.drawable.unit_ifv_stroke);
-            icon = BitmapFactory.decodeResource(resources, R.drawable.unit_ifv_icon);
+            image = Assets.ifvImageL;
+            icon = Assets.ifvIcon;
+            stroke = Assets.ifvStroke;
             iconPos = new Vector2(position.x, position.y);
         }
         this.zoneID = (byte)zoneID;
@@ -86,7 +82,7 @@ public class IFV extends Unit{
             }
             tmpLocal = field.GetLocalSocketCoord(tmp);
 
-            if(field.GetFieldInfo()[(int)tmpLocal.y][(int)tmpLocal.x] != -1)
+            if(field.GetFieldInfo()[tmpLocal.y][tmpLocal.x] != -1)
                 return false;
 
             tmpForm[i].SetValue(tmp);
@@ -96,6 +92,7 @@ public class IFV extends Unit{
         {
             for (int i = 0; i < form.length; i++)
                 form[i].SetValue(tmpForm[i]);
+            if(isVisible && isRight) stroke.horizontalFlip();
         }
 
         return true;
@@ -110,17 +107,24 @@ public class IFV extends Unit{
     @Override
     protected void ResetOffset()
     {
-        offset.SetValue(-48, 0);
-        strokeOffset.SetValue(-4, -4);
+        offset.SetValue((int)(-55 * Assets.gridCoeff),(int)( -26 * Assets.gridCoeff));
+        strokeOffset.SetValue((int)(-5 * Assets.gridCoeff),(int)( -5 * Assets.gridCoeff));
     }
 
     @Override
     protected void ChangeOffset()
     {
         if(isRight)
-            offset.SetValue(-22, 0);
+            offset.SetValue((int)(-22 * Assets.gridCoeff),(int)( -26 * Assets.gridCoeff));
         else
             ResetOffset();
+    }
+
+    @Override
+    protected void TurnImage()
+    {
+        image = isRight ? Assets.ifvImageR : Assets.ifvImageL;
+        stroke.horizontalFlip();
     }
 
     @Override

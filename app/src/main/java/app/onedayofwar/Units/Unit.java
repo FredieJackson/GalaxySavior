@@ -1,15 +1,12 @@
 package app.onedayofwar.Units;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.LightingColorFilter;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
 import app.onedayofwar.Field;
+import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Graphics;
+import app.onedayofwar.Graphics.Sprite;
 import app.onedayofwar.System.Vector2;
 
 abstract public class Unit
@@ -17,16 +14,16 @@ abstract public class Unit
     //region Variables
     public Vector2 pos;
     public Vector2 offset;
-    public Vector2 iconOffset;
     public boolean isInstalled;
     protected byte zoneID;
 
     //region Images
-    protected Bitmap stroke;
-    protected Bitmap icon;
+    protected Sprite stroke;
+    protected Sprite icon;
+    protected Sprite image;
+
     public boolean isSelected;
     protected Vector2 strokeOffset;
-    protected Bitmap image;
     public boolean isRight;
     public Paint strokePaint;
     //endregion
@@ -35,10 +32,11 @@ abstract public class Unit
     int power;
     int hitPoints;
     int reloadTime;
-    int reload;
+    public int reload;
     int armor;
     public Vector2 iconPos;
     Vector2[] form;
+    boolean[] damagedForm;
     byte damagedZones;
     boolean isDead;
     protected boolean isVisible;
@@ -54,7 +52,6 @@ abstract public class Unit
         isSelected = false;
         if(isVisible)
         {
-            iconOffset = new Vector2();
             strokeOffset = new Vector2();
             offset = new Vector2();
             strokePaint = new Paint();
@@ -71,35 +68,47 @@ abstract public class Unit
     abstract public boolean SetForm(Vector2 startSocket, Field field, boolean isInstallUnit);
     abstract protected void ChangeOffset();
     abstract protected void ResetOffset();
+    abstract protected void TurnImage();
     abstract public byte GetZone();
     //endregion
 
     //region Draw
-    public void Draw(Canvas canvas)
+    public void Draw(Graphics g)
     {
-        DrawStroke(canvas);
-        canvas.drawBitmap(image, pos.x + offset.x, pos.y + offset.y, null);
+        DrawStroke(g);
+        g.drawSprite(image, pos.x + offset.x, pos.y + offset.y);
+        DrawDamagedZones(g);
         if(reload > 0 && !isDead)
-            DrawReload(canvas);
-    }
-    public void DrawReload(Canvas canvas)
-    {
-        canvas.drawText("" + reload, pos.x + offset.x + image.getWidth()/2, pos.y + offset.y + image.getHeight()/2, strokePaint);
+            DrawReload(g);
     }
 
-    public void DrawStroke(Canvas canvas)
+    public void DrawReload(Graphics g)
+    {
+        g.drawText("" + reload, 24, pos.x + offset.x + image.getWidth()/2, pos.y + offset.y + image.getHeight()/2, strokePaint.getColor());
+    }
+
+    public void DrawStroke(Graphics g)
     {
         if(isSelected)
         {
-            canvas.drawBitmap(stroke, pos.x + offset.x + strokeOffset.x, pos.y + offset.y + strokeOffset.y, strokePaint);
+            g.drawSprite(stroke, pos.x + offset.x + strokeOffset.x, pos.y + offset.y + strokeOffset.y, strokePaint.getColor());
         }
     }
 
-    public void DrawIcon(Canvas canvas)
+    public void DrawIcon(Graphics g)
     {
-        if(!isInstalled)
+        if(!isInstalled && !iconPos.IsNegative(false))
         {
-            canvas.drawBitmap(icon, iconPos.x + iconOffset.x, iconPos.y + iconOffset.y, null);
+            g.drawSprite(icon, iconPos.x, iconPos.y);
+        }
+    }
+
+    public void DrawDamagedZones(Graphics g)
+    {
+        for(int i = 0; i < form.length; i++)
+        {
+            if(damagedForm[i])
+                g.drawSprite(Assets.signFire, form[i].x - (int)(13 * Assets.gridCoeff), form[i].y - (int)(20 * Assets.gridCoeff));
         }
     }
     //endregion
@@ -111,21 +120,24 @@ abstract public class Unit
         pos.SetValue(0, -image.getHeight());
         if(isRight)
         {
-            image = ImageFlip(image);
-            stroke = ImageFlip(stroke);
             isRight = false;
+            TurnImage();
+            //image.horizontalFlip();
+            //stroke.horizontalFlip();
         }
     }
 
     public Rect GetStartPosition()
     {
-        return new Rect(iconPos.x ,iconPos.y, iconPos.x + icon.getWidth(), iconPos.y + icon.getHeight());
+        return new Rect(iconPos.x , iconPos.y, iconPos.x + icon.getWidth(), iconPos.y + icon.getHeight());
     }
 
     protected void InitializeFormArray()
     {
+        damagedForm = new boolean[form.length];
         for(int i = 0; i < form.length; i++)
         {
+            damagedForm[i] = false;
             form[i] = new Vector2();
             form[i].SetFalse();
         }
@@ -141,8 +153,9 @@ abstract public class Unit
         isRight = !isRight;
         if(isVisible)
         {
-            stroke = ImageFlip(stroke);
-            image = ImageFlip(image);
+            TurnImage();
+            //stroke.horizontalFlip();
+            //image.horizontalFlip();
             ChangeOffset();
         }
     }
@@ -150,19 +163,12 @@ abstract public class Unit
     public void strokeSetYellow()
     {
         strokePaint.setARGB(255,255,255,0);
-        strokePaint.setColorFilter(new LightingColorFilter(strokePaint.getColor(), 1));
+        Graphics.setColorFilter(strokePaint.getColor());
     }
     public void strokeSetRed()
     {
         strokePaint.setARGB(255,255,0,0);
-        strokePaint.setColorFilter(new LightingColorFilter(strokePaint.getColor(), 1));
-    }
-
-    public Bitmap ImageFlip(Bitmap src)
-    {
-        Matrix matrix = new Matrix();
-        matrix.preScale(-1.0f, 1.0f);
-        return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
+        Graphics.setColorFilter(strokePaint.getColor());
     }
 
     public void CheckPosition(Field field)
@@ -174,6 +180,18 @@ abstract public class Unit
         else
             //Подсвечиваем красным
             strokeSetRed();
+    }
+
+    public void Select()
+    {
+        isSelected = true;
+        if(isRight) stroke.horizontalFlip();
+    }
+
+    public void Deselect()
+    {
+        isSelected = false;
+        if(isRight) stroke.horizontalFlip();
     }
 
     public void NextTurn()
@@ -189,10 +207,10 @@ abstract public class Unit
 
     public void Reload()
     {
-        reload = reloadTime;
+        reload = reloadTime + 1;
     }
 
-    public boolean SetDamage(int damage)
+    public boolean SetDamage(int damage, Vector2 damagedZone)
     {
         damagedZones++;
         if(armor >= damage)
@@ -205,11 +223,23 @@ abstract public class Unit
         if(hitPoints <= 0)
         {
             isDead = true;
+            for(int i = 0; i < damagedForm.length; i++)
+            {
+               damagedForm[i] = true;
+            }
             return true;
         }
         else if(damagedZones == form.length)
         {
             isDead = true;
+        }
+        for(int i = 0; i < form.length; i++)
+        {
+            if(form[i].Equals(damagedZone))
+            {
+                damagedForm[i] = true;
+                break;
+            }
         }
         return false;
     }

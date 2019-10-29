@@ -1,54 +1,63 @@
 package app.onedayofwar.System;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.graphics.Rect;
+
+import app.onedayofwar.Graphics.Graphics;
+import app.onedayofwar.Graphics.Sprite;
 
 /**
  * Created by Slava on 08.11.2014.
  */
-public class Button {
-
+public class Button
+{
     public int x;
     public int y;
     public int width;
     public int height;
-    private Bitmap image;
+    private Rect rect;
+    private Sprite image;
     private boolean isClicked;
     private boolean isLocked;
     private boolean isAnimated;
     private boolean isVisible;
 
-    public Button(Bitmap image, Vector2 position, boolean isAnimated)
+    public Button(Sprite image, Vector2 position, boolean isAnimated)
     {
         this.image = image;
         x = position.x;
         y = position.y;
         width = image.getWidth();
         height = image.getHeight();
+        rect = new Rect(x, y, x + width,y + height);
         isClicked = false;
         isLocked = false;
         isVisible = true;
         this.isAnimated = isAnimated;
     }
 
-    public void Draw(Canvas canvas)
+    public void Draw(Graphics g)
     {
         if(isVisible)
         {
             if (isClicked && isAnimated)
-                canvas.drawBitmap(image, new Rect(0, 0, height, width), new Rect( x + 5, y + 5, x + width - 5, y + height - 5), null);
+                g.drawSprite(image, rect.left + 5, rect.top + 5, rect.width() - 5, rect.height() - 5, 0, 0, rect.width(), rect.height());
             else
-                canvas.drawBitmap(image, x, y, null);
+                g.drawSprite(image, x, y);
         }
+    }
+
+    public void Flip()
+    {
+        image.horizontalFlip();
     }
 
     public void Update(Vector2 touchPos)
     {
         if(!isLocked && isVisible)
         {
-            if (touchPos.x < x + width && touchPos.x > x && touchPos.y > y && touchPos.y < y + height)
+            rect.set(x, y, x + width, y + height);
+
+            if (touchPos.x > rect.left - 5 && touchPos.x < rect.right + 5 && touchPos.y > rect.top - 5 && touchPos.y < rect.bottom + 5)
                 isClicked = true;
             else
                 isClicked = false;
@@ -63,13 +72,6 @@ public class Button {
     public boolean IsClicked()
     {
         return isClicked;
-    }
-
-    public void ImageFlip()
-    {
-        Matrix matrix = new Matrix();
-        matrix.preScale(-1.0f, 1.0f);
-        image = Bitmap.createBitmap(image, 0, 0, image.getWidth(), image.getHeight(), matrix, true);
     }
 
     public void Lock()
@@ -94,6 +96,12 @@ public class Button {
     {
         x = pos.x;
         y = pos.y;
+    }
+
+    public void SetPosition(int x, int y)
+    {
+        this.x = x;
+        this.y = y;
     }
 
     public Vector2 GetPosition()

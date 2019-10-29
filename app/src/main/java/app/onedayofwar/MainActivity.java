@@ -4,10 +4,14 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
-import android.view.Window;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import app.onedayofwar.Graphics.Assets;
 
 public class MainActivity extends Activity
 {
@@ -17,16 +21,19 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.main);
+        Assets.mainFont = Typeface.createFromAsset(getAssets(), "fonts/hollowpoint.ttf");//clonewars.ttf");
     }
     @Override
     protected void onResume()
     {
         super.onResume();
         setContentView(R.layout.main);
+        mainFonts();
     }
     public void ClickBtn1(View view)
     {
         setContentView(R.layout.main_game_mode);
+        gameModeFonts();
     }
     public void ClickSingleBtn(View view)
     {
@@ -61,20 +68,48 @@ public class MainActivity extends Activity
     public void ClickBackBtn(View view)
     {
         setContentView(R.layout.main);
+        mainFonts();
     }
     public void ClickBtn2(View view)
     {
-
     }
     public void ClickBtn3(View view)
     {
 
     }
+
     private void StartGame(char type)
     {
         Intent intent = new Intent(this, GameActivity.class);
         intent.putExtra("type", type);
         startActivity(intent);
         setContentView(R.layout.loading);
+    }
+
+    private void mainFonts()
+    {
+        Button button =(Button)findViewById(R.id.startGameBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.settingsBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.infoBtn);
+        button.setTypeface(Assets.mainFont);
+        TextView text =(TextView)findViewById(R.id.appTitle);
+        text.setTypeface(Assets.mainFont);
+    }
+    private void gameModeFonts()
+    {
+        Button button =(Button)findViewById(R.id.backBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.singleBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.bluetoothBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.internetBtn);
+        button.setTypeface(Assets.mainFont);
+        button =(Button)findViewById(R.id.internetBtn);
+        button.setTypeface(Assets.mainFont);
+        TextView text =(TextView)findViewById(R.id.selectTitle);
+        text.setTypeface(Assets.mainFont);
     }
 }

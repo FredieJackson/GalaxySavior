@@ -10,7 +10,6 @@ public class Vector2
     public int y;
 
     //region Constructor
-
     public Vector2(int x, int y)
     {
         this.x = x;
@@ -78,6 +77,11 @@ public class Vector2
     {
         x = -x;
         y = -y;
+    }
+
+    public boolean Equals(Vector2 vector)
+    {
+        return (x == vector.x) && (y == vector.y);
     }
 
     public void ChangeSign(boolean changeX)

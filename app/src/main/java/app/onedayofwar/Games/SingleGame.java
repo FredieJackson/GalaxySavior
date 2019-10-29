@@ -16,6 +16,7 @@ import app.onedayofwar.Units.*;
 public class SingleGame extends Game
 {
     ArrayList<Unit> eArmy;
+    public static byte difficulty;
     public SingleGame(GameView gameView)
     {
         super(gameView);
@@ -36,27 +37,27 @@ public class SingleGame extends Game
         eArmy = new ArrayList<>();
         for(int i = 0; i < unitCount[0]; i++)
         {
-            eArmy.add(new Robot(gameView.getResources(), new Vector2(), 0, false));
+            eArmy.add(new Robot(new Vector2(), 0, false));
         }
         for(int i = 0; i < unitCount[1]; i++)
         {
-            eArmy.add(new IFV(gameView.getResources(), new Vector2(), 1, false));
+            eArmy.add(new IFV(new Vector2(), 1, false));
         }
         for(int i = 0; i < unitCount[2]; i++)
         {
-            eArmy.add(new Engineer(gameView.getResources(), new Vector2(), 2, false));
+            eArmy.add(new Engineer(new Vector2(), 2, false));
         }
         for(int i = 0; i < unitCount[3]; i++)
         {
-            eArmy.add(new Tank(gameView.getResources(), new Vector2(), 3, false));
+            eArmy.add(new Tank(new Vector2(), 3, false));
         }
         for(int i = 0; i < unitCount[4]; i++)
         {
-            eArmy.add(new Turret(gameView.getResources(), new Vector2(), 4, false));
+            eArmy.add(new Turret(new Vector2(), 4, false));
         }
         for(int i = 0; i < unitCount[5]; i++)
         {
-            eArmy.add(new SONDER(gameView.getResources(), new Vector2(), 5, false));
+            eArmy.add(new SONDER(new Vector2(), 5, false));
         }
     }
 
@@ -116,7 +117,10 @@ public class SingleGame extends Game
             }
         }
         if(isGameOver)
+        {
             testLocalView = "YOU LOSE!";
+            state = GameState.Lose;
+        }
         if(!isGood)
         {
             for(Unit unit : army)
@@ -144,7 +148,10 @@ public class SingleGame extends Game
             }
         }
         if(isGameOver)
+        {
             testLocalView = "YOU WIN!";
+            state = GameState.Win;
+        }
         if(!isGood)
         {
             for(Unit unit : eArmy)
@@ -158,6 +165,10 @@ public class SingleGame extends Game
         }
         //endregion
 
+        if(state == GameState.Win || state == GameState.Lose)
+        {
+            GameOver();
+        }
     }
 
     public boolean PlayerShoot()
@@ -166,21 +177,21 @@ public class SingleGame extends Game
             return false;
         int target = eField.GetSelectedSocketInfo();
         army.get(selectedUnitZone).Reload();
-        army.get(selectedUnitZone).isSelected = false;
+        army.get(selectedUnitZone).Deselect();
+
         if(target < 0)
         {
             eField.SetSign(false);
         }
         else
         {
-            eField.SetSign(true);
-            if(eArmy.get(target).SetDamage(army.get(selectedUnitZone).GetPower()))
+            if(eArmy.get(target).SetDamage(army.get(selectedUnitZone).GetPower(), eField.selectedSocket))
             {
-                Vector2 tmp = new Vector2();
+                Vector2 tmpLocalFormCoord = new Vector2();
                 for(int i = 0; i < eArmy.get(target).GetForm().length; i++)
                 {
-                    tmp.SetValue(eField.GetLocalSocketCoord(eArmy.get(target).GetForm()[i]));
-                    eField.GetShots()[tmp.y][tmp.x] = 2;
+                    tmpLocalFormCoord.SetValue(eField.GetLocalSocketCoord(eArmy.get(target).GetForm()[i]));
+                    eField.GetShots()[tmpLocalFormCoord.y][ tmpLocalFormCoord.x] = 2;
                 }
             }
             else
@@ -206,7 +217,7 @@ public class SingleGame extends Game
         while (eArmy.get(rndUnitID).IsDead() || eArmy.get(rndUnitID).IsReloading());
 
 
-        if((int)(Math.random()*101) <= 30)
+        if((int)(Math.random()*101) <= difficulty)
         {
             byte rndTargetID;
             do
@@ -247,7 +258,7 @@ public class SingleGame extends Game
         }
         else
         {
-            if(army.get(target).SetDamage(eArmy.get(rndUnitID).GetPower()))
+            if(army.get(target).SetDamage(eArmy.get(rndUnitID).GetPower(), field.selectedSocket))
             {
                 Vector2 tmp = new Vector2();
                 for(int i = 0; i < army.get(target).GetForm().length; i++)

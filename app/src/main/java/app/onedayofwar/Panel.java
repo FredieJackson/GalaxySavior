@@ -1,12 +1,11 @@
 package app.onedayofwar;
 
-import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import app.onedayofwar.Graphics.Assets;
+import app.onedayofwar.Graphics.Graphics;
 import app.onedayofwar.System.Button;
 import app.onedayofwar.System.Vector2;
 
@@ -20,7 +19,7 @@ public class Panel
     public int y;
     public int offsetX;
     public int offsetY;
-    public int velocity;
+    public Vector2 velocity;
     public int width;
     int height;
     public boolean isStop;
@@ -32,19 +31,13 @@ public class Panel
     Paint paint;
 
     //region Constructor
-    public Panel(Resources res, int x, int y, int width, int height, Type type)
+    public Panel(int x, int y, int width, int height, Type type)
     {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.type = type;
-
-        if(type == Type.RIGHT)
-        {
-            Bitmap btnImg = BitmapFactory.decodeResource(res, R.drawable.btn_panel_close);
-            closeBtn = new Button(btnImg, new Vector2(x, height / 2 - btnImg.getHeight() / 2), false);
-        }
 
        /* if(openType == 3)
             image = BitmapFactory.decodeResource(res,R.drawable.gate_top);
@@ -62,10 +55,14 @@ public class Panel
         offsetY = 0;
         SetVelocity();
         rect = new Rect(x, y, x + width, y + height);
+
+        if(type == Type.RIGHT)
+            closeBtn = new Button(Assets.btnPanelClose, new Vector2(x, height / 2 - Assets.btnPanelClose.getHeight() / 2), false);
+
         isStop = true;
         isClose = true;
         paint = new Paint();
-        paint.setARGB(255,200,60,30);
+        paint.setARGB(255,31,31,31);
     }
     //endregion
 
@@ -74,16 +71,16 @@ public class Panel
         switch (type)
         {
             case LEFT:
-                velocity = -1;
+                velocity = new Vector2(-15, 0);
                 break;
             case UP:
-                velocity = -1;
+                velocity = new Vector2(0, -10);
                 break;
             case RIGHT:
-                velocity = 1;
+                velocity = new Vector2(15, 0);
                 break;
             case DOWN:
-                velocity = 1;
+                velocity = new Vector2(0, 10);
                 break;
         }
     }
@@ -92,11 +89,10 @@ public class Panel
     {
         if(!isStop)
         {
-            if(type == Type.DOWN || type == Type.UP)
-                offsetY += velocity;
-            else
-                offsetX += velocity;
-
+            offsetX += velocity.x;
+            offsetY += velocity.y;
+            if (type == Type.RIGHT)
+                closeBtn.x += velocity.x;
 
             switch (type)
             {
@@ -105,8 +101,8 @@ public class Panel
                     {
                         offsetX = -width;
                         closeBtn.x -= closeBtn.width;
-                        velocity = -velocity;
-                        closeBtn.ImageFlip();
+                        velocity.ChangeSign();
+                        closeBtn.Flip();
                         isClose = false;
                         isStop = true;
 
@@ -114,29 +110,28 @@ public class Panel
                     else if (Math.abs(offsetX) <= 0)
                     {
                         offsetX = 0;
-                        velocity = - velocity;
+                        velocity.ChangeSign();
                         isClose = true;
                         isStop = true;
                     }
                 break;
 
                 case RIGHT:
-                    closeBtn.x += velocity;
-
                     if (offsetX >= width)
                     {
                         offsetX = width;
-                        closeBtn.x = x + offsetX - closeBtn.width;
-                        velocity = -velocity;
-                        closeBtn.ImageFlip();
+                        closeBtn.x = x + offsetX -closeBtn.width;
+                        velocity.ChangeSign();
+                        closeBtn.Flip();
                         isClose = false;
                         isStop = true;
+
                     }
                     else if (offsetX <= 0)
                     {
                         offsetX = 0;
                         closeBtn.x = x;
-                        velocity = -velocity;
+                        velocity.ChangeSign();
                         isClose = true;
                         isStop = true;
                     }
@@ -146,14 +141,14 @@ public class Panel
                     if (Math.abs(offsetY) >= height)
                     {
                         offsetY = -height;
-                        velocity = -velocity;
+                        velocity.ChangeSign();
                         isStop = true;
                         isClose = false;
                     }
                     else if (offsetY >= 0)
                     {
                         offsetY = 0;
-                        velocity = -velocity;
+                        velocity.ChangeSign();
                         isStop = true;
                         isClose = true;
                     }
@@ -163,14 +158,14 @@ public class Panel
                     if (offsetY >= height)
                     {
                         offsetY = height;
-                        velocity = -velocity;
+                        velocity.ChangeSign();
                         isStop = true;
                         isClose = false;
                     }
                     else if (offsetY <= 0)
                     {
                         offsetY = 0;
-                        velocity = -velocity;
+                        velocity.ChangeSign();
                         isStop = true;
                         isClose = true;
                     }
@@ -186,7 +181,7 @@ public class Panel
         {
             if (!isClose)
             {
-                closeBtn.ImageFlip();
+                closeBtn.Flip();
                 closeBtn.x += closeBtn.width;
             }
         }
@@ -198,15 +193,18 @@ public class Panel
         return new Vector2(x + offsetX, y + offsetY);
     }
 
-    public void Draw(Canvas canvas)
+    public void Draw(Graphics g)
     {
         //if(image == null)
         if(isClose || !isStop)
-            canvas.drawRect(rect, paint);
+            g.drawRect(rect.left, rect.top, rect.width(), rect.height(), paint.getColor());
         /*else
             canvas.drawBitmap(image, new Rect(0,0,image.getWidth(), image.getHeight()), new RectF(x + offsetX, y + offsetY, x + offsetX + width, y + offsetY + height), null);*/
-        if(type == Type.RIGHT)
-            closeBtn.Draw(canvas);
+    }
+
+    public void DrawButton(Graphics g)
+    {
+        closeBtn.Draw(g);
     }
 
     public boolean IsCloseBtnPressed()

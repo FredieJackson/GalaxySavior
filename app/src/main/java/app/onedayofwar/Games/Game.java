@@ -1,6 +1,5 @@
 package app.onedayofwar.Games;
 
-import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.widget.Toast;
@@ -9,6 +8,7 @@ import java.util.ArrayList;
 
 import app.onedayofwar.Field;
 import app.onedayofwar.GameView;
+import app.onedayofwar.Graphics.Assets;
 import app.onedayofwar.System.*;
 import app.onedayofwar.Units.*;
 
@@ -18,6 +18,8 @@ import app.onedayofwar.Units.*;
 public abstract class Game
 {
     //region Variables
+    public static enum GameState { Installation, Defence, Attack , AttackPrepare, Win, Lose}
+    public static GameState state;
     public Field field;
     public Field eField;
     protected GameView gameView;
@@ -30,7 +32,6 @@ public abstract class Game
     private byte unitNum[];
     protected byte[] unitCount;
     protected byte selectedUnitZone;
-    public boolean isInstallationComplete;
     //endregion
 
     //endregion
@@ -55,14 +56,14 @@ public abstract class Game
     //region Initialization
     protected void Initialize()
     {
+        state = GameState.Installation;
         turns = 0;
         army = new ArrayList<>();
 
-        field = new Field(gameView.getResources(), 50, 50, 15, true);
-        eField = new Field(gameView.getResources(), 50, 50, 15, false);
+        field = new Field(gameView.screenWidth/2 - Assets.gridIso.getWidth()/2, gameView.screenHeight/2 - Assets.gridIso.getHeight()/2, 15, true);
+        eField = new Field((int)(170 * Assets.screenWidthCoeff  * Assets.dpiCoeff), gameView.screenHeight/2 - Assets.gridIso.getHeight()/2, 15, false); //gameView.screenWidth/2 - Assets.grid.getWidth()/2, gameView.screenHeight/2 - Assets.grid.getHeight()/2, 15, false);
         eField.Move();
 
-        isInstallationComplete = false;
         isYourTurn = false;
         selectedUnitZone = -1;
 
@@ -86,27 +87,27 @@ public abstract class Game
 
         for(int i = 0; i < unitCount[0]; i++)
         {
-            army.add(new Robot(gameView.getResources(), new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - 50, 10), 0, true));
+            army.add(new Robot(new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - Assets.robotIcon.getWidth()/2, 10), 0, true));
         }
         for(int i = 0; i < unitCount[1]; i++)
         {
-            army.add(new IFV(gameView.getResources(), new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - 50, army.get(unitNum[0]).GetStartPosition().bottom  + 10), 1, true));
+            army.add(new IFV(new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - Assets.robotIcon.getWidth()/2, army.get(unitNum[0]).GetStartPosition().bottom  + 10), 1, true));
         }
         for(int i = 0; i < unitCount[2]; i++)
         {
-            army.add(new Engineer(gameView.getResources(), new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - 50, army.get(unitNum[1]).GetStartPosition().bottom  + 10), 2, true));
+            army.add(new Engineer(new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - Assets.robotIcon.getWidth()/2, army.get(unitNum[1]).GetStartPosition().bottom  + 10), 2, true));
         }
         for(int i = 0; i < unitCount[3]; i++)
         {
-            army.add(new Tank(gameView.getResources(), new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - 50, army.get(unitNum[2]).GetStartPosition().bottom  + 10), 3, true));
+            army.add(new Tank(new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - Assets.robotIcon.getWidth()/2, army.get(unitNum[2]).GetStartPosition().bottom  + 10), 3, true));
         }
         for(int i = 0; i < unitCount[4]; i++)
         {
-            army.add(new Turret(gameView.getResources(), new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - 50, army.get(unitNum[3]).GetStartPosition().bottom  + 10), 4, true));
+            army.add(new Turret(new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - Assets.robotIcon.getWidth()/2, army.get(unitNum[3]).GetStartPosition().bottom  + 10), 4, true));
         }
         for(int i = 0; i < unitCount[5]; i++)
         {
-            army.add(new SONDER(gameView.getResources(), new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - 50, army.get(unitNum[4]).GetStartPosition().bottom  + 10), 5, true));
+            army.add(new SONDER(new Vector2(gameView.selectingPanel.x + gameView.selectingPanel.width/2 - Assets.robotIcon.getWidth()/2, army.get(unitNum[4]).GetStartPosition().bottom  + 10), 5, true));
         }
         drawArmySequence = new Unit[army.size()];
         for(int i = 0; i < army.size(); i++)
@@ -120,19 +121,20 @@ public abstract class Game
     //region Update
     public void Update()
     {
-        if(!isInstallationComplete && !gameView.selectingPanel.isStop)
+        if(state == GameState.Installation && !gameView.selectingPanel.isStop)
             AlignArmyPosition();
 
         if(gameView.IsGatesClose() && isYourTurn)
         {
-            if(!isInstallationComplete)
+            if(state == GameState.Installation)
             {
-                isInstallationComplete = true;
+                state = GameState.AttackPrepare;
                 gameView.MoveGates();
             }
             else if(selectedUnitZone > -1)
             {
                 SwapFields();
+                state = GameState.Attack;
                 gameView.ShootingPrepare();
                 gameView.MoveGates();
             }
@@ -141,8 +143,12 @@ public abstract class Game
                 SwapFields();
                 EnemyShoot();
                 NextTurn();
+                state = GameState.Defence;
                 gameView.DefendingPrepare();
                 gameView.MoveGates();
+
+                //в состоянии дэфенс проигрываем анимацию потом меняем на подготовку к атаке
+                state = GameState.AttackPrepare;
             }
         }
     }
@@ -155,7 +161,7 @@ public abstract class Game
         if(event.getAction() == MotionEvent.ACTION_DOWN)
         {
             //Если расстановка не закончена
-            if(!isInstallationComplete)
+            if(state == GameState.Installation)
             {
                 //Пытаемся выбрать юнит
                 SelectUnit();
@@ -167,7 +173,7 @@ public abstract class Game
 
         }
 
-        if(isInstallationComplete && !gameView.IsGatesClose())
+        if(state != GameState.Installation && !gameView.IsGatesClose())
         {
             if(eField.IsVectorInField(gameView.touchPos))
             {
@@ -181,7 +187,7 @@ public abstract class Game
         }
 
         //Если выбран юнит и расстановка не закончена
-        if (selectedUnitZone > -1 && !isInstallationComplete)
+        if (selectedUnitZone > -1 && state == GameState.Installation)
         {
             //Пытаемся передвигать юнит
             MoveSelectedUnit();
@@ -219,6 +225,7 @@ public abstract class Game
         }
         return false;
     }
+
     public boolean CheckInstallationFinish()
     {
         byte c = 0;
@@ -234,13 +241,29 @@ public abstract class Game
         }
         return false;
     }
+
+    public void updateDrawArmySequence()
+    {
+        for(int i = 0; i < drawArmySequence.length; i++)
+        {
+            for(int j = 0; j < drawArmySequence.length - 1 - i; j++)
+            {
+                if(drawArmySequence[j].GetForm()[0].y > drawArmySequence[j + 1].GetForm()[0].y)
+                {
+                    Unit tmp = drawArmySequence[j];
+                    drawArmySequence[j] = drawArmySequence[j+1];
+                    drawArmySequence[j+1] = tmp;
+                }
+            }
+        }
+    }
     /**
      * Передвигает выбраный юнит
      */
     public void MoveSelectedUnit()
     {
         //Если касание было не по кнопкам
-        if (!gameView.isButtonPressed)
+        if (!gameView.isButtonPressed && (gameView.touchPos.x < gameView.selectingPanel.x + gameView.selectingPanel.offsetX - 5))
         {
             //Если юнит выбран
             if (selectedUnitZone > -1)
@@ -268,7 +291,7 @@ public abstract class Game
      */
     public void SelectUnit()
     {
-        if (isInstallationComplete)
+        if (state != GameState.Installation)
         {
             //Получаем локальные координаты клетки поля
             Vector2 tmp = new Vector2(field.GetLocalSocketCoord(field.selectedSocket));
@@ -278,10 +301,10 @@ public abstract class Game
             if (tmpID > -1 && !army.get(tmpID).IsDead() && !army.get(tmpID).IsReloading())
             {
                 if (selectedUnitZone > -1)
-                    army.get(selectedUnitZone).isSelected = false;
+                    army.get(selectedUnitZone).Deselect();
 
                 selectedUnitZone = tmpID;
-                army.get(tmpID).isSelected = true;
+                army.get(tmpID).Select();
             }
         }
         else
@@ -296,32 +319,25 @@ public abstract class Game
                 for (byte i = 0; i < unitNum.length; i++)
                 {
                     //Если остались не выбранные корабли определенного типа и прямоугольник касания пересекает прямоугольник стартовой зоны кораблей этого типа
-                    if (gameView.selectingPanel.isClose && gameView.selectingPanel.isStop && unitNum[i] > -1 && touchRect.intersect(army.get(unitNum[i]).GetStartPosition()))
+                    if (gameView.selectingPanel.isClose && unitNum[i] > -1 && touchRect.intersect(army.get(unitNum[i]).GetStartPosition()))
                     {
                         //Выделенному типу присваиваем ид этой зоны
                         selectedUnitZone = i;
 
                         //Перемещаем в конец, чтоб перекрывал остальные юниты
-                        Unit tmpUnit = drawArmySequence[drawArmySequence.length - 1];
-                        byte tmpUnitNum = -1;
-
                         for(byte u = 0; u < drawArmySequence.length; u++)
                         {
                             if(army.get(unitNum[i]).equals(drawArmySequence[u]))
                             {
-                                tmpUnitNum = u;
+                                Unit tmpUnit;
+                                for(int n = u; n < drawArmySequence.length - 1; n++)
+                                {
+                                    tmpUnit = drawArmySequence[n];
+                                    drawArmySequence[n] = drawArmySequence[n + 1];
+                                    drawArmySequence[n + 1] = tmpUnit;
+                                }
                                 break;
                             }
-                        }
-
-                        if(tmpUnitNum == -1)
-                        {
-                            Toast.makeText(gameView.getContext(), "tmpUnitNum = -1", Toast.LENGTH_SHORT).show();
-                        }
-                        else
-                        {
-                            drawArmySequence[drawArmySequence.length - 1] = drawArmySequence[tmpUnitNum];
-                            drawArmySequence[tmpUnitNum] = tmpUnit;
                         }
 
                         //Задвигаем панель выбора юнитов
@@ -382,7 +398,7 @@ public abstract class Game
 
     public void AlignArmyPosition()
     {
-        if(isInstallationComplete)
+        if(state != GameState.Installation)
         {
             for (Unit unit : army)
             {
@@ -392,16 +408,18 @@ public abstract class Game
                     unit.pos.x -= field.width + field.initX + 10;
             }
         }
-        else if (!gameView.selectingPanel.isStop)
+        else
         {
-            for (int i = 0, j = 0; i < unitCount.length; i++)
+            if(!gameView.selectingPanel.isStop)
             {
-                j += unitCount[i];
-                army.get(j - 1).iconOffset.x += gameView.selectingPanel.velocity;
+                for (int i = 0, j = 0; i < unitCount.length; i++)
+                {
+                    j += unitCount[i];
+                    army.get(j - 1).iconPos.x += gameView.selectingPanel.velocity.x;
+                }
             }
         }
     }
-
     public void SwapFields()
     {
         field.Move();
@@ -453,6 +471,8 @@ public abstract class Game
                         //Помечаем тип как установленный
                         unitNum[selectedUnitZone] = -1;
 
+                    updateDrawArmySequence();
+
                     if(!gameView.selectingPanel.isClose)
                         gameView.selectingPanel.Move();
                     //Обнуляем выделенный тип юнитов
@@ -463,41 +483,67 @@ public abstract class Game
     }
     //endregion
 
-    public void DrawUnits(Canvas canvas)
+    public void DrawUnits()
     {
         for(Unit unit : drawArmySequence)
         {
             if(!unit.pos.IsNegative(false))
-                unit.Draw(canvas);
+                unit.Draw(gameView.graphics);
         }
-        if(isInstallationComplete && field.x >= 0)
+        if(state != GameState.Installation && field.x >= 0)
         {
-            field.DrawFieldInfo(canvas);
-            canvas.drawText(testLocalView, 50, 150, army.get(0).strokePaint);
+            gameView.graphics.drawText(testLocalView, 24, 50, 150, army.get(0).strokePaint.getColor());
         }
     }
 
-    public void DrawFields(Canvas canvas)
+    public void DrawFields()
     {
-        if(isInstallationComplete)
+        if(state != GameState.Installation)
         {
             if (eField.x >= 0)
-                eField.Draw(canvas);
+                eField.Draw(gameView.graphics);
+            else
+                field.DrawFieldInfo(gameView.graphics);
         }
         else
         {
-            field.Draw(canvas);
+            field.Draw(gameView.graphics);
         }
     }
 
-    public void DrawUnitsIcons(Canvas canvas)
+    public void DrawUnitsIcons()
     {
         for(int i = 0, j = 0; i < unitCount.length; i++)
         {
             j += unitCount[i];
-            army.get(j - 1).DrawIcon(canvas);
+            army.get(j - 1).DrawIcon(gameView.graphics);
         }
     }
 
+    public void GameOver()
+    {
+        byte playerShots[][] = eField.GetShots();
+        byte goodShots = 0;
+        int reward = 0;
+
+        for(int i = 0 ; i < playerShots.length; i++)
+        {
+            for (int j = 0; j < playerShots[i].length; j++)
+            {
+                if(playerShots[i][j] == 2)
+                {
+                    goodShots++;
+                }
+            }
+        }
+
+        reward += goodShots * 5;
+        if(state == GameState.Win)
+        {
+            reward += 150;
+        }
+
+        gameView.GameOver(state, reward);
+    }
     //endregion
 }
