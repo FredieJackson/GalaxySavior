@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">WarshipsBattle</string>
+    <string name="startGame">Start Game</string>
+    <string name="settings">Settings</string>
+    <string name="info">Info</string>
+    <string name="helloWorld">Warships Battle</string>
+</resources>

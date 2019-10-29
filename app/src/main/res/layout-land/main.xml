@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="1">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/helloWorld"
+        android:id="@+id/textView"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.1" />
+
+    <Button
+        android:layout_width="199dp"
+        android:layout_height="34dp"
+        android:text="@string/startGame"
+        android:id="@+id/btn"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.1"
+        android:onClick="ClickBtn1" />
+    <Button
+        android:layout_width="199dp"
+        android:layout_height="34dp"
+        android:text="@string/settings"
+        android:id="@+id/btn1"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.1"
+        android:onClick="ClickBtn2" />
+    <Button
+        android:layout_width="199dp"
+        android:layout_height="34dp"
+        android:text="@string/info"
+        android:id="@+id/btn2"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.1"
+        android:onClick="ClickBtn3" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Prize"
+        android:id="@+id/getBtn"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.1"
+        android:visibility="invisible"
+        android:onClick="GoToFirstActivity" />
+
+</LinearLayout>
